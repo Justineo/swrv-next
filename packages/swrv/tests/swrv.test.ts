@@ -23,7 +23,7 @@ import {
   useSWRVSubscription,
 } from "../src";
 import { serialize } from "../src/_internal";
-import type { SWRVMiddleware } from "../src";
+import type { SWRVMiddleware, SWRVMutationConfiguration } from "../src";
 
 async function flush() {
   await Promise.resolve();
@@ -952,7 +952,7 @@ describe("swrv", () => {
     expect(swrv.data.value).toBe(1);
     expect(fetcher).toHaveBeenCalledTimes(1);
 
-    const options: NonNullable<Parameters<typeof mutation.trigger>[1]> = {
+    const options: SWRVMutationConfiguration<number, Error, void, string, number> = {
       populateCache: true,
       revalidate: (data, currentKey) => currentKey === key && (data ?? 0) < 30,
     };

@@ -103,6 +103,61 @@ const mutationWithOptions = mutation.trigger(
   },
 );
 
+const mutationResult = mutation.trigger({ name: "alice" });
+
+const numericMutation = useSWRVMutation<string, Error, number, string>(
+  "numeric-user",
+  async (_key, { arg }) => String(arg),
+);
+
+const numericMutationResult = numericMutation.trigger(1);
+const numericMutationNoThrow = numericMutation.trigger(1, {
+  throwOnError: false,
+});
+
+const optionalMutation = useSWRVMutation<string | undefined, Error, "foo" | undefined, string>(
+  "optional-user",
+  async (_key, { arg }) => arg?.toUpperCase(),
+);
+
+const optionalMutationNoArg = optionalMutation.trigger();
+const optionalMutationUndefined = optionalMutation.trigger(undefined);
+const optionalMutationFoo = optionalMutation.trigger("foo");
+
+const noArgMutation = useSWRVMutation<string, Error, never, string>(
+  "no-arg-user",
+  async (key) => key,
+);
+
+const noArgMutationResult = noArgMutation.trigger();
+
+const cachedDataMutation = useSWRVMutation<string, Error, "foo", string, string[]>(
+  "cached-data-user",
+  async (_key, { arg }) => arg.toUpperCase(),
+);
+
+const cachedDataMutationResult = cachedDataMutation.trigger<string[]>("foo", {
+  optimisticData: (current) => [...(current ?? []), "optimistic"],
+  populateCache: (result, current) => [...(current ?? []), result],
+  revalidate: false,
+});
+
+const mutationThrowOffByDefault = useSWRVMutation<string, Error, "foo", string>(
+  "throw-off",
+  async (_key, { arg }) => arg.toUpperCase(),
+  {
+    throwOnError: false,
+  },
+);
+
+const mutationThrowOffResult = mutationThrowOffByDefault.trigger("foo");
+
+// @ts-expect-error required mutation args should stay required
+void numericMutation.trigger();
+
+// @ts-expect-error literal mutation args should be preserved
+void cachedDataMutation.trigger("bar");
+
 const subscription = useSWRVSubscription(
   ["room", 1] as [string, number],
   (key, { next }) => {
@@ -146,11 +201,26 @@ const typeAssertions = {
   infiniteMutate: true as Expect<Equal<Awaited<typeof infiniteMutate>, string[] | undefined>>,
   infiniteSerialized: true as Expect<Equal<typeof infiniteSerialized, string>>,
   mutationArg: true as Expect<Equal<Parameters<typeof mutation.trigger>[0], { name: string }>>,
-  mutationResult: true as Expect<
-    Equal<Awaited<ReturnType<typeof mutation.trigger>>, string | undefined>
+  mutationResult: true as Expect<Equal<Awaited<typeof mutationResult>, string>>,
+  mutationWithOptions: true as Expect<Equal<Awaited<typeof mutationWithOptions>, string>>,
+  numericMutationArg: true as Expect<Equal<Parameters<typeof numericMutation.trigger>[0], number>>,
+  numericMutationResult: true as Expect<Equal<Awaited<typeof numericMutationResult>, string>>,
+  numericMutationNoThrow: true as Expect<
+    Equal<Awaited<typeof numericMutationNoThrow>, string | undefined>
   >,
-  mutationWithOptions: true as Expect<
-    Equal<Awaited<typeof mutationWithOptions>, string | undefined>
+  optionalMutationNoArg: true as Expect<
+    Equal<Awaited<typeof optionalMutationNoArg>, string | undefined>
+  >,
+  optionalMutationUndefined: true as Expect<
+    Equal<Awaited<typeof optionalMutationUndefined>, string | undefined>
+  >,
+  optionalMutationFoo: true as Expect<
+    Equal<Awaited<typeof optionalMutationFoo>, string | undefined>
+  >,
+  noArgMutationResult: true as Expect<Equal<Awaited<typeof noArgMutationResult>, string>>,
+  cachedDataMutationResult: true as Expect<Equal<Awaited<typeof cachedDataMutationResult>, string>>,
+  mutationThrowOffResult: true as Expect<
+    Equal<Awaited<typeof mutationThrowOffResult>, string | undefined>
   >,
   subscriptionData: true as Expect<Equal<typeof subscription.data.value, string | undefined>>,
   subscriptionKey: true as Expect<
@@ -173,6 +243,20 @@ void immutableResponse;
 void infiniteResponse;
 void infiniteMutate;
 void mutation;
+void mutationResult;
 void mutationWithOptions;
+void numericMutation;
+void numericMutationResult;
+void numericMutationNoThrow;
+void optionalMutation;
+void optionalMutationNoArg;
+void optionalMutationUndefined;
+void optionalMutationFoo;
+void noArgMutation;
+void noArgMutationResult;
+void cachedDataMutation;
+void cachedDataMutationResult;
+void mutationThrowOffByDefault;
+void mutationThrowOffResult;
 void subscription;
 void typeAssertions;

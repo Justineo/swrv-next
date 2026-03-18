@@ -54,6 +54,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - `useSWRV` and `useSWRVImmutable` now infer array-key fetcher arguments more precisely
   - public compile-time coverage exists for root and subpath APIs
   - bound and scoped mutators now expose the mutation-result type instead of collapsing everything to cached-data type, and mutator callbacks can now model different output payloads from their input snapshot
+  - `useSWRVMutation` now models SWR-style trigger overloads more closely, including no-arg and optional-arg triggers, hook-level `throwOnError` defaults, and separate cache-data typing for `optimisticData` and `populateCache`
   - the package export map now points at the emitted `.d.mts` declaration files and is checked by a package-export smoke test
 - The docs package now builds with VitePress and includes a first guide, API overview, and migration page.
 - The docs package now also includes examples, a current-scope page, and an explicit SSR guide built around provider-scoped clients plus config-level fallback data.

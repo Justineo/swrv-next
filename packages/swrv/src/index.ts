@@ -42,7 +42,14 @@ export type {
   SWRVMiddleware,
   SWRVResponse,
 } from "./_internal";
-export type { MutationFetcher, SWRVMutationConfiguration, SWRVMutationResponse } from "./mutation";
+export type {
+  MutationFetcher,
+  SWRVMutationConfiguration,
+  SWRVMutationResponse,
+  TriggerWithArgs,
+  TriggerWithOptionsArgs,
+  TriggerWithoutArgs,
+} from "./mutation";
 export type {
   SWRVInfiniteConfiguration,
   SWRVInfiniteKeyedMutator,
