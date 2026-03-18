@@ -401,6 +401,48 @@ describe("swrv", () => {
     expect(state.data.value).toEqual(["[apple]", "banana", "[pineapple]"]);
   });
 
+  it("revalidates infinite resources when bound mutate receives object options", async () => {
+    let value = 0;
+    const key = `infinite-mutate-options-${Date.now()}`;
+    const fetcher = vi.fn(async () => `foo-${value++}`);
+
+    const state = runComposable(() =>
+      useSWRVInfinite<string>((index) => (index === 0 ? key : null), fetcher, {
+        dedupingInterval: 0,
+      }),
+    );
+
+    await settle();
+    expect(state.data.value).toEqual(["foo-0"]);
+
+    await state.mutate(state.data.value, { revalidate: true });
+    await settle();
+
+    expect(state.data.value).toEqual(["foo-1"]);
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not revalidate infinite resources when bound mutate disables revalidation", async () => {
+    let value = 0;
+    const key = `infinite-mutate-no-revalidate-${Date.now()}`;
+    const fetcher = vi.fn(async () => `foo-${value++}`);
+
+    const state = runComposable(() =>
+      useSWRVInfinite<string>((index) => (index === 0 ? key : null), fetcher, {
+        dedupingInterval: 0,
+      }),
+    );
+
+    await settle();
+    expect(state.data.value).toEqual(["foo-0"]);
+
+    await state.mutate(state.data.value, { revalidate: false });
+    await settle();
+
+    expect(state.data.value).toEqual(["foo-0"]);
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+
   it("does not throw when infinite getKey is not ready and mutate() is called", async () => {
     const state = runComposable(() =>
       useSWRVInfinite<string>(
