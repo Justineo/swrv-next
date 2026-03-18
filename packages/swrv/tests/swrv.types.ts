@@ -4,7 +4,7 @@ import useSWRV, { mutate, preload, useSWRVImmutable } from "../src";
 import useSWRVInfinite, { unstable_serialize as unstableSerializeInfinite } from "../src/infinite";
 import useSWRVMutation from "../src/mutation";
 import useSWRVSubscription from "../src/subscription";
-import type { SWRVConfiguration, SWRVMiddleware } from "../src";
+import type { SWRVConfiguration, SWRVMiddleware, TriggerWithoutArgs } from "../src";
 
 type Equal<Left, Right> =
   (<Value>() => Value extends Left ? 1 : 2) extends <Value>() => Value extends Right ? 1 : 2
@@ -152,6 +152,8 @@ const noArgMutation = useSWRVMutation<string, Error, never, string>(
 );
 
 const noArgMutationResult = noArgMutation.trigger();
+const noArgMutationTrigger: TriggerWithoutArgs<string, Error, never, string> =
+  noArgMutation.trigger;
 
 const cachedDataMutation = useSWRVMutation<string, Error, "foo", string, string[]>(
   "cached-data-user",
@@ -179,6 +181,12 @@ void numericMutation.trigger();
 
 // @ts-expect-error literal mutation args should be preserved
 void cachedDataMutation.trigger("bar");
+
+// @ts-expect-error no-arg mutation triggers should not accept arbitrary args
+void noArgMutation.trigger("value");
+
+// @ts-expect-error mutation responses should not expose bound mutate
+void noArgMutation.mutate;
 
 const subscription = useSWRVSubscription(
   ["room", 1] as [string, number],
@@ -267,6 +275,9 @@ const typeAssertions = {
     Equal<Awaited<typeof optionalMutationFoo>, string | undefined>
   >,
   noArgMutationResult: true as Expect<Equal<Awaited<typeof noArgMutationResult>, string>>,
+  noArgMutationTrigger: true as Expect<
+    Equal<typeof noArgMutationTrigger, TriggerWithoutArgs<string, Error, never, string>>
+  >,
   cachedDataMutationResult: true as Expect<Equal<Awaited<typeof cachedDataMutationResult>, string>>,
   mutationThrowOffResult: true as Expect<
     Equal<Awaited<typeof mutationThrowOffResult>, string | undefined>

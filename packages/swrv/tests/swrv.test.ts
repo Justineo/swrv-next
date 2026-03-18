@@ -1627,6 +1627,68 @@ describe("swrv", () => {
     expect(swrv.data.value).toEqual(["foo", "BAR"]);
   });
 
+  it("does not dedupe repeated mutation triggers", async () => {
+    const key = `mutation-no-dedupe-${Date.now()}`;
+    const calls = vi.fn();
+    const mutation = runComposable(() =>
+      useSWRVMutation<string, Error, void>(key, async () => {
+        calls();
+        await waitForMacrotask();
+        return "data";
+      }),
+    );
+
+    const first = mutation.trigger(undefined);
+    const second = mutation.trigger(undefined);
+    const third = mutation.trigger(undefined);
+    await flush();
+
+    expect(calls).toHaveBeenCalledTimes(3);
+
+    await expect(first).resolves.toBe("data");
+    await expect(second).resolves.toBe("data");
+    await expect(third).resolves.toBe("data");
+  });
+
+  it("always uses the latest mutation fetcher closure state", async () => {
+    const key = `mutation-latest-fetcher-${Date.now()}`;
+    const count = ref(0);
+    const mutation = runComposable(() =>
+      useSWRVMutation<number, Error, void>(key, async () => count.value),
+    );
+
+    await expect(mutation.trigger(undefined)).resolves.toBe(0);
+    await settle();
+    expect(mutation.data.value).toBe(0);
+
+    count.value = 1;
+    await expect(mutation.trigger(undefined)).resolves.toBe(1);
+    await settle();
+    expect(mutation.data.value).toBe(1);
+  });
+
+  it("always uses the latest mutation config closure state", async () => {
+    const key = `mutation-latest-config-${Date.now()}`;
+    const count = ref(0);
+    const logs: number[] = [];
+    const mutation = runComposable(() =>
+      useSWRVMutation<number, Error, void>(key, async () => count.value, {
+        onSuccess() {
+          logs.push(count.value);
+        },
+      }),
+    );
+
+    await expect(mutation.trigger(undefined)).resolves.toBe(0);
+    await settle();
+    expect(logs).toEqual([0]);
+
+    count.value = 1;
+    await expect(mutation.trigger(undefined)).resolves.toBe(1);
+    await settle();
+    expect(logs).toEqual([0, 1]);
+  });
+
   it("can reset mutation-local state", async () => {
     const mutation = runComposable(() =>
       useSWRVMutation<string, Error, void>("mutation-reset", async () => "updated"),
@@ -1747,6 +1809,34 @@ describe("swrv", () => {
     );
 
     await expect(mutation.trigger(undefined)).rejects.toThrow("missing key");
+  });
+
+  it("calls mutation onError and the returned rejection handler for falsey errors", async () => {
+    const key = `mutation-falsey-error-${Date.now()}`;
+    const onSuccess = vi.fn();
+    const onError = vi.fn();
+    const onRejected = vi.fn();
+    const mutation = runComposable(() =>
+      useSWRVMutation<never, string, void>(
+        key,
+        async () =>
+          await new Promise<never>((_resolve, reject) => {
+            reject("");
+          }),
+        {
+          onError,
+          onSuccess,
+        },
+      ),
+    );
+
+    await expect(mutation.trigger(undefined)).rejects.toBe("");
+    await mutation.trigger(undefined).catch(onRejected);
+    await settle();
+
+    expect(onSuccess).not.toHaveBeenCalled();
+    expect(onError).toHaveBeenCalled();
+    expect(onRejected).toHaveBeenCalled();
   });
 
   it("receives subscription pushes and cleans up on scope dispose", async () => {
