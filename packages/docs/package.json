@@ -1,0 +1,18 @@
+{
+  "name": "docs",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vitepress build docs",
+    "dev": "vitepress dev docs --host 0.0.0.0",
+    "preview": "vitepress preview docs --host 0.0.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "esbuild": "catalog:",
+    "typescript": "catalog:",
+    "vite-plus": "catalog:",
+    "vitepress": "catalog:"
+  }
+}

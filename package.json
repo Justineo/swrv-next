@@ -4,11 +4,18 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "ready": "vp fmt && vp lint && vp run test -r && vp run build -r",
-    "dev": "vp run website#dev",
+    "build": "vp run build -r",
+    "check": "vp check",
+    "dev": "vp run docs#dev",
+    "ready": "vp check && vp run test -r && vp run build -r",
+    "release:major": "vp exec bumpp --all --recursive --commit --tag --push --yes --release major",
+    "release:minor": "vp exec bumpp --all --recursive --commit --tag --push --yes --release minor",
+    "release:patch": "vp exec bumpp --all --recursive --commit --tag --push --yes --release patch",
+    "test": "vp run test -r",
     "prepare": "vp config"
   },
   "devDependencies": {
+    "bumpp": "catalog:",
     "vite-plus": "catalog:"
   },
   "engines": {

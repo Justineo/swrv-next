@@ -11,6 +11,9 @@ node_modules
 dist
 dist-ssr
 *.local
+playwright-report
+test-results
+.vitepress-cache
 
 # Editor directories and files
 .vscode/*
@@ -25,3 +28,5 @@ dist-ssr
 
 !journey/logs/
 !journey/logs/**
+apps/
+packages/utils/

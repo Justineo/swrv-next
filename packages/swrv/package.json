@@ -1,0 +1,40 @@
+{
+  "name": "swrv",
+  "version": "0.0.0",
+  "description": "Vue-native stale-while-revalidate data fetching",
+  "license": "Apache-2.0",
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.mjs",
+    "./_internal": "./dist/_internal/index.mjs",
+    "./immutable": "./dist/immutable/index.mjs",
+    "./infinite": "./dist/infinite/index.mjs",
+    "./mutation": "./dist/mutation/index.mjs",
+    "./subscription": "./dist/subscription/index.mjs",
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "vp pack src/index.ts src/infinite/index.ts src/mutation/index.ts src/subscription/index.ts src/immutable/index.ts src/_internal/index.ts",
+    "check": "vp check",
+    "dev": "vp pack src/index.ts src/infinite/index.ts src/mutation/index.ts src/subscription/index.ts src/immutable/index.ts src/_internal/index.ts --watch",
+    "test": "vp test"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "jsdom": "catalog:",
+    "typescript": "catalog:",
+    "vite-plus": "catalog:",
+    "vue": "catalog:"
+  },
+  "peerDependencies": {
+    "vue": "catalog:"
+  }
+}

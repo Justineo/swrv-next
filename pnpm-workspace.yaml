@@ -1,16 +1,20 @@
 packages:
-  - apps/*
-  - packages/*
-  - tools/*
-
-catalogMode: prefer
+  - packages/swrv
+  - packages/docs
 
 catalog:
   "@types/node": ^24
+  bumpp: ^11.0.1
+  esbuild: ^0.27.4
+  jsdom: ^29.0.0
   typescript: ^5
   vite: npm:@voidzero-dev/vite-plus-core@latest
-  vitest: npm:@voidzero-dev/vite-plus-test@latest
   vite-plus: latest
+  vitepress: ^1.6.4
+  vitest: npm:@voidzero-dev/vite-plus-test@latest
+  vue: ^3.5.30
+
+catalogMode: prefer
 overrides:
   vite: "catalog:"
   vitest: "catalog:"

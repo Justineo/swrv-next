@@ -1,0 +1,149 @@
+import {
+  computed,
+  defineComponent,
+  getCurrentInstance,
+  inject,
+  provide,
+  ref,
+  type PropType,
+} from "vue";
+
+import { createSWRVClient } from "./_internal/client";
+import { createScopedMutator } from "./_internal/mutate";
+import { serialize } from "./_internal/serialize";
+
+import type {
+  CacheAdapter,
+  Compare,
+  RawKey,
+  ResolvedSWRVConfiguration,
+  SWRVClient,
+  SWRVConfigAccessor,
+  SWRVConfigComponent,
+  SWRVConfiguration,
+  SWRVContextValue,
+} from "./_internal/types";
+
+const defaultCompare: Compare<unknown> = (left, right) => Object.is(left, right);
+
+const DEFAULT_CONFIGURATION: ResolvedSWRVConfiguration<any, any> = {
+  compare: defaultCompare,
+  dedupingInterval: 2000,
+  errorRetryCount: 5,
+  errorRetryInterval: 5000,
+  focusThrottleInterval: 5000,
+  keepPreviousData: false,
+  refreshInterval: 0,
+  refreshWhenHidden: false,
+  refreshWhenOffline: false,
+  revalidateIfStale: true,
+  revalidateOnFocus: true,
+  revalidateOnReconnect: true,
+  shouldRetryOnError: true,
+  ttl: 0,
+};
+
+const defaultClient = createSWRVClient();
+const defaultContext = {
+  client: defaultClient,
+  config: ref(DEFAULT_CONFIGURATION),
+} satisfies SWRVContextValue;
+
+const contextKey = Symbol("swrv-config");
+
+function createClientFromValue(
+  value: SWRVConfiguration<any, any> | undefined,
+  fallback: SWRVClient,
+) {
+  if (!value) {
+    return fallback;
+  }
+
+  if (value.client) {
+    return value.client;
+  }
+
+  if (value.cache) {
+    return createSWRVClient(value.cache);
+  }
+
+  if (value.provider) {
+    return createSWRVClient(value.provider());
+  }
+
+  return fallback;
+}
+
+export function mergeConfiguration<Data = unknown, Error = unknown>(
+  base: ResolvedSWRVConfiguration<Data, Error>,
+  override?: SWRVConfiguration<Data, Error>,
+): ResolvedSWRVConfiguration<Data, Error> {
+  const merged = {
+    ...base,
+    ...override,
+  } satisfies ResolvedSWRVConfiguration<Data, Error>;
+
+  merged.compare = override?.compare ?? base.compare ?? defaultCompare;
+  return merged;
+}
+
+export function useSWRVContext(): SWRVContextValue {
+  if (!getCurrentInstance()) {
+    return defaultContext;
+  }
+
+  return inject(contextKey, defaultContext);
+}
+
+export function useSWRVConfig(): SWRVConfigAccessor {
+  const context = useSWRVContext();
+  const client = context.client;
+  const config = context.config.value;
+  const mutate = createScopedMutator(client);
+
+  return {
+    cache: client.cache,
+    client,
+    config,
+    mutate,
+    preload: <Data = unknown>(key: RawKey, fetcher: () => Promise<Data>) => {
+      const [serializedKey] = serialize(key);
+      if (!serializedKey) {
+        return fetcher();
+      }
+
+      return client.preload(serializedKey, fetcher());
+    },
+  };
+}
+
+export const SWRVConfig = defineComponent({
+  name: "SWRVConfig",
+  props: {
+    value: {
+      type: Object as PropType<SWRVConfiguration<any, any>>,
+      default: undefined,
+    },
+  },
+  setup(props, { slots }) {
+    const parentContext = useSWRVContext();
+    const client = createClientFromValue(props.value, parentContext.client);
+    const resolvedConfig = computed(() =>
+      mergeConfiguration(parentContext.config.value, props.value),
+    );
+
+    provide(contextKey, {
+      client,
+      config: resolvedConfig,
+    });
+
+    return () => slots.default?.();
+  },
+}) as SWRVConfigComponent;
+
+export function createCacheProvider<Value = unknown>(): CacheAdapter<Value> {
+  return new Map<string, Value>();
+}
+
+export const INTERNAL_DEFAULT_CONFIGURATION = DEFAULT_CONFIGURATION;
+export const GLOBAL_SWRV_CLIENT = defaultClient;

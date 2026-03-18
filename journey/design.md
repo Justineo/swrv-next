@@ -1,6 +1,6 @@
 # SWRV Next Design Snapshot
 
-Status: Planning baseline
+Status: Initial implementation baseline
 Last updated: 2026-03-18
 
 ## Mission
@@ -9,9 +9,23 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
 
 ## Current State
 
-- This repository is still the Vite+ starter scaffold. It currently contains placeholder workspace packages such as `apps/website` and `packages/utils`, not the intended `packages/swrv` and `packages/docs` layout.
-- The project did not previously have a canonical `journey/design.md`, which is a gap for future agent work.
-- The main reference materials for the rebuild are:
+- The repository now uses the intended monorepo shape:
+  - `packages/swrv`
+  - `packages/docs`
+- The root workspace is validated through `vp check`, `vp test`, and `vp run build -r`.
+- The `swrv` package now contains an initial provider-scoped runtime with:
+  - `useSWRV`
+  - `SWRVConfig`
+  - `useSWRVConfig`
+  - global `mutate`
+  - global `preload`
+  - `swrv/immutable`
+  - `swrv/infinite`
+  - `swrv/mutation`
+  - `swrv/subscription`
+- The docs package now builds with VitePress and includes a first guide, API overview, and migration page.
+- Repository maintenance scaffolding now exists for CI, Renovate, and release publishing.
+- The main reference materials for the rebuild remain:
   - `journey/research/swr-vs-swrv.md`
   - `/Users/yiling.gu@konghq.com/Developer/Justineo/swr` (local SWR source, version 2.4.1)
   - `/Users/yiling.gu@konghq.com/Developer/Kong/swrv` (local legacy SWRV source, version 1.1.0)
@@ -29,6 +43,8 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
 - Keep the public API as close to SWR as practical, but preserve a Vue-native reactive contract for returned state and composition.
 - Treat types, automated tests, docs, CI/CD, release automation, and dependency maintenance as first-class project scope, not cleanup work after the runtime is complete.
 - Keep project memory current in `journey/design.md`, use `journey/plans/` for milestone or phase plans, and use `journey/logs/` for implementation notes and dead ends.
+- Use plain VitePress scripts for docs builds inside `packages/docs`, but continue to drive workspace orchestration through `vp run ...`.
+- Keep the library build on stable declaration generation for now instead of the experimental `tsgo` path.
 
 ## Planned Repository Shape
 
@@ -42,4 +58,5 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
 - Supported Vue floor and supported TypeScript floor
 - Whether TTL/serverTTL remain first-class core APIs, move behind an extension layer, or become compatibility utilities
 - The exact SSR/Nuxt support contract and hydration story
-- The release orchestration mechanism for versioning, GitHub Releases, and npm publishing
+- How far the current `infinite`, `mutation`, and `subscription` implementations need to evolve to reach the desired SWR parity line
+- Whether to replace any VitePress build-path warnings once Vite+ or VitePress upstream behavior changes
