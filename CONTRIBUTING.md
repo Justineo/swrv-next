@@ -64,3 +64,6 @@ External setup still matters:
 - The npm package record must be linked to the GitHub repository.
 - Maintainers should verify the package dry-run before creating or approving a
   release tag.
+- Actual publishing should continue to go through `vp pm publish ...`, not a
+  raw `npm publish`, so the workspace package manager and `catalog:` manifests
+  stay in the supported path.

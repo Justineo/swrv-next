@@ -56,6 +56,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
 - The docs package now also includes examples, a current-scope page, and an explicit SSR guide built around provider-scoped clients plus config-level fallback data.
 - Browser-facing end-to-end coverage now exists through a Playwright fixture app under `packages/swrv/e2e`, covering focus revalidation, reconnect revalidation, optimistic mutation UI, and subscription pushes in a real browser runtime.
 - Repository maintenance scaffolding now exists for CI, Renovate, and release publishing.
+- Release publishing is now routed through `vp pm publish` in GitHub Actions so the workspace package manager remains responsible for `catalog:` dependency resolution and Trusted Publisher provenance.
 - The package publish surface is now materially closer to launch-ready:
   - config-level `fallback` data is supported and stays visible during initial revalidation
   - nested `SWRVConfig` boundaries merge fallback maps in SWR-style order

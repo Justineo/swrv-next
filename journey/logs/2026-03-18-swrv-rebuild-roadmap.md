@@ -57,3 +57,18 @@
   - the docs site now documents the current SSR contract and config-level fallback usage
 - Revalidated the workspace with `vp run ready`, `vp pm pack -- --json --dry-run`, and `vp pm publish -- --dry-run --access public --provenance --no-git-checks --tag next`.
 - Phase 6 docs and repo-side launch readiness is now complete for the current roadmap cut.
+- Continued the parity hardening pass after the initial launch-readiness cut:
+  - added SWR-style middleware composition across `useSWRV`, `immutable`, `infinite`, `mutation`, and `subscription`
+  - tightened `infinite` mutate semantics around `revalidateFirstPage`, cached page reuse, and page-selective revalidation callbacks
+  - fixed `useSWRVMutation` option handling so local error state still updates when `throwOnError` is disabled
+  - expanded base mutate coverage for `rollbackOnError: false`, committed-snapshot `populateCache` transforms, function-style `revalidate`, and key-filter revalidation
+  - strengthened mutator typing so bound and scoped mutators expose mutation-result types instead of collapsing to cached-data types
+- Added browser-facing end-to-end coverage with Playwright:
+  - created a dedicated fixture app under `packages/swrv/e2e`
+  - covered focus revalidation, reconnect revalidation, optimistic mutation UI, and subscription pushes in a real browser runtime
+  - integrated browser installation and Playwright execution into CI and release validation
+- Hardened the publish workflow:
+  - switched the GitHub release publish step from raw `npm publish` to `vp pm publish`
+  - revalidated package dry-run and publish dry-run through the supported package-manager path
+- Revalidated the workspace with `vp run ready`.
+- Phase 5 type/test hardening is now complete for the current roadmap cut.

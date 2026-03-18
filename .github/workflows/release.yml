@@ -89,7 +89,7 @@ jobs:
 
       - name: Publish package
         working-directory: packages/swrv
-        run: npm publish --access public --provenance --tag next
+        run: vp pm publish -- --access public --provenance --no-git-checks --tag next
 
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
