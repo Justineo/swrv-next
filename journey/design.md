@@ -1,6 +1,6 @@
 # SWRV Next Design Snapshot
 
-Status: Baseline plus first core parity hardening pass
+Status: Baseline plus core, infinite, and mutation hardening passes
 Last updated: 2026-03-18
 
 ## Mission
@@ -29,6 +29,11 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - focus and reconnect revalidation now respect focus throttling and visibility/online state
   - error retries now survive refresh scheduling instead of being cleared immediately
   - the immutable entry point now disables polling by forcing `refreshInterval: 0`
+- The infinite and mutation helpers have also moved closer to SWR:
+  - `swrv/infinite` now exposes `unstable_serialize`, resolves page keys safely, supports cursor-style sequential loading, and treats `setSize()` as a page-oriented operation instead of a raw aggregate refresh
+  - `swrv/infinite` now revalidates the first page while loading new pages and lets no-arg `mutate()` revalidate all loaded pages
+  - `swrv/mutation` now guards local state against stale trigger results after `reset()` or a newer trigger
+  - scoped `mutate()` now returns the actual mutation result even when `populateCache` is disabled
 - The docs package now builds with VitePress and includes a first guide, API overview, and migration page.
 - Repository maintenance scaffolding now exists for CI, Renovate, and release publishing.
 - The main reference materials for the rebuild remain:
@@ -65,4 +70,5 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
 - Whether TTL/serverTTL remain first-class core APIs, move behind an extension layer, or become compatibility utilities
 - The exact SSR/Nuxt support contract and hydration story
 - How far the current `infinite`, `mutation`, and `subscription` implementations need to evolve to reach the desired SWR parity line
+- Whether the current infinite revalidation policy is enough, or if page-selective revalidation options need to get even closer to SWR's `revalidate` callback behavior
 - Whether to replace any VitePress build-path warnings once Vite+ or VitePress upstream behavior changes

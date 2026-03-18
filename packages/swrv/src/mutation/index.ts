@@ -42,7 +42,7 @@ export interface SWRVMutationResponse<Data = unknown, Error = unknown, ExtraArg 
 
 export default function useSWRVMutation<Data = unknown, Error = unknown, ExtraArg = unknown>(
   key: RawKey | (() => RawKey),
-  fetcher: MutationFetcher<Data, ExtraArg>,
+  fetcher: MutationFetcher<Data, ExtraArg> | null,
   config: SWRVMutationConfiguration<Data, Error, ExtraArg> = {},
 ): SWRVMutationResponse<Data, Error, ExtraArg> {
   const { mutate } = useSWRVConfig();
@@ -50,6 +50,8 @@ export default function useSWRVMutation<Data = unknown, Error = unknown, ExtraAr
   const data = ref<Data>();
   const error = ref<Error>();
   const isMutating = ref(false);
+  let ditchMutationsUntil = 0;
+  let mutationTimestamp = 0;
 
   const trigger = async (
     arg: ExtraArg,
@@ -57,10 +59,15 @@ export default function useSWRVMutation<Data = unknown, Error = unknown, ExtraAr
   ) => {
     const resolvedKey = resolveKeyValue(key as RawKey | (() => RawKey));
     const [serializedKey] = serialize(resolvedKey);
+    if (!fetcher) {
+      throw new Error("Can’t trigger the mutation: missing fetcher.");
+    }
     if (!serializedKey) {
       throw new Error("Can’t trigger the mutation: missing key.");
     }
 
+    const mutationStartedAt = ++mutationTimestamp;
+    ditchMutationsUntil = mutationStartedAt;
     isMutating.value = true;
 
     const mergedOptions = {
@@ -77,20 +84,26 @@ export default function useSWRVMutation<Data = unknown, Error = unknown, ExtraAr
         mergedOptions,
       )) as Data | undefined;
 
-      data.value = result;
-      error.value = undefined;
-      mergedOptions.onSuccess?.(result as Data, resolvedKey, mergedOptions);
+      if (ditchMutationsUntil <= mutationStartedAt) {
+        data.value = result;
+        error.value = undefined;
+        isMutating.value = false;
+        mergedOptions.onSuccess?.(result as Data, resolvedKey, mergedOptions);
+      }
+
       return result;
     } catch (caught) {
       const resolvedError = caught as Error;
-      error.value = resolvedError;
-      mergedOptions.onError?.(resolvedError, resolvedKey, mergedOptions);
-      if (mergedOptions.throwOnError !== false) {
-        throw resolvedError;
+      if (ditchMutationsUntil <= mutationStartedAt) {
+        error.value = resolvedError;
+        isMutating.value = false;
+        mergedOptions.onError?.(resolvedError, resolvedKey, mergedOptions);
+        if (mergedOptions.throwOnError !== false) {
+          throw resolvedError;
+        }
       }
+
       return undefined;
-    } finally {
-      isMutating.value = false;
     }
   };
 
@@ -99,6 +112,7 @@ export default function useSWRVMutation<Data = unknown, Error = unknown, ExtraAr
     error,
     isMutating,
     reset: () => {
+      ditchMutationsUntil = ++mutationTimestamp;
       data.value = undefined;
       error.value = undefined;
       isMutating.value = false;

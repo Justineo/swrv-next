@@ -203,6 +203,6 @@ export function createScopedMutator(client: SWRVClient): ScopedMutator {
       return undefined;
     }
 
-    return client.getState<Data>(serializedKey)?.data;
+    return result as Data | undefined;
   };
 }

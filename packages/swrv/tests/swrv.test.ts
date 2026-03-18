@@ -211,6 +211,143 @@ describe("swrv", () => {
     expect(state.data.value).toEqual(["page:0", "page:1", "page:2"]);
   });
 
+  it("supports cursor-based infinite loading", async () => {
+    const state = runComposable(() =>
+      useSWRVInfinite<Array<{ data: string; id: number }>>(
+        (index, previousPageData) => {
+          if (index === 0) {
+            return "/api/items";
+          }
+
+          if (!previousPageData?.length) {
+            return null;
+          }
+
+          return `/api/items?offset=${previousPageData[previousPageData.length - 1].id}`;
+        },
+        async (...args: readonly unknown[]) => {
+          const url = String(args[0]);
+          const parse = url.match(/\?offset=(\d+)/);
+          const offset = parse ? Number(parse[1]) + 1 : 0;
+
+          return offset <= 3
+            ? [
+                { data: "foo", id: offset },
+                { data: "bar", id: offset + 1 },
+              ]
+            : [];
+        },
+        { initialSize: 5 },
+      ),
+    );
+
+    await settle(8);
+
+    expect(state.data.value).toEqual([
+      [
+        { data: "foo", id: 0 },
+        { data: "bar", id: 1 },
+      ],
+      [
+        { data: "foo", id: 2 },
+        { data: "bar", id: 3 },
+      ],
+      [],
+    ]);
+  });
+
+  it("revalidates the first page and fetches only the new page when size grows", async () => {
+    let requests = 0;
+    const key = `infinite-requests-${Date.now()}`;
+
+    const state = runComposable(() =>
+      useSWRVInfinite<string>(
+        (index) => [key, index] as const,
+        async (...args: readonly unknown[]) => {
+          requests += 1;
+          return `page ${String(args[1])}, `;
+        },
+      ),
+    );
+
+    await settle();
+    expect(requests).toBe(1);
+    expect(state.data.value).toEqual(["page 0, "]);
+
+    await state.setSize(2);
+    await settle();
+
+    expect(requests).toBe(3);
+    expect(state.data.value).toEqual(["page 0, ", "page 1, "]);
+
+    await state.setSize(3);
+    await settle();
+
+    expect(requests).toBe(5);
+    expect(state.data.value).toEqual(["page 0, ", "page 1, ", "page 2, "]);
+  });
+
+  it("revalidates all loaded pages when infinite mutate() is called without data", async () => {
+    const pageData = ["apple", "banana", "pineapple"];
+    const key = `infinite-mutate-${Date.now()}`;
+
+    const state = runComposable(() =>
+      useSWRVInfinite<string>(
+        (index) => [key, index] as const,
+        async (...args: readonly unknown[]) => `${pageData[Number(args[1])]}, `,
+        { initialSize: 3 },
+      ),
+    );
+
+    await settle(6);
+    expect(state.data.value).toEqual(["apple, ", "banana, ", "pineapple, "]);
+
+    pageData[1] = "watermelon";
+    await state.mutate();
+    await settle(6);
+
+    expect(state.data.value).toEqual(["apple, ", "watermelon, ", "pineapple, "]);
+  });
+
+  it("does not throw when infinite getKey is not ready and mutate() is called", async () => {
+    const state = runComposable(() =>
+      useSWRVInfinite<string>(
+        () => {
+          throw new Error("not ready");
+        },
+        async (...args: readonly unknown[]) => `data:${String(args[0])}`,
+      ),
+    );
+
+    await settle();
+
+    expect(state.data.value).toBeUndefined();
+    await expect(state.mutate()).resolves.toBeUndefined();
+  });
+
+  it("passes null as previousPageData when parallel mode is enabled", async () => {
+    const previousPageDataLogs: Array<string | null> = [];
+
+    const state = runComposable(() =>
+      useSWRVInfinite<string>(
+        (index, previousPageData) => {
+          previousPageDataLogs.push(previousPageData);
+          return ["parallel", index] as const;
+        },
+        async (...args: readonly unknown[]) => `page ${String(args[1])}`,
+        {
+          initialSize: 3,
+          parallel: true,
+        },
+      ),
+    );
+
+    await settle(6);
+
+    expect(state.data.value).toEqual(["page 0", "page 1", "page 2"]);
+    expect(previousPageDataLogs.every((value) => value === null)).toBe(true);
+  });
+
   it("supports mutation hooks updating cache when populateCache is enabled", async () => {
     const key = `mutation-${Date.now()}`;
     const swrv = runComposable(() => useSWRV<string>(key));
@@ -225,6 +362,96 @@ describe("swrv", () => {
 
     expect(mutation.data.value).toBe("updated");
     expect(swrv.data.value).toBe("updated");
+  });
+
+  it("can reset mutation-local state", async () => {
+    const mutation = runComposable(() =>
+      useSWRVMutation<string, Error, void>("mutation-reset", async () => "updated"),
+    );
+
+    await mutation.trigger(undefined);
+    await settle();
+
+    expect(mutation.data.value).toBe("updated");
+
+    mutation.reset();
+
+    expect(mutation.data.value).toBeUndefined();
+    expect(mutation.error.value).toBeUndefined();
+    expect(mutation.isMutating.value).toBe(false);
+  });
+
+  it("ignores stale mutation results after reset()", async () => {
+    let resolveMutation!: (value: string) => void;
+    const onSuccess = vi.fn();
+
+    const mutation = runComposable(() =>
+      useSWRVMutation<string, Error, void>(
+        "mutation-reset-race",
+        async () =>
+          await new Promise<string>((resolve) => {
+            resolveMutation = resolve;
+          }),
+      ),
+    );
+
+    const resultPromise = mutation.trigger(undefined, { onSuccess });
+    await flush();
+
+    mutation.reset();
+    resolveMutation("updated");
+    await settle();
+
+    await expect(resultPromise).resolves.toBe("updated");
+    expect(mutation.data.value).toBeUndefined();
+    expect(mutation.isMutating.value).toBe(false);
+    expect(onSuccess).not.toHaveBeenCalled();
+  });
+
+  it("keeps only the latest mutation result when triggered multiple times", async () => {
+    const resolvers = new Map<number, (value: number) => void>();
+
+    const mutation = runComposable(() =>
+      useSWRVMutation<number, Error, number>(
+        "mutation-race",
+        async (_key, { arg }) =>
+          await new Promise<number>((resolve) => {
+            resolvers.set(arg, resolve);
+          }),
+      ),
+    );
+
+    const first = mutation.trigger(0);
+    const second = mutation.trigger(1);
+    const third = mutation.trigger(2);
+    await flush();
+
+    resolvers.get(0)?.(0);
+    await settle();
+    expect(mutation.data.value).toBeUndefined();
+    expect(mutation.isMutating.value).toBe(true);
+
+    resolvers.get(1)?.(1);
+    await settle();
+    expect(mutation.data.value).toBeUndefined();
+    expect(mutation.isMutating.value).toBe(true);
+
+    resolvers.get(2)?.(2);
+    await settle();
+
+    await expect(first).resolves.toBe(0);
+    await expect(second).resolves.toBe(1);
+    await expect(third).resolves.toBe(2);
+    expect(mutation.data.value).toBe(2);
+    expect(mutation.isMutating.value).toBe(false);
+  });
+
+  it("throws when triggering a mutation without a fetcher", async () => {
+    const mutation = runComposable(() =>
+      useSWRVMutation<string, Error, void>("missing-fetcher", null),
+    );
+
+    await expect(mutation.trigger(undefined)).rejects.toThrow("missing fetcher");
   });
 
   it("receives subscription pushes and cleans up on scope dispose", async () => {

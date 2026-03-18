@@ -19,3 +19,14 @@
   - disabled polling in the immutable entry point by forcing `refreshInterval: 0`
 - Expanded the package test suite with SWR-style behavior checks for mount revalidation, focus, reconnect, retry, and immutable polling.
 - Revalidated the workspace with `vp run ready`.
+- Hardened `swrv/infinite`:
+  - added safe first-page serialization and exported `unstable_serialize`
+  - improved cursor-style loading and parallel-mode behavior
+  - changed `setSize()` to operate at the page level and revalidate the first page while loading missing pages
+  - made no-arg infinite `mutate()` revalidate all loaded pages
+- Hardened `swrv/mutation`:
+  - added missing-fetcher guards
+  - prevented stale trigger results from overwriting local state after `reset()` or a newer trigger
+  - fixed scoped `mutate()` to return the actual mutation result even when `populateCache` is disabled
+- Expanded the package tests with SWR-style checks for cursor pagination, infinite page growth, infinite mutate revalidation, safe invalid keys, mutation reset, and mutation race handling.
+- Revalidated the workspace with `vp run ready`.
