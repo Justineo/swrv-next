@@ -11,6 +11,7 @@
   "devDependencies": {
     "@types/node": "catalog:",
     "esbuild": "catalog:",
+    "oxc-minify": "catalog:",
     "typescript": "catalog:",
     "vite-plus": "catalog:",
     "vitepress": "catalog:"

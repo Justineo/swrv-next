@@ -54,6 +54,8 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - the package export map now points at the emitted `.d.mts` declaration files and is checked by a package-export smoke test
 - The docs package now builds with VitePress and includes a first guide, API overview, and migration page.
 - The docs package now also includes examples, a current-scope page, and an explicit SSR guide built around provider-scoped clients plus config-level fallback data.
+- The docs package now targets the VitePress 2 prerelease line (`2.0.0-alpha.16`) instead of the VitePress 1 stable line so the docs stack stays on the intended forward-looking baseline.
+- Under the VitePress 2 plus Rolldown path used here, the docs package now also carries `oxc-minify` explicitly because VitePress requires it for production builds on that toolchain.
 - Browser-facing end-to-end coverage now exists through a Playwright fixture app under `packages/swrv/e2e`, covering focus revalidation, reconnect revalidation, optimistic mutation UI, and subscription pushes in a real browser runtime.
 - Repository maintenance scaffolding now exists for CI, Renovate, and release publishing.
 - Release publishing is now routed through `vp pm publish` in GitHub Actions so the workspace package manager remains responsible for `catalog:` dependency resolution and Trusted Publisher provenance.
@@ -102,4 +104,3 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
 - How far the current `infinite`, `mutation`, and `subscription` implementations still need to evolve to reach the desired SWR parity line
 - Whether the current infinite revalidation policy is enough, or if page-selective revalidation options need to get even closer to SWR's `revalidate` callback behavior
 - How much additional type-level precision is worth adding beyond the current public overloads before the API surface is frozen
-- Whether to replace any VitePress build-path warnings once Vite+ or VitePress upstream behavior changes
