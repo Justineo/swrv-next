@@ -969,6 +969,64 @@ describe("swrv", () => {
     expect(state.size.value).toBe(1);
   });
 
+  it("keeps fallbackData visible while growing infinite size with an empty cache", async () => {
+    const key = `infinite-fallback-${Date.now()}`;
+    const pending: Array<(value: string) => void> = [];
+    const resolvePending = async () => {
+      while (pending.length > 0) {
+        pending.splice(0).forEach((resolve) => {
+          resolve("response value");
+        });
+        await settle();
+      }
+    };
+    const state = runComposable(() =>
+      useSWRVInfinite<string>(
+        (index) => `${key}-${index}`,
+        async () =>
+          await new Promise<string>((resolve) => {
+            pending.push(resolve);
+          }),
+        { fallbackData: ["fallback-1", "fallback-2"] },
+      ),
+    );
+
+    expect(state.data.value).toEqual(["fallback-1", "fallback-2"]);
+
+    const setSizePromise = state.setSize(2);
+    await flush();
+    expect(state.data.value).toEqual(["fallback-1", "fallback-2"]);
+
+    await resolvePending();
+    await setSizePromise;
+    await settle();
+  });
+
+  it("shares loaded page data with plain useSWRV consumers", async () => {
+    const key = `infinite-share-${Date.now()}`;
+    const infinite = runComposable(() =>
+      useSWRVInfinite<string>(
+        (index) => `${key}-${index + 1}`,
+        async (...args: readonly unknown[]) => `${String(args[0])},`,
+        {
+          dedupingInterval: 0,
+        },
+      ),
+    );
+    const page = runComposable(() => useSWRV<string>(`${key}-2`));
+
+    await settle();
+
+    expect(infinite.data.value).toEqual([`${key}-1,`]);
+    expect(page.data.value).toBeUndefined();
+
+    await infinite.setSize((size) => size + 1);
+    await settle();
+
+    expect(infinite.data.value).toEqual([`${key}-1,`, `${key}-2,`]);
+    expect(page.data.value).toBe(`${key}-2,`);
+  });
+
   it("uses cached page data immediately while revalidating infinite size growth in the background", async () => {
     vi.useFakeTimers();
 
