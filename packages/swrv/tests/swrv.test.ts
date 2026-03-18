@@ -1397,6 +1397,78 @@ describe("swrv", () => {
     expect(swrv.data.value).toBe("updated");
   });
 
+  it("passes the original key and trigger arg through mutation fetchers", async () => {
+    const key = [`mutation-args-${Date.now()}`, "arg0"] as const;
+    const fetcher = vi.fn(
+      async (resolvedKey: typeof key, { arg }: { arg: string }) =>
+        `${resolvedKey[0]}:${resolvedKey[1]}:${arg}`,
+    );
+    const mutation = runComposable(() =>
+      useSWRVMutation<string, Error, string, typeof key>(key, fetcher),
+    );
+
+    await expect(mutation.trigger("arg1")).resolves.toBe(`${key[0]}:${key[1]}:arg1`);
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(fetcher).toHaveBeenCalledWith(key, { arg: "arg1" });
+  });
+
+  it("calls mutation onSuccess from hook config", async () => {
+    const key = `mutation-success-${Date.now()}`;
+    const onSuccess = vi.fn();
+    const mutation = runComposable(() =>
+      useSWRVMutation<string, Error, void>(key, async () => "data", {
+        onSuccess,
+      }),
+    );
+
+    await expect(mutation.trigger(undefined)).resolves.toBe("data");
+    await settle();
+
+    expect(mutation.data.value).toBe("data");
+    expect(onSuccess).toHaveBeenCalledTimes(1);
+    expect(onSuccess.mock.calls[0]?.[0]).toBe("data");
+    expect(onSuccess.mock.calls[0]?.[1]).toBe(key);
+  });
+
+  it("supports configuring mutation onSuccess per trigger", async () => {
+    const key = `mutation-success-trigger-${Date.now()}`;
+    const onSuccess = vi.fn();
+    const mutation = runComposable(() =>
+      useSWRVMutation<string, Error, void>(key, async () => "data"),
+    );
+
+    await expect(mutation.trigger(undefined, { onSuccess })).resolves.toBe("data");
+    await settle();
+
+    expect(onSuccess).toHaveBeenCalledTimes(1);
+    expect(onSuccess.mock.calls[0]?.[0]).toBe("data");
+    expect(onSuccess.mock.calls[0]?.[1]).toBe(key);
+  });
+
+  it("calls mutation onError and throws by default", async () => {
+    const key = `mutation-throw-${Date.now()}`;
+    const onError = vi.fn();
+    const mutation = runComposable(() =>
+      useSWRVMutation<string, Error, void>(
+        key,
+        async () => {
+          throw new Error("boom");
+        },
+        {
+          onError,
+        },
+      ),
+    );
+
+    await expect(mutation.trigger(undefined)).rejects.toThrow("boom");
+    await settle();
+
+    expect(mutation.error.value?.message).toBe("boom");
+    expect(onError).toHaveBeenCalledTimes(1);
+    expect(onError.mock.calls[0]?.[0]).toBeInstanceOf(Error);
+    expect(onError.mock.calls[0]?.[1]).toBe(key);
+  });
+
   it("passes the current cached value to mutation populateCache transforms", async () => {
     const key = `mutation-populate-transform-${Date.now()}`;
     const swrv = runComposable(() => useSWRV<string>(key));
@@ -1436,6 +1508,44 @@ describe("swrv", () => {
     expect(mutation.error.value).toBeInstanceOf(Error);
     expect(mutation.error.value?.message).toBe("boom");
     expect(onError).toHaveBeenCalledTimes(1);
+  });
+
+  it("tracks isMutating while a mutation request is in flight", async () => {
+    const key = `mutation-pending-${Date.now()}`;
+    let resolveMutation!: (value: string) => void;
+    const mutation = runComposable(() =>
+      useSWRVMutation<string, Error, void>(
+        key,
+        async () =>
+          await new Promise<string>((resolve) => {
+            resolveMutation = resolve;
+          }),
+      ),
+    );
+
+    const mutationPromise = mutation.trigger(undefined);
+    await flush();
+    expect(mutation.isMutating.value).toBe(true);
+
+    resolveMutation("data");
+    await expect(mutationPromise).resolves.toBe("data");
+    await settle();
+
+    expect(mutation.data.value).toBe("data");
+    expect(mutation.isMutating.value).toBe(false);
+  });
+
+  it("does not read shared useSWRV cache into mutation-local state", async () => {
+    const key = `mutation-cache-isolation-${Date.now()}`;
+    const swrv = runComposable(() => useSWRV<string>(key, async () => "data"));
+    const mutation = runComposable(() =>
+      useSWRVMutation<string, Error, void>(key, async () => "wrong"),
+    );
+
+    await settle();
+
+    expect(swrv.data.value).toBe("data");
+    expect(mutation.data.value).toBeUndefined();
   });
 
   it("supports function revalidate in mutation trigger options", async () => {
@@ -1478,6 +1588,43 @@ describe("swrv", () => {
     await settle();
     expect(swrv.data.value).toBe(33);
     expect(fetcher).toHaveBeenCalledTimes(3);
+  });
+
+  it("supports optimistic shared-cache updates through mutation hooks", async () => {
+    const key = `mutation-optimistic-${Date.now()}`;
+    const swrv = runComposable(() =>
+      useSWRV<string[]>(key, async () => ["foo"], {
+        dedupingInterval: 0,
+      }),
+    );
+    let resolveMutation!: (value: string) => void;
+    const mutation = runComposable(() =>
+      useSWRVMutation<string, Error, string, string, string[]>(
+        key,
+        async (_key, { arg }) =>
+          await new Promise<string>((resolve) => {
+            resolveMutation = () => resolve(arg.toUpperCase());
+          }),
+      ),
+    );
+
+    await settle();
+    expect(swrv.data.value).toEqual(["foo"]);
+
+    const mutationPromise = mutation.trigger<string[]>("bar", {
+      optimisticData: (current) => [...(current ?? []), "bar"],
+      populateCache: (result, current) => [...(current ?? []), result],
+      revalidate: false,
+    });
+
+    await flush();
+    expect(swrv.data.value).toEqual(["foo", "bar"]);
+
+    resolveMutation("BAR");
+    await expect(mutationPromise).resolves.toBe("BAR");
+    await settle();
+
+    expect(swrv.data.value).toEqual(["foo", "BAR"]);
   });
 
   it("can reset mutation-local state", async () => {
@@ -1562,12 +1709,44 @@ describe("swrv", () => {
     expect(mutation.isMutating.value).toBe(false);
   });
 
+  it("clears mutation error state after a later successful trigger", async () => {
+    const key = `mutation-error-clear-${Date.now()}`;
+    let shouldSucceed = false;
+    const mutation = runComposable(() =>
+      useSWRVMutation<string[], Error, void>(key, async () => {
+        if (shouldSucceed) {
+          return ["foo"];
+        }
+
+        throw new Error("error");
+      }),
+    );
+
+    await expect(mutation.trigger(undefined)).rejects.toThrow("error");
+    await settle();
+    expect(mutation.error.value?.message).toBe("error");
+
+    shouldSucceed = true;
+    await expect(mutation.trigger(undefined)).resolves.toEqual(["foo"]);
+    await settle();
+
+    expect(mutation.error.value).toBeUndefined();
+  });
+
   it("throws when triggering a mutation without a fetcher", async () => {
     const mutation = runComposable(() =>
       useSWRVMutation<string, Error, void>("missing-fetcher", null),
     );
 
     await expect(mutation.trigger(undefined)).rejects.toThrow("missing fetcher");
+  });
+
+  it("throws when triggering a mutation without a key", async () => {
+    const mutation = runComposable(() =>
+      useSWRVMutation<string, Error, void>(null, async () => "data"),
+    );
+
+    await expect(mutation.trigger(undefined)).rejects.toThrow("missing key");
   });
 
   it("receives subscription pushes and cleans up on scope dispose", async () => {
