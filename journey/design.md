@@ -1,6 +1,6 @@
 # SWRV Next Design Snapshot
 
-Status: Initial implementation baseline
+Status: Baseline plus first core parity hardening pass
 Last updated: 2026-03-18
 
 ## Mission
@@ -23,6 +23,12 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - `swrv/infinite`
   - `swrv/mutation`
   - `swrv/subscription`
+- The base hook behavior has started to move closer to SWR semantics:
+  - `revalidateOnMount` now only affects the initial activation, not later key changes
+  - fallback data stays idle when revalidation is disabled
+  - focus and reconnect revalidation now respect focus throttling and visibility/online state
+  - error retries now survive refresh scheduling instead of being cleared immediately
+  - the immutable entry point now disables polling by forcing `refreshInterval: 0`
 - The docs package now builds with VitePress and includes a first guide, API overview, and migration page.
 - Repository maintenance scaffolding now exists for CI, Renovate, and release publishing.
 - The main reference materials for the rebuild remain:

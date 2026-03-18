@@ -20,6 +20,10 @@ type CurrentKeyState = {
   serializedKey: string;
 };
 
+function hasDefinedValue<Data>(value: Data | undefined): value is Data {
+  return value !== undefined;
+}
+
 function resolveRetryableError<ErrorType = unknown>(
   option: boolean | ((error: ErrorType) => boolean),
   error: ErrorType,
@@ -27,19 +31,41 @@ function resolveRetryableError<ErrorType = unknown>(
   return typeof option === "function" ? option(error) : option !== false;
 }
 
-export function unstable_serialize(key: RawKey | (() => RawKey)) {
-  return serialize(key)[0];
+function isDocumentVisible() {
+  return typeof document === "undefined" || document.visibilityState !== "hidden";
 }
 
-function shouldUseMountRevalidation(
-  hasCachedValue: boolean,
-  config: ResolvedSWRVConfiguration<any, any>,
+function isNavigatorOnline() {
+  return typeof navigator === "undefined" || navigator.onLine !== false;
+}
+
+function isActive() {
+  return isDocumentVisible() && isNavigatorOnline();
+}
+
+function resolveResolvedData<Data>(cachedData: Data | undefined, fallbackData: Data | undefined) {
+  return hasDefinedValue(cachedData) ? cachedData : fallbackData;
+}
+
+function shouldRevalidateOnActivation<Data>(
+  isInitialActivation: boolean,
+  currentData: Data | undefined,
+  hasFetcher: boolean,
+  config: ResolvedSWRVConfiguration<Data, any>,
 ) {
-  if (config.revalidateOnMount !== undefined) {
+  if (!hasFetcher) {
+    return false;
+  }
+
+  if (isInitialActivation && config.revalidateOnMount !== undefined) {
     return config.revalidateOnMount;
   }
 
-  return !hasCachedValue || config.revalidateIfStale;
+  return !hasDefinedValue(currentData) || config.revalidateIfStale;
+}
+
+export function unstable_serialize(key: RawKey | (() => RawKey)) {
+  return serialize(key)[0];
 }
 
 export default function useSWRV<Data = unknown, Error = unknown>(
@@ -79,18 +105,26 @@ export default function useSWRV<Data = unknown, Error = unknown>(
   let refreshTimer: ReturnType<typeof setTimeout> | undefined;
   let retryTimer: ReturnType<typeof setTimeout> | undefined;
   let disposed = false;
-  let lastFocusAt = 0;
+  let hasMounted = false;
+  let nextFocusRevalidatedAt = 0;
 
-  const clearTimers = () => {
+  const clearRefreshTimer = () => {
     if (refreshTimer) {
       clearTimeout(refreshTimer);
       refreshTimer = undefined;
     }
+  };
 
+  const clearRetryTimer = () => {
     if (retryTimer) {
       clearTimeout(retryTimer);
       retryTimer = undefined;
     }
+  };
+
+  const clearTimers = () => {
+    clearRefreshTimer();
+    clearRetryTimer();
   };
 
   const applyState = () => {
@@ -109,7 +143,7 @@ export default function useSWRV<Data = unknown, Error = unknown>(
   };
 
   const scheduleRefresh = () => {
-    clearTimers();
+    clearRefreshTimer();
 
     const configValue = mergedConfig();
     const interval =
@@ -122,7 +156,24 @@ export default function useSWRV<Data = unknown, Error = unknown>(
     }
 
     refreshTimer = setTimeout(() => {
-      void revalidate({ dedupe: false });
+      const currentState = client.getState<Data, Error>(currentKey.value.serializedKey);
+
+      if (currentState?.error) {
+        scheduleRefresh();
+        return;
+      }
+
+      if (!configValue.refreshWhenHidden && !isDocumentVisible()) {
+        scheduleRefresh();
+        return;
+      }
+
+      if (!configValue.refreshWhenOffline && !isNavigatorOnline()) {
+        scheduleRefresh();
+        return;
+      }
+
+      void revalidate({ dedupe: true });
     }, interval);
   };
 
@@ -150,20 +201,12 @@ export default function useSWRV<Data = unknown, Error = unknown>(
     }
 
     if (!options.force) {
-      if (
-        !configValue.refreshWhenHidden &&
-        typeof document !== "undefined" &&
-        document.visibilityState === "hidden"
-      ) {
+      if (!configValue.refreshWhenHidden && !isDocumentVisible()) {
         scheduleRefresh();
         return cached?.data;
       }
 
-      if (
-        !configValue.refreshWhenOffline &&
-        typeof navigator !== "undefined" &&
-        navigator.onLine === false
-      ) {
+      if (!configValue.refreshWhenOffline && !isNavigatorOnline()) {
         scheduleRefresh();
         return cached?.data;
       }
@@ -211,10 +254,11 @@ export default function useSWRV<Data = unknown, Error = unknown>(
         return client.getState<Data, Error>(serializedKey)?.data;
       }
 
+      const latestData = client.getState<Data, Error>(serializedKey)?.data;
       client.setState<Data, Error>(
         serializedKey,
         {
-          data: resolvedData,
+          data: configValue.compare(latestData, resolvedData) ? latestData : resolvedData,
           error: undefined,
           isLoading: false,
           isValidating: false,
@@ -241,7 +285,14 @@ export default function useSWRV<Data = unknown, Error = unknown>(
       applyState();
 
       const shouldRetry = resolveRetryableError(configValue.shouldRetryOnError, resolvedError);
-      if (shouldRetry && (options.retryCount ?? 0) < configValue.errorRetryCount && !disposed) {
+      const shouldScheduleRetry =
+        shouldRetry &&
+        (options.retryCount ?? 0) < configValue.errorRetryCount &&
+        !disposed &&
+        (!configValue.revalidateOnFocus || !configValue.revalidateOnReconnect || isActive());
+
+      if (shouldScheduleRetry) {
+        clearRetryTimer();
         retryTimer = setTimeout(() => {
           void revalidate({
             dedupe: true,
@@ -267,14 +318,14 @@ export default function useSWRV<Data = unknown, Error = unknown>(
       }
 
       const now = Date.now();
-      if (now - lastFocusAt < configValue.focusThrottleInterval) {
+      if (!isActive() || now <= nextFocusRevalidatedAt) {
         return undefined;
       }
 
-      lastFocusAt = now;
+      nextFocusRevalidatedAt = now + configValue.focusThrottleInterval;
     }
 
-    if (event === "reconnect" && !configValue.revalidateOnReconnect) {
+    if (event === "reconnect" && (!configValue.revalidateOnReconnect || !isActive())) {
       return undefined;
     }
 
@@ -311,16 +362,19 @@ export default function useSWRV<Data = unknown, Error = unknown>(
       clearTimers();
       resetSubscriptions();
 
+      const isInitialActivation = !hasMounted;
       const configValue = mergedConfig();
       currentKey.value = { rawKey, serializedKey };
 
       if (!serializedKey) {
+        nextFocusRevalidatedAt = 0;
         if (!configValue.keepPreviousData) {
           data.value = configValue.fallbackData;
           error.value = undefined;
         }
         isLoading.value = false;
         isValidating.value = false;
+        hasMounted = true;
         return;
       }
 
@@ -330,6 +384,7 @@ export default function useSWRV<Data = unknown, Error = unknown>(
       unsubscribeRevalidator = client.addRevalidator(serializedKey, bindCurrentKey);
 
       const cached = client.getState<Data, Error>(serializedKey);
+      const resolvedData = resolveResolvedData(cached?.data, configValue.fallbackData);
       if (cached) {
         applyState();
       } else if (!configValue.keepPreviousData) {
@@ -339,14 +394,27 @@ export default function useSWRV<Data = unknown, Error = unknown>(
         isValidating.value = false;
       }
 
-      if (shouldUseMountRevalidation(Boolean(cached), configValue)) {
+      nextFocusRevalidatedAt = configValue.revalidateOnFocus
+        ? Date.now() + configValue.focusThrottleInterval
+        : 0;
+
+      if (
+        shouldRevalidateOnActivation(
+          isInitialActivation,
+          resolvedData,
+          Boolean(fetcher ?? configValue.fetcher),
+          configValue,
+        )
+      ) {
+        hasMounted = true;
         await revalidate({
           dedupe: true,
-          force: !cached,
+          force: true,
         });
         return;
       }
 
+      hasMounted = true;
       scheduleRefresh();
     },
     {

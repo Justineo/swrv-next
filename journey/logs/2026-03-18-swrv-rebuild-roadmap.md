@@ -11,3 +11,11 @@
 - Added repository automation scaffolding: CI workflow, release workflow, Renovate config, and root release helper scripts.
 - Validated the workspace with `vp run ready`.
 - Noted that the docs build currently succeeds with non-fatal VitePress/Rolldown warnings emitted by upstream tooling.
+- Started the first Phase 2 runtime hardening slice:
+  - fixed `revalidateOnMount` so it only suppresses the initial activation and does not suppress later key changes
+  - aligned fallback-data idle behavior with SWR for the disabled-revalidation case
+  - tightened focus and reconnect revalidation to respect focus throttling and active document state
+  - fixed error retry timers so retries are not canceled by refresh scheduling
+  - disabled polling in the immutable entry point by forcing `refreshInterval: 0`
+- Expanded the package test suite with SWR-style behavior checks for mount revalidation, focus, reconnect, retry, and immutable polling.
+- Revalidated the workspace with `vp run ready`.

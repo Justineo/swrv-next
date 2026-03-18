@@ -17,6 +17,7 @@ export default function useSWRVImmutable<Data = unknown, Error = unknown>(
 ): SWRVResponse<Data, Error> {
   return useSWRV<Data, Error>(key, fetcher, {
     ...config,
+    refreshInterval: 0,
     revalidateIfStale: false,
     revalidateOnFocus: false,
     revalidateOnReconnect: false,

@@ -4,6 +4,7 @@ import {
   effectScope,
   h,
   nextTick,
+  ref,
   type App,
   type EffectScope,
 } from "vue";
@@ -14,6 +15,7 @@ import {
   createSWRVClient,
   mutate,
   useSWRV,
+  useSWRVImmutable,
   useSWRVInfinite,
   useSWRVMutation,
   useSWRVSubscription,
@@ -32,11 +34,20 @@ async function settle(iterations = 3) {
   }
 }
 
+async function waitForMacrotask() {
+  await new Promise((resolve) => {
+    setTimeout(resolve, 0);
+  });
+  await nextTick();
+}
+
 const scopes: EffectScope[] = [];
 const apps: App[] = [];
 const containers: HTMLElement[] = [];
 
 afterEach(() => {
+  vi.useRealTimers();
+
   while (scopes.length > 0) {
     scopes.pop()?.stop();
   }
@@ -89,6 +100,24 @@ function mountWithClient(client: ReturnType<typeof createSWRVClient>, key: strin
   app.mount(container);
 
   return () => state;
+}
+
+function mockVisibilityState(state: DocumentVisibilityState) {
+  const descriptor = Object.getOwnPropertyDescriptor(document, "visibilityState");
+
+  Object.defineProperty(document, "visibilityState", {
+    configurable: true,
+    value: state,
+  });
+
+  return () => {
+    if (descriptor) {
+      Object.defineProperty(document, "visibilityState", descriptor);
+      return;
+    }
+
+    Reflect.deleteProperty(document, "visibilityState");
+  };
 }
 
 describe("swrv", () => {
@@ -219,5 +248,219 @@ describe("swrv", () => {
 
     scopes.pop()?.stop();
     expect(disposed).toBe(true);
+  });
+
+  it("does not fetch on the initial mount when revalidateOnMount is false", async () => {
+    const fetcher = vi.fn(async () => "remote");
+
+    const state = runComposable(() =>
+      useSWRV<string>("mount-disabled", fetcher, {
+        revalidateOnMount: false,
+      }),
+    );
+
+    await settle();
+
+    expect(fetcher).not.toHaveBeenCalled();
+    expect(state.data.value).toBeUndefined();
+    expect(state.isLoading.value).toBe(false);
+    expect(state.isValidating.value).toBe(false);
+  });
+
+  it("still fetches when the key changes even if revalidateOnMount is false", async () => {
+    const fetcher = vi.fn(async (...args: readonly unknown[]) => `value:${String(args[0])}`);
+    const key = ref("first");
+
+    const state = runComposable(() =>
+      useSWRV<string>(() => key.value, fetcher, {
+        revalidateOnMount: false,
+      }),
+    );
+
+    await settle();
+    expect(fetcher).not.toHaveBeenCalled();
+
+    key.value = "second";
+    await settle();
+
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(fetcher).toHaveBeenLastCalledWith("second");
+    expect(state.data.value).toBe("value:second");
+  });
+
+  it("keeps fallback data idle when revalidation is disabled", async () => {
+    const fetcher = vi.fn(async () => "remote");
+
+    const state = runComposable(() =>
+      useSWRV<string>("fallback-idle", fetcher, {
+        fallbackData: "fallback",
+        revalidateIfStale: false,
+        revalidateOnFocus: false,
+        revalidateOnReconnect: false,
+      }),
+    );
+
+    await settle();
+
+    expect(fetcher).not.toHaveBeenCalled();
+    expect(state.data.value).toBe("fallback");
+    expect(state.isLoading.value).toBe(false);
+    expect(state.isValidating.value).toBe(false);
+  });
+
+  it("revalidates on focus by default", async () => {
+    let value = 0;
+    const state = runComposable(() =>
+      useSWRV<number>("focus-default", async () => value++, {
+        dedupingInterval: 0,
+        focusThrottleInterval: 0,
+      }),
+    );
+
+    await settle();
+    expect(state.data.value).toBe(0);
+
+    await waitForMacrotask();
+    window.dispatchEvent(new Event("focus"));
+    await settle();
+
+    expect(state.data.value).toBe(1);
+  });
+
+  it("does not revalidate on focus when the option is disabled", async () => {
+    let value = 0;
+    const state = runComposable(() =>
+      useSWRV<number>("focus-disabled", async () => value++, {
+        dedupingInterval: 0,
+        revalidateOnFocus: false,
+      }),
+    );
+
+    await settle();
+    expect(state.data.value).toBe(0);
+
+    await waitForMacrotask();
+    window.dispatchEvent(new Event("focus"));
+    await settle();
+
+    expect(state.data.value).toBe(0);
+  });
+
+  it("throttles focus revalidation immediately after mount", async () => {
+    vi.useFakeTimers();
+
+    let value = 0;
+    const state = runComposable(() =>
+      useSWRV<number>("focus-throttle", async () => value++, {
+        dedupingInterval: 0,
+        focusThrottleInterval: 50,
+      }),
+    );
+
+    await settle();
+    expect(state.data.value).toBe(0);
+
+    window.dispatchEvent(new Event("focus"));
+    await settle();
+    expect(state.data.value).toBe(0);
+
+    await vi.advanceTimersByTimeAsync(60);
+    window.dispatchEvent(new Event("focus"));
+    await settle();
+
+    expect(state.data.value).toBe(1);
+  });
+
+  it("revalidates on reconnect by default", async () => {
+    let value = 0;
+    const state = runComposable(() =>
+      useSWRV<number>("reconnect-default", async () => value++, {
+        dedupingInterval: 0,
+      }),
+    );
+
+    await settle();
+    expect(state.data.value).toBe(0);
+
+    await waitForMacrotask();
+    window.dispatchEvent(new Event("offline"));
+    window.dispatchEvent(new Event("online"));
+    await settle();
+
+    expect(state.data.value).toBe(1);
+  });
+
+  it("does not revalidate on reconnect when the document is hidden", async () => {
+    let value = 0;
+    const restoreVisibility = mockVisibilityState("hidden");
+
+    try {
+      const state = runComposable(() =>
+        useSWRV<number>("reconnect-hidden", async () => value++, {
+          dedupingInterval: 0,
+        }),
+      );
+
+      await settle();
+      expect(state.data.value).toBe(0);
+
+      await waitForMacrotask();
+      window.dispatchEvent(new Event("offline"));
+      window.dispatchEvent(new Event("online"));
+      await settle();
+
+      expect(state.data.value).toBe(0);
+    } finally {
+      restoreVisibility();
+    }
+  });
+
+  it("retries failed requests after errorRetryInterval", async () => {
+    vi.useFakeTimers();
+
+    const fetcher = vi
+      .fn<() => Promise<string>>()
+      .mockRejectedValueOnce(new Error("boom"))
+      .mockResolvedValueOnce("recovered");
+
+    const state = runComposable(() =>
+      useSWRV<string>("retry", fetcher, {
+        dedupingInterval: 0,
+        errorRetryCount: 1,
+        errorRetryInterval: 50,
+      }),
+    );
+
+    await settle();
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(state.error.value).toBeInstanceOf(Error);
+
+    await vi.advanceTimersByTimeAsync(50);
+    await settle();
+
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(state.data.value).toBe("recovered");
+    expect(state.error.value).toBeUndefined();
+  });
+
+  it("disables polling in the immutable entry point", async () => {
+    vi.useFakeTimers();
+
+    let value = 0;
+    const state = runComposable(() =>
+      useSWRVImmutable<number>("immutable-refresh", async () => value++, {
+        dedupingInterval: 0,
+        refreshInterval: 10,
+      }),
+    );
+
+    await settle();
+    expect(state.data.value).toBe(0);
+
+    await vi.advanceTimersByTimeAsync(50);
+    await settle();
+
+    expect(state.data.value).toBe(0);
+    expect(value).toBe(1);
   });
 });
