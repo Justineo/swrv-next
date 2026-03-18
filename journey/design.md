@@ -85,7 +85,10 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
 - Use plain VitePress scripts for docs builds inside `packages/docs`, but continue to drive workspace orchestration through `vp run ...`.
 - Keep the library build on stable declaration generation for now instead of the experimental `tsgo` path.
 - Treat explicit client scoping plus config-level `fallback` as the supported SSR path for the current cut. Deeper Nuxt integration and dedicated hydration helpers can remain follow-up work.
-- Keep publish automation on the `next` dist-tag until the final version line is explicitly chosen.
+- Freeze the rebuilt release line as a breaking `2.x` track, and keep prerelease automation on the `next` dist-tag until the first stable cut is ready.
+- Freeze the published Vue support range at `>=3.2.26 <4`.
+- Freeze the typed-consumer and contributor TypeScript baseline at `>=5.5`.
+- Keep `ttl` as a supported compatibility-oriented extension in the current cut, but do not restore `serverTTL` as part of the rebuilt core API.
 
 ## Planned Repository Shape
 
@@ -95,9 +98,6 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
 
 ## Early Decisions To Resolve
 
-- Versioning strategy for the rebuilt release: continue the `1.x` line or treat the rewrite as a breaking `2.0`-style release
-- Supported Vue floor and supported TypeScript floor
-- Whether TTL/serverTTL remain first-class core APIs, move behind an extension layer, or become compatibility utilities
 - How much dedicated Nuxt or hydration helper surface should exist beyond the current explicit client plus `fallback` contract
 - How far the current `infinite`, `mutation`, and `subscription` implementations still need to evolve to reach the desired SWR parity line
 - Whether the current infinite revalidation policy is enough, or if page-selective revalidation options need to get even closer to SWR's `revalidate` callback behavior

@@ -72,3 +72,10 @@
   - revalidated package dry-run and publish dry-run through the supported package-manager path
 - Revalidated the workspace with `vp run ready`.
 - Phase 5 type/test hardening is now complete for the current roadmap cut.
+- Locked the remaining project-charter policy decisions for the current cut:
+  - the rewrite is now treated as the future `2.x` line
+  - prereleases stay on the `next` dist-tag until the first stable release
+  - the published Vue support range is `>=3.2.26 <4`
+  - the typed-consumer and contributor TypeScript baseline is `>=5.5`
+  - `ttl` stays as a compatibility-oriented extension, while `serverTTL` does not return in the rebuilt core API
+- Milestone `M1` project charter locked is now complete for the current roadmap cut.

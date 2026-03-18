@@ -3,6 +3,9 @@
 SWRV Next rebuilds SWRV as a modern Vue-native data fetching library aligned
 with the current SWR behavior model and shipped from a Vite-era monorepo.
 
+The intended first stable release line for the rewrite is `2.x`. Until that
+stable line is tagged, prereleases stay on the `next` dist-tag.
+
 ## Workspace
 
 - [`packages/swrv`](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/packages/swrv): the published library package
@@ -15,6 +18,7 @@ with the current SWR behavior model and shipped from a Vite-era monorepo.
 vp install
 vp check
 vp run test -r
+vp run test:e2e
 vp run build -r
 ```
 

@@ -3,6 +3,25 @@
 SWRV is a Vue-native stale-while-revalidate data fetching library aligned with
 the modern SWR behavior model.
 
+## Release Track
+
+This rewrite is intended to ship as the next major line of SWRV. Until the
+first stable cut is tagged, prerelease publishes stay on the `next` dist-tag.
+
+## Support Matrix
+
+- Vue: `>=3.2.26 <4`
+- TypeScript: `>=5.5` for the typed consumer path and contributor baseline
+- Node.js: `>=22.12.0` for repository development and CI
+
+## Compatibility Notes
+
+- The supported SSR contract is explicit `client` scoping plus config-level
+  `fallback`.
+- `ttl` remains available as a compatibility-oriented extension in the current
+  cut.
+- `serverTTL` is intentionally not returning as part of the rebuilt core API.
+
 ## Install
 
 ```bash
@@ -63,6 +82,7 @@ For non-string keys, use `unstable_serialize()` to build the fallback map key.
 vp install
 vp check
 vp run test -r
+vp run test:e2e
 vp run build -r
 ```
 

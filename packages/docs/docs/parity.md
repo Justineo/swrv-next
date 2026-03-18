@@ -22,6 +22,7 @@
 The project is aligned to SWR as the main behavioral reference, but it is not yet a complete drop-in parity release.
 
 - the supported SSR path is explicit client scoping plus config-level `fallback`, not a larger framework integration layer yet
+- `ttl` remains available as a compatibility-oriented extension even though it is not part of SWR core semantics
 - some advanced `infinite` and `mutation` edge semantics still need broader ported coverage
 - the current docs focus on the working public surface, not the full final API contract
 
@@ -31,6 +32,14 @@ The project is aligned to SWR as the main behavioral reference, but it is not ye
 - package layout follows SWR-style subpath exports
 - the repo uses Vite+, Vitest, VitePress, and modern release automation instead of Vue CLI and Jest-era tooling
 - typings are being rebuilt around stricter public inference and declaration coverage
+- `serverTTL` is not part of the rebuilt core API
+
+## Release Policy
+
+- the intended first stable line for the rewrite is `2.x`
+- prereleases stay on the `next` dist-tag until that stable line is cut
+- the supported Vue range for the published package is `>=3.2.26 <4`
+- the current typed-consumer and contributor baseline is TypeScript `>=5.5`
 
 ## What To Expect Next
 
