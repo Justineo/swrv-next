@@ -55,6 +55,7 @@ export interface SWRVConfiguration<
   fallbackData?: Data;
   fetcher?: Fn | null;
   focusThrottleInterval?: number;
+  isPaused?: () => boolean;
   keepPreviousData?: boolean;
   provider?: () => CacheAdapter<CacheState<any, any>>;
   refreshInterval?: number | ((latestData: Data | undefined) => number);
@@ -79,6 +80,7 @@ export interface ResolvedSWRVConfiguration<
   errorRetryInterval: number;
   fallback: Record<string, unknown>;
   focusThrottleInterval: number;
+  isPaused: () => boolean;
   keepPreviousData: boolean;
   refreshInterval: number | ((latestData: Data | undefined) => number);
   refreshWhenHidden: boolean;

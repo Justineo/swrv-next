@@ -33,6 +33,7 @@ const DEFAULT_CONFIGURATION: ResolvedSWRVConfiguration<any, any> = {
   errorRetryInterval: 5000,
   fallback: {},
   focusThrottleInterval: 5000,
+  isPaused: () => false,
   keepPreviousData: false,
   refreshInterval: 0,
   refreshWhenHidden: false,
@@ -89,6 +90,7 @@ export function mergeConfiguration<Data = unknown, Error = unknown>(
     base.fallback && override?.fallback
       ? { ...base.fallback, ...override.fallback }
       : (override?.fallback ?? base.fallback ?? {});
+  merged.isPaused = override?.isPaused ?? base.isPaused ?? (() => false);
   return merged;
 }
 

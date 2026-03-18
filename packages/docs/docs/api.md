@@ -48,7 +48,7 @@ Current supported high-value options include:
 - `client`, `cache`, and `provider` for cache boundaries
 - `fallback` for config-level initial data
 - `fetcher` for a shared fetcher
-- revalidation controls such as `revalidateOnMount`, `revalidateOnFocus`, and `revalidateOnReconnect`
+- revalidation controls such as `revalidateOnMount`, `revalidateOnFocus`, `revalidateOnReconnect`, and `isPaused`
 - `refreshInterval`, `dedupingInterval`, and `ttl`
 
 ## `swrv/mutation`

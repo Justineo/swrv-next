@@ -694,6 +694,92 @@ describe("swrv", () => {
     expect(state.data.value).toBe("value:second");
   });
 
+  it("skips initial revalidation when isPaused returns true", async () => {
+    const fetcher = vi.fn(async () => "remote");
+    const key = `paused-mount-${Date.now()}`;
+
+    const state = runComposable(() =>
+      useSWRV<string>(key, fetcher, {
+        isPaused: () => true,
+        revalidateOnMount: true,
+      }),
+    );
+
+    await settle();
+
+    expect(fetcher).not.toHaveBeenCalled();
+    expect(state.data.value).toBeUndefined();
+    expect(state.isLoading.value).toBe(false);
+    expect(state.isValidating.value).toBe(false);
+  });
+
+  it("stops revalidation while paused and resumes when unpaused", async () => {
+    let paused = false;
+    let value = 0;
+    const key = `paused-revalidate-${Date.now()}`;
+
+    const state = runComposable(() =>
+      useSWRV<number>(key, () => value++, {
+        dedupingInterval: 0,
+        isPaused: () => paused,
+      }),
+    );
+
+    await settle();
+    expect(state.data.value).toBe(0);
+
+    paused = true;
+    await state.mutate();
+    await settle();
+
+    expect(state.data.value).toBe(0);
+    expect(value).toBe(1);
+
+    paused = false;
+    await state.mutate();
+    await settle();
+
+    expect(state.data.value).toBe(1);
+    expect(value).toBe(2);
+  });
+
+  it("drops loading state and ignores errors that resolve while paused", async () => {
+    vi.useFakeTimers();
+
+    let paused = false;
+    const key = `paused-error-${Date.now()}`;
+    const fetcher = vi.fn(
+      () =>
+        new Promise<string>((_resolve, reject) => {
+          setTimeout(() => {
+            reject(new Error("boom"));
+          }, 20);
+        }),
+    );
+
+    const state = runComposable(() =>
+      useSWRV<string>(key, fetcher, {
+        revalidateOnMount: false,
+        dedupingInterval: 0,
+        errorRetryInterval: 10,
+        isPaused: () => paused,
+      }),
+    );
+
+    const revalidatePromise = state.mutate();
+    await flush();
+    expect(state.isValidating.value).toBe(true);
+
+    paused = true;
+    await vi.runAllTimersAsync();
+    await revalidatePromise;
+    await settle();
+
+    expect(state.error.value).toBeUndefined();
+    expect(state.isLoading.value).toBe(false);
+    expect(state.isValidating.value).toBe(false);
+  });
+
   it("keeps fallback data idle when revalidation is disabled", async () => {
     const fetcher = vi.fn(async () => "remote");
     const key = `fallback-idle-${Date.now()}`;
@@ -713,6 +799,27 @@ describe("swrv", () => {
     expect(state.data.value).toBe("fallback");
     expect(state.isLoading.value).toBe(false);
     expect(state.isValidating.value).toBe(false);
+  });
+
+  it("revalidates on bound mutate without clearing the current data first", async () => {
+    let value = 0;
+    const key = `bound-mutate-${Date.now()}`;
+    const state = runComposable(() =>
+      useSWRV<string>(key, async () => `value:${value++}`, {
+        dedupingInterval: 0,
+      }),
+    );
+
+    await settle();
+    expect(state.data.value).toBe("value:0");
+
+    const revalidatePromise = state.mutate();
+    expect(state.data.value).toBe("value:0");
+
+    await revalidatePromise;
+    await settle();
+
+    expect(state.data.value).toBe("value:1");
   });
 
   it("keeps config fallback data visible while the first request is validating", async () => {

@@ -196,6 +196,11 @@ export default function useSWRV<Data = unknown, Error = unknown>(
     }
 
     refreshTimer = setTimeout(() => {
+      if (configValue.isPaused()) {
+        scheduleRefresh();
+        return;
+      }
+
       const currentState = client.getState<Data, Error>(currentKey.value.serializedKey);
 
       if (currentState?.error) {
@@ -233,6 +238,11 @@ export default function useSWRV<Data = unknown, Error = unknown>(
     const cached = client.getState<Data, Error>(serializedKey);
     if (cached) {
       applyState();
+    }
+
+    if (configValue.isPaused()) {
+      scheduleRefresh();
+      return cached?.data;
     }
 
     if (!activeFetcher) {
@@ -285,6 +295,21 @@ export default function useSWRV<Data = unknown, Error = unknown>(
 
       const resolvedData = await (fetchRecord?.promise as Promise<Data>);
 
+      if (mergedConfig().isPaused()) {
+        client.setState<Data, Error>(
+          serializedKey,
+          {
+            isLoading: false,
+            isValidating: false,
+          },
+          configValue.ttl,
+          rawKey,
+        );
+        applyState();
+        scheduleRefresh();
+        return client.getState<Data, Error>(serializedKey)?.data;
+      }
+
       if (!client.isLatestFetch(serializedKey, startedAt)) {
         return client.getState<Data, Error>(serializedKey)?.data;
       }
@@ -311,6 +336,21 @@ export default function useSWRV<Data = unknown, Error = unknown>(
       return resolvedData;
     } catch (caught) {
       const resolvedError = caught as Error;
+
+      if (mergedConfig().isPaused()) {
+        client.setState<Data, Error>(
+          serializedKey,
+          {
+            isLoading: false,
+            isValidating: false,
+          },
+          configValue.ttl,
+          rawKey,
+        );
+        applyState();
+        scheduleRefresh();
+        return client.getState<Data, Error>(serializedKey)?.data;
+      }
 
       client.setState<Data, Error>(
         serializedKey,
@@ -443,7 +483,7 @@ export default function useSWRV<Data = unknown, Error = unknown>(
         shouldRevalidateOnActivation(
           isInitialActivation,
           resolvedData,
-          Boolean(fetcher ?? configValue.fetcher),
+          Boolean(fetcher ?? configValue.fetcher) && !configValue.isPaused(),
           configValue,
         )
       ) {
@@ -474,11 +514,16 @@ export default function useSWRV<Data = unknown, Error = unknown>(
     error,
     isLoading,
     isValidating,
-    mutate: async (value, options) =>
-      (await scopedMutate<Data>(
+    mutate: async function mutate(value, options) {
+      if (arguments.length === 0) {
+        return (await scopedMutate<Data>(currentKey.value.rawKey)) as Data | undefined;
+      }
+
+      return (await scopedMutate<Data>(
         currentKey.value.rawKey,
         value as Data | Promise<Data | undefined> | undefined,
         options as boolean | MutatorOptions<Data>,
-      )) as Data | undefined,
+      )) as Data | undefined;
+    },
   } as SWRVResponse<Data, Error>;
 }
