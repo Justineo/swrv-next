@@ -37,9 +37,13 @@ export function serialize<Key extends RawKey>(key: KeySource<Key>): [string, Key
 }
 
 export function callFetcher<Data>(fetcher: BareFetcher<Data>, args: RawKey): Promise<Data> {
-  if (Array.isArray(args)) {
-    return Promise.resolve(fetcher(...args));
-  }
+  try {
+    if (Array.isArray(args)) {
+      return Promise.resolve(fetcher(...args));
+    }
 
-  return Promise.resolve(fetcher(args));
+    return Promise.resolve(fetcher(args));
+  } catch (error) {
+    return Promise.reject(error);
+  }
 }
