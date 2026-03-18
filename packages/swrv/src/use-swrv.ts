@@ -250,6 +250,8 @@ function useSWRVHandler<Data = unknown, Error = unknown>(
       return undefined;
     }
 
+    const isActiveKey = () => currentKey.value.serializedKey === serializedKey;
+
     const cached = client.getState<Data, Error>(serializedKey);
     if (cached) {
       applyState(cached, serializedKey);
@@ -340,7 +342,9 @@ function useSWRVHandler<Data = unknown, Error = unknown>(
           rawKey,
         );
         syncAfterStateWrite(serializedKey, pausedState);
-        scheduleRefresh();
+        if (isActiveKey()) {
+          scheduleRefresh();
+        }
         return pausedState.data;
       }
 
@@ -372,10 +376,12 @@ function useSWRVHandler<Data = unknown, Error = unknown>(
         rawKey,
       );
       syncAfterStateWrite(serializedKey, successState);
-      if (!currentFetch) {
+      if (!currentFetch && isActiveKey()) {
         mergedConfig().onSuccess(resolvedData, serializedKey, mergedConfig());
       }
-      scheduleRefresh();
+      if (isActiveKey()) {
+        scheduleRefresh();
+      }
       return resolvedData;
     } catch (caught) {
       const resolvedError = caught as Error;
@@ -392,7 +398,9 @@ function useSWRVHandler<Data = unknown, Error = unknown>(
           rawKey,
         );
         syncAfterStateWrite(serializedKey, pausedErrorState);
-        scheduleRefresh();
+        if (isActiveKey()) {
+          scheduleRefresh();
+        }
         return pausedErrorState.data;
       }
 
@@ -409,7 +417,7 @@ function useSWRVHandler<Data = unknown, Error = unknown>(
       syncAfterStateWrite(serializedKey, errorState);
 
       const latestConfig = mergedConfig();
-      if (!currentFetch) {
+      if (!currentFetch && isActiveKey()) {
         latestConfig.onError(resolvedError, serializedKey, latestConfig);
       }
 
@@ -417,6 +425,7 @@ function useSWRVHandler<Data = unknown, Error = unknown>(
       const shouldRetryWhileActive =
         shouldRetry &&
         !disposed &&
+        isActiveKey() &&
         (!latestConfig.revalidateOnFocus ||
           !latestConfig.revalidateOnReconnect ||
           isActive(latestConfig));
@@ -446,11 +455,13 @@ function useSWRVHandler<Data = unknown, Error = unknown>(
         );
       }
 
-      if (options.throwOnError) {
+      if (options.throwOnError && isActiveKey()) {
         throw resolvedError;
       }
 
-      scheduleRefresh();
+      if (isActiveKey()) {
+        scheduleRefresh();
+      }
       return cached?.data;
     }
   };

@@ -316,4 +316,100 @@ describe("swrv core refresh and compare behavior", () => {
       },
     );
   });
+
+  it("does not let an older key refresh reset the new key polling schedule", async () => {
+    vi.useFakeTimers();
+
+    const baseKey = `refresh-key-switch-${Date.now()}`;
+    const current = ref("slow");
+    const fetcher = vi.fn(async (resolvedKey: string) => {
+      await new Promise((resolve) => {
+        setTimeout(resolve, resolvedKey.endsWith("slow") ? 200 : 100);
+      });
+      return resolvedKey;
+    });
+
+    const state = runComposable(() =>
+      useSWRV<string, unknown, string>(() => `${baseKey}-${current.value}`, fetcher, {
+        dedupingInterval: 50,
+        refreshInterval: 100,
+      }),
+    );
+
+    await vi.advanceTimersByTimeAsync(200);
+    await settle();
+    expect(state.data.value).toBe(`${baseKey}-slow`);
+
+    await vi.advanceTimersByTimeAsync(100);
+    await flush();
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(fetcher).toHaveBeenLastCalledWith(`${baseKey}-slow`);
+
+    current.value = "fast";
+    await flush();
+    expect(fetcher).toHaveBeenCalledTimes(3);
+    expect(fetcher).toHaveBeenLastCalledWith(`${baseKey}-fast`);
+
+    await vi.advanceTimersByTimeAsync(100);
+    await settle();
+    expect(state.data.value).toBe(`${baseKey}-fast`);
+
+    await vi.advanceTimersByTimeAsync(100);
+    await settle();
+    expect(fetcher).toHaveBeenCalledTimes(4);
+    expect(fetcher).toHaveBeenLastCalledWith(`${baseKey}-fast`);
+  });
+
+  it("does not call onSuccess for an older key after the hook switches keys", async () => {
+    vi.useFakeTimers();
+
+    const baseKey = `refresh-success-key-${Date.now()}`;
+    const current = ref("slow");
+    const onSuccess = vi.fn();
+    const fetcher = vi.fn(async (resolvedKey: string) => {
+      await new Promise((resolve) => {
+        setTimeout(resolve, resolvedKey.endsWith("slow") ? 200 : 100);
+      });
+      return resolvedKey;
+    });
+
+    runComposable(() =>
+      useSWRV<string, unknown, string>(() => `${baseKey}-${current.value}`, fetcher, {
+        dedupingInterval: 50,
+        onSuccess,
+        refreshInterval: 100,
+      }),
+    );
+
+    await vi.advanceTimersByTimeAsync(200);
+    await settle();
+    expect(onSuccess).toHaveBeenCalledTimes(1);
+    expect(onSuccess).toHaveBeenLastCalledWith(
+      `${baseKey}-slow`,
+      `${baseKey}-slow`,
+      expect.objectContaining({
+        refreshInterval: 100,
+      }),
+    );
+
+    await vi.advanceTimersByTimeAsync(100);
+    await flush();
+    current.value = "fast";
+    await flush();
+
+    await vi.advanceTimersByTimeAsync(100);
+    await settle();
+    expect(onSuccess).toHaveBeenCalledTimes(2);
+    expect(onSuccess).toHaveBeenLastCalledWith(
+      `${baseKey}-fast`,
+      `${baseKey}-fast`,
+      expect.objectContaining({
+        refreshInterval: 100,
+      }),
+    );
+
+    await vi.advanceTimersByTimeAsync(100);
+    await settle();
+    expect(onSuccess).toHaveBeenCalledTimes(2);
+  });
 });
