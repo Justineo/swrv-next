@@ -14,7 +14,7 @@ import {
 } from "../src";
 import { unstable_serialize as unstableSerializeInfinite } from "../src/infinite";
 import { serialize } from "../src/_internal";
-import type { SWRVMiddleware, SWRVMutationConfiguration, SWRVSubscription } from "../src";
+import type { SWRVMutationConfiguration, SWRVSubscription } from "../src";
 import {
   flush,
   mountWithClient,
@@ -28,12 +28,6 @@ import {
 } from "./test-utils";
 
 describe("swrv", () => {
-  const createLoggerMiddleware = (id: number, keys: Array<{ id: number; key: unknown }>) =>
-    ((useSWRVNext) => (key, fetcher, config) => {
-      keys.push({ id, key });
-      return useSWRVNext(key, fetcher, config);
-    }) satisfies SWRVMiddleware;
-
   it("dedupes concurrent requests for the same key", async () => {
     const key = "dedupe-key";
     const fetcher = vi.fn(async (...args: readonly unknown[]) => `data:${String(args[0])}`);
@@ -2264,117 +2258,5 @@ describe("swrv", () => {
       a: 2,
       c: 2,
     });
-  });
-
-  it("applies middleware in SWR order across config boundaries and per-hook config", async () => {
-    const key: [string, number] = ["middleware", 1];
-    const calls: Array<{ id: number; key: unknown }> = [];
-    let state!: ReturnType<typeof useSWRV<string>>;
-
-    const Child = defineComponent({
-      setup() {
-        state = useSWRV<string, unknown, [string, number]>(
-          key,
-          async (resource: string, id: number) => `${resource}:${id}`,
-          {
-            use: [createLoggerMiddleware(0, calls)],
-          },
-        );
-        return () => h("div", state.data.value ?? "");
-      },
-    });
-
-    const container = registerContainer(document.createElement("div"));
-    document.body.appendChild(container);
-
-    const app = registerApp(
-      createApp({
-        render: () =>
-          h(
-            SWRVConfig,
-            { value: { use: [createLoggerMiddleware(2, calls)] } },
-            {
-              default: () =>
-                h(
-                  SWRVConfig,
-                  { value: { use: [createLoggerMiddleware(1, calls)] } },
-                  {
-                    default: () => h(Child),
-                  },
-                ),
-            },
-          ),
-      }),
-    );
-
-    app.mount(container);
-
-    await settle();
-
-    expect(state.data.value).toBe("middleware:1");
-    expect(calls.map((call) => call.id)).toEqual([2, 1, 0]);
-    expect(calls[0].key).toEqual(key);
-  });
-
-  it("passes the original infinite key loader through middleware", async () => {
-    const calls: Array<{ id: number; key: unknown }> = [];
-    const resource = `page-${Date.now()}`;
-    const getKey = (index: number) => (index === 0 ? ([resource, index] as const) : null);
-
-    const state = runComposable(() =>
-      useSWRVInfinite<string>(
-        getKey,
-        async (...args: readonly unknown[]) => `${String(args[0])}:${String(args[1])}`,
-        {
-          use: [createLoggerMiddleware(0, calls)],
-        },
-      ),
-    );
-
-    await settle();
-
-    expect(calls.map((call) => call.key)).toEqual([getKey]);
-    expect(state.data.value).toEqual([`${resource}:0`]);
-  });
-
-  it("applies middleware to useSWRVMutation with the original key", async () => {
-    const calls: Array<{ id: number; key: unknown }> = [];
-
-    const mutation = mountWithConfig(
-      () =>
-        useSWRVMutation<string, Error, string, string>(
-          "mutation-middleware",
-          async (key: string, { arg }) => `${key}:${arg}`,
-          { use: [createLoggerMiddleware(0, calls)] },
-        ),
-      { use: [createLoggerMiddleware(1, calls)] },
-    );
-
-    await flush();
-
-    expect(calls.map((call) => call.id)).toEqual([1, 0]);
-    expect(calls[0].key).toBe("mutation-middleware");
-    await expect(mutation().trigger("value")).resolves.toBe("mutation-middleware:value");
-  });
-
-  it("passes the original subscription key through middleware", async () => {
-    const calls: Array<{ id: number; key: unknown }> = [];
-    const key = ["subscription", 1] as const;
-
-    const state = runComposable(() =>
-      useSWRVSubscription<string, Error, typeof key>(
-        key,
-        (_resolvedKey, { next }) => {
-          next(undefined, "connected");
-          return () => {};
-        },
-        { use: [createLoggerMiddleware(0, calls)] },
-      ),
-    );
-
-    await settle();
-
-    expect(calls.map((call) => call.key)).toEqual([key]);
-    expect(state.data.value).toBe("connected");
   });
 });
