@@ -1,6 +1,6 @@
 # SWRV Next Design Snapshot
 
-Status: Runtime parity plus repo-side launch readiness
+Status: Launch-ready current cut
 Last updated: 2026-03-18
 
 ## Mission
@@ -12,7 +12,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
 - The repository now uses the intended monorepo shape:
   - `packages/swrv`
   - `packages/docs`
-- The root workspace is validated through `vp check`, `vp test`, `vp exec playwright test`, and `vp run build -r`.
+- The root workspace is validated through `vp check`, `vp test`, `vp exec playwright test`, `vp run build -r`, `vp run ready`, `vp pm pack -- --json --dry-run`, and `vp pm publish -- --dry-run --access public --provenance --no-git-checks --tag next`.
 - The `swrv` package now contains an initial provider-scoped runtime with:
   - `useSWRV`
   - `SWRVConfig`
@@ -77,6 +77,8 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - SWR-style `use` middleware composition now works across `useSWRV`, `immutable`, `infinite`, `mutation`, and `subscription`
   - the published package includes explicit typed subpath exports, a package README, and an Apache-2.0 license file
   - root contributor and security guidance now exist for repository users and maintainers
+  - the current release path has been revalidated after the latest parity hardening through package and publish dry-runs
+  - the workspace and published package manifests are now aligned to the intended prerelease line at `2.0.0-next.0`
 - The main reference materials for the rebuild remain:
   - `journey/research/swr-vs-swrv.md`
   - `/Users/yiling.gu@konghq.com/Developer/Justineo/swr` (local SWR source, version 2.4.1)
@@ -97,7 +99,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
 - Keep project memory current in `journey/design.md`, use `journey/plans/` for milestone or phase plans, and use `journey/logs/` for implementation notes and dead ends.
 - Use plain VitePress scripts for docs builds inside `packages/docs`, but continue to drive workspace orchestration through `vp run ...`.
 - Keep the library build on stable declaration generation for now instead of the experimental `tsgo` path.
-- Treat explicit client scoping plus config-level `fallback` as the supported SSR path for the current cut. Deeper Nuxt integration and dedicated hydration helpers can remain follow-up work.
+- Treat explicit client scoping plus config-level `fallback` as the supported SSR path for the first launch-ready cut. Deeper Nuxt integration and dedicated hydration helpers are follow-up work, not blockers for the current release line.
 - Freeze the rebuilt release line as a breaking `2.x` track, and keep prerelease automation on the `next` dist-tag until the first stable cut is ready.
 - Freeze the published Vue support range at `>=3.2.26 <4`.
 - Freeze the typed-consumer and contributor TypeScript baseline at `>=5.5`.
@@ -109,9 +111,8 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
 - `packages/docs`: VitePress docs site
 - `journey/`: project memory and planning artifacts
 
-## Early Decisions To Resolve
+## Follow-up Questions
 
 - How much dedicated Nuxt or hydration helper surface should exist beyond the current explicit client plus `fallback` contract
-- How far the current `infinite`, `mutation`, and `subscription` implementations still need to evolve to reach the desired SWR parity line
-- Whether the current infinite revalidation policy is enough, or if page-selective revalidation options need to get even closer to SWR's `revalidate` callback behavior
-- How much additional type-level precision is worth adding beyond the current public overloads before the API surface is frozen
+- Whether any remaining advanced edge semantics in `infinite`, `mutation`, and `subscription` are worth tightening further before or after the first public prerelease
+- How much additional type-level precision is worth adding beyond the current public overloads once the API surface is exercised by real consumers

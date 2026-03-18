@@ -1,6 +1,6 @@
 {
   "name": "swrv",
-  "version": "0.0.0",
+  "version": "2.0.0-next.0",
   "description": "Vue-native stale-while-revalidate data fetching",
   "keywords": [
     "cache",

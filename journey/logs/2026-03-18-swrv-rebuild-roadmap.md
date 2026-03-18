@@ -79,3 +79,17 @@
   - the typed-consumer and contributor TypeScript baseline is `>=5.5`
   - `ttl` stays as a compatibility-oriented extension, while `serverTTL` does not return in the rebuilt core API
 - Milestone `M1` project charter locked is now complete for the current roadmap cut.
+- Continued the late parity hardening pass after the initial launch-readiness baseline:
+  - upgraded the docs stack to VitePress 2 and aligned the docs toolchain with the forward-looking baseline
+  - hardened preload semantics, infinite aggregate/page cache synchronization, and bound infinite mutate option coverage
+  - tightened `useSWRVInfinite` mutator typing so mutation payloads can differ from the aggregate page-array cache shape
+  - expanded `useSWRVSubscription` runtime coverage for singleton key switching and tightened handler key typing for conditional key sources
+  - expanded `useSWRVMutation` runtime coverage for callback semantics, `isMutating`, cache isolation, shared-cache optimistic updates, non-deduped triggers, latest fetcher/config closure behavior, empty-key failures, and falsey rejection handling
+  - expanded public type coverage for infinite and mutation trigger surfaces, including no-arg mutation triggers and the absence of base-hook-only fields on mutation responses
+- Revalidated the current release path after the late parity hardening pass with:
+  - `vp run ready`
+  - `vp pm pack -- --json --dry-run`
+  - `vp pm publish -- --dry-run --access public --provenance --no-git-checks --tag next`
+- Confirmed that the current SSR contract for the first launch-ready cut remains explicit client scoping plus config-level `fallback`, with deeper Nuxt or hydration helpers deferred to follow-up work.
+- Aligned the workspace and package manifests to the intended prerelease line at `2.0.0-next.0` and revalidated pack plus publish dry-runs against that concrete version.
+- Milestone `M7` OSS launch readiness is now complete for the current roadmap cut.
