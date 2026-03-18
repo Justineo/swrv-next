@@ -31,6 +31,8 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - the immutable entry point now disables polling by forcing `refreshInterval: 0`
   - `isPaused()` now gates mount, focus, reconnect, polling, and mutate-driven revalidation, and in-flight results are discarded while paused
   - bound `mutate()` now correctly treats a no-argument call as revalidation instead of mutating the cache to `undefined`
+  - config-level `onSuccess` and `onError` callbacks now exist for base requests
+  - config-level `isVisible()` and `isOnline()` overrides now participate in focus, reconnect, and active-state gating
 - The infinite and mutation helpers have also moved closer to SWR:
   - `swrv/infinite` now exposes `unstable_serialize`, resolves page keys safely, supports cursor-style sequential loading, and treats `setSize()` as a page-oriented operation instead of a raw aggregate refresh
   - `swrv/infinite` now revalidates the first page while loading new pages and lets no-arg `mutate()` revalidate all loaded pages

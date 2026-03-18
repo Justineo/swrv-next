@@ -49,6 +49,8 @@ Current supported high-value options include:
 - `fallback` for config-level initial data
 - `fetcher` for a shared fetcher
 - revalidation controls such as `revalidateOnMount`, `revalidateOnFocus`, `revalidateOnReconnect`, and `isPaused`
+- activity overrides through `isVisible` and `isOnline`
+- lifecycle callbacks through `onSuccess` and `onError`
 - `refreshInterval`, `dedupingInterval`, and `ttl`
 
 ## `swrv/mutation`

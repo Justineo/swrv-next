@@ -55,8 +55,20 @@ export interface SWRVConfiguration<
   fallbackData?: Data;
   fetcher?: Fn | null;
   focusThrottleInterval?: number;
+  isOnline?: () => boolean;
   isPaused?: () => boolean;
+  isVisible?: () => boolean;
   keepPreviousData?: boolean;
+  onError?: (
+    error: Error,
+    key: string,
+    config: Readonly<ResolvedSWRVConfiguration<Data, Error, Fn>>,
+  ) => void;
+  onSuccess?: (
+    data: Data,
+    key: string,
+    config: Readonly<ResolvedSWRVConfiguration<Data, Error, Fn>>,
+  ) => void;
   provider?: () => CacheAdapter<CacheState<any, any>>;
   refreshInterval?: number | ((latestData: Data | undefined) => number);
   refreshWhenHidden?: boolean;
@@ -80,8 +92,20 @@ export interface ResolvedSWRVConfiguration<
   errorRetryInterval: number;
   fallback: Record<string, unknown>;
   focusThrottleInterval: number;
+  isOnline: () => boolean;
   isPaused: () => boolean;
+  isVisible: () => boolean;
   keepPreviousData: boolean;
+  onError: (
+    error: Error,
+    key: string,
+    config: Readonly<ResolvedSWRVConfiguration<Data, Error, Fn>>,
+  ) => void;
+  onSuccess: (
+    data: Data,
+    key: string,
+    config: Readonly<ResolvedSWRVConfiguration<Data, Error, Fn>>,
+  ) => void;
   refreshInterval: number | ((latestData: Data | undefined) => number);
   refreshWhenHidden: boolean;
   refreshWhenOffline: boolean;

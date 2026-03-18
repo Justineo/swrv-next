@@ -10,7 +10,7 @@ export interface SWRVMutationConfiguration<
   Error = unknown,
   ExtraArg = unknown,
   Key extends RawKey = RawKey,
-> extends Omit<SWRVConfiguration<Data, Error>, "fetcher"> {
+> extends Omit<SWRVConfiguration<Data, Error>, "fetcher" | "onError" | "onSuccess"> {
   onError?: (
     error: Error,
     key: Key,

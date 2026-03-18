@@ -35,16 +35,8 @@ function resolveRetryableError<ErrorType = unknown>(
   return typeof option === "function" ? option(error) : option !== false;
 }
 
-function isDocumentVisible() {
-  return typeof document === "undefined" || document.visibilityState !== "hidden";
-}
-
-function isNavigatorOnline() {
-  return typeof navigator === "undefined" || navigator.onLine !== false;
-}
-
-function isActive() {
-  return isDocumentVisible() && isNavigatorOnline();
+function isActive<Data, Error>(config: ResolvedSWRVConfiguration<Data, Error>) {
+  return config.isVisible() && config.isOnline();
 }
 
 function resolveResolvedData<Data>(cachedData: Data | undefined, fallbackData: Data | undefined) {
@@ -208,12 +200,12 @@ export default function useSWRV<Data = unknown, Error = unknown>(
         return;
       }
 
-      if (!configValue.refreshWhenHidden && !isDocumentVisible()) {
+      if (!configValue.refreshWhenHidden && !configValue.isVisible()) {
         scheduleRefresh();
         return;
       }
 
-      if (!configValue.refreshWhenOffline && !isNavigatorOnline()) {
+      if (!configValue.refreshWhenOffline && !configValue.isOnline()) {
         scheduleRefresh();
         return;
       }
@@ -251,12 +243,12 @@ export default function useSWRV<Data = unknown, Error = unknown>(
     }
 
     if (!options.force) {
-      if (!configValue.refreshWhenHidden && !isDocumentVisible()) {
+      if (!configValue.refreshWhenHidden && !configValue.isVisible()) {
         scheduleRefresh();
         return cached?.data;
       }
 
-      if (!configValue.refreshWhenOffline && !isNavigatorOnline()) {
+      if (!configValue.refreshWhenOffline && !configValue.isOnline()) {
         scheduleRefresh();
         return cached?.data;
       }
@@ -332,6 +324,9 @@ export default function useSWRV<Data = unknown, Error = unknown>(
         rawKey,
       );
       applyState();
+      if (!currentFetch) {
+        mergedConfig().onSuccess(resolvedData, serializedKey, mergedConfig());
+      }
       scheduleRefresh();
       return resolvedData;
     } catch (caught) {
@@ -364,12 +359,19 @@ export default function useSWRV<Data = unknown, Error = unknown>(
       );
       applyState();
 
-      const shouldRetry = resolveRetryableError(configValue.shouldRetryOnError, resolvedError);
+      const latestConfig = mergedConfig();
+      if (!currentFetch) {
+        latestConfig.onError(resolvedError, serializedKey, latestConfig);
+      }
+
+      const shouldRetry = resolveRetryableError(latestConfig.shouldRetryOnError, resolvedError);
       const shouldScheduleRetry =
         shouldRetry &&
-        (options.retryCount ?? 0) < configValue.errorRetryCount &&
+        (options.retryCount ?? 0) < latestConfig.errorRetryCount &&
         !disposed &&
-        (!configValue.revalidateOnFocus || !configValue.revalidateOnReconnect || isActive());
+        (!latestConfig.revalidateOnFocus ||
+          !latestConfig.revalidateOnReconnect ||
+          isActive(latestConfig));
 
       if (shouldScheduleRetry) {
         clearRetryTimer();
@@ -378,7 +380,7 @@ export default function useSWRV<Data = unknown, Error = unknown>(
             dedupe: true,
             retryCount: (options.retryCount ?? 0) + 1,
           });
-        }, configValue.errorRetryInterval);
+        }, latestConfig.errorRetryInterval);
       }
 
       if (options.throwOnError) {
@@ -398,14 +400,14 @@ export default function useSWRV<Data = unknown, Error = unknown>(
       }
 
       const now = Date.now();
-      if (!isActive() || now <= nextFocusRevalidatedAt) {
+      if (!isActive(configValue) || now <= nextFocusRevalidatedAt) {
         return undefined;
       }
 
       nextFocusRevalidatedAt = now + configValue.focusThrottleInterval;
     }
 
-    if (event === "reconnect" && (!configValue.revalidateOnReconnect || !isActive())) {
+    if (event === "reconnect" && (!configValue.revalidateOnReconnect || !isActive(configValue))) {
       return undefined;
     }
 

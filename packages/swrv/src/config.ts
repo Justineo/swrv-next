@@ -25,6 +25,10 @@ import type {
 } from "./_internal/types";
 
 const defaultCompare: Compare<unknown> = (left, right) => Object.is(left, right);
+const noop = () => {};
+const defaultIsOnline = () => typeof navigator === "undefined" || navigator.onLine !== false;
+const defaultIsVisible = () =>
+  typeof document === "undefined" || document.visibilityState !== "hidden";
 
 const DEFAULT_CONFIGURATION: ResolvedSWRVConfiguration<any, any> = {
   compare: defaultCompare,
@@ -33,8 +37,12 @@ const DEFAULT_CONFIGURATION: ResolvedSWRVConfiguration<any, any> = {
   errorRetryInterval: 5000,
   fallback: {},
   focusThrottleInterval: 5000,
+  isOnline: defaultIsOnline,
   isPaused: () => false,
+  isVisible: defaultIsVisible,
   keepPreviousData: false,
+  onError: noop,
+  onSuccess: noop,
   refreshInterval: 0,
   refreshWhenHidden: false,
   refreshWhenOffline: false,
@@ -90,7 +98,11 @@ export function mergeConfiguration<Data = unknown, Error = unknown>(
     base.fallback && override?.fallback
       ? { ...base.fallback, ...override.fallback }
       : (override?.fallback ?? base.fallback ?? {});
+  merged.isOnline = override?.isOnline ?? base.isOnline ?? defaultIsOnline;
   merged.isPaused = override?.isPaused ?? base.isPaused ?? (() => false);
+  merged.isVisible = override?.isVisible ?? base.isVisible ?? defaultIsVisible;
+  merged.onError = override?.onError ?? base.onError ?? noop;
+  merged.onSuccess = override?.onSuccess ?? base.onSuccess ?? noop;
   return merged;
 }
 

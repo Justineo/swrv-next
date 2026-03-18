@@ -1057,6 +1057,120 @@ describe("swrv", () => {
     }
   });
 
+  it("respects config.isVisible when handling focus revalidation", async () => {
+    let value = 0;
+    let visible = true;
+    const key = `focus-visible-${Date.now()}`;
+    const state = runComposable(() =>
+      useSWRV<number>(key, async () => value++, {
+        dedupingInterval: 0,
+        focusThrottleInterval: 0,
+        isVisible: () => visible,
+      }),
+    );
+
+    await settle();
+    expect(state.data.value).toBe(0);
+
+    visible = false;
+    await waitForMacrotask();
+    window.dispatchEvent(new Event("focus"));
+    await settle();
+
+    expect(state.data.value).toBe(0);
+
+    visible = true;
+    await waitForMacrotask();
+    window.dispatchEvent(new Event("focus"));
+    await settle();
+
+    expect(state.data.value).toBe(1);
+  });
+
+  it("respects config.isOnline when handling reconnect revalidation", async () => {
+    let value = 0;
+    let online = true;
+    const key = `reconnect-online-${Date.now()}`;
+    const state = runComposable(() =>
+      useSWRV<number>(key, async () => value++, {
+        dedupingInterval: 0,
+        isOnline: () => online,
+        revalidateOnMount: false,
+      }),
+    );
+
+    await state.mutate();
+    await settle();
+    expect(state.data.value).toBe(0);
+
+    online = false;
+    await waitForMacrotask();
+    window.dispatchEvent(new Event("online"));
+    await settle();
+
+    expect(state.data.value).toBe(0);
+
+    online = true;
+    await waitForMacrotask();
+    window.dispatchEvent(new Event("online"));
+    await settle();
+
+    expect(state.data.value).toBe(1);
+  });
+
+  it("calls onSuccess only for the original deduped request", async () => {
+    const key = `success-callback-${Date.now()}`;
+    const onSuccess = vi.fn();
+    const fetcher = vi.fn(async () => "data");
+
+    runComposable(() =>
+      useSWRV<string>(key, fetcher, {
+        onSuccess,
+      }),
+    );
+    runComposable(() =>
+      useSWRV<string>(key, fetcher, {
+        onSuccess,
+      }),
+    );
+
+    await settle();
+
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(onSuccess).toHaveBeenCalledTimes(1);
+    expect(onSuccess).toHaveBeenCalledWith("data", key, expect.any(Object));
+  });
+
+  it("calls onError when the request fails", async () => {
+    const key = `error-callback-${Date.now()}`;
+    const onError = vi.fn();
+    const error = new Error("boom");
+    let rejectValue!: (error: Error) => void;
+
+    const state = runComposable(() =>
+      useSWRV<string>(
+        key,
+        () =>
+          new Promise<string>((_resolve, reject) => {
+            rejectValue = reject;
+          }),
+        {
+          dedupingInterval: 0,
+          onError,
+          shouldRetryOnError: false,
+        },
+      ),
+    );
+
+    await flush();
+    rejectValue(error);
+    await settle();
+
+    expect(state.error.value).toBe(error);
+    expect(onError).toHaveBeenCalledTimes(1);
+    expect(onError).toHaveBeenCalledWith(error, key, expect.any(Object));
+  });
+
   it("retries failed requests after errorRetryInterval", async () => {
     vi.useFakeTimers();
     const key = `retry-${Date.now()}`;
