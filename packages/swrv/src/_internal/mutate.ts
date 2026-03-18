@@ -36,18 +36,22 @@ function shouldRevalidate<Data>(
 }
 
 export function createScopedMutator(client: SWRVClient): ScopedMutator {
-  return async function scopedMutate<Data = unknown>(
+  return async function scopedMutate<Data = unknown, MutationData = Data>(
     keyOrFilter: RawKey | KeyFilter,
-    data?: Data | Promise<Data | undefined> | MutatorCallback<Data>,
-    options?: boolean | MutatorOptions<Data>,
+    data?: MutationData | Promise<MutationData | undefined> | MutatorCallback<Data, MutationData>,
+    options?: boolean | MutatorOptions<Data, MutationData>,
   ) {
     if (isFunction(keyOrFilter)) {
-      const results: Array<Data | undefined> = [];
+      const results: Array<MutationData | undefined> = [];
 
       for (const key of client.cache.keys()) {
         const cached = client.getState(key);
         if (cached?._k && (keyOrFilter as KeyFilter)(cached._k)) {
-          results.push((await scopedMutate(cached._k, data, options)) as Data | undefined);
+          results.push(
+            (await scopedMutate<Data, MutationData>(cached._k, data, options)) as
+              | MutationData
+              | undefined,
+          );
         }
       }
 
@@ -113,20 +117,20 @@ export function createScopedMutator(client: SWRVClient): ScopedMutator {
       );
     }
 
-    let result = data as Data | Promise<Data | undefined> | undefined;
+    let result = data as MutationData | Promise<MutationData | undefined> | undefined;
     let error: unknown;
     let failed = false;
 
     if (isFunction(result)) {
       try {
-        result = (result as MutatorCallback<Data>)(committedData);
+        result = (result as MutatorCallback<Data, MutationData>)(committedData);
       } catch (caught) {
         error = caught;
         failed = true;
       }
     }
 
-    if (isPromiseLike<Data | undefined>(result)) {
+    if (isPromiseLike<MutationData | undefined>(result)) {
       try {
         result = await result;
       } catch (caught) {
@@ -138,7 +142,7 @@ export function createScopedMutator(client: SWRVClient): ScopedMutator {
         if (failed && normalizedOptions.throwOnError) {
           throw error;
         }
-        return result as Data | undefined;
+        return result as MutationData | undefined;
       }
 
       if (
@@ -164,7 +168,7 @@ export function createScopedMutator(client: SWRVClient): ScopedMutator {
     if (!failed && normalizedOptions.populateCache !== false) {
       const nextData =
         typeof normalizedOptions.populateCache === "function"
-          ? normalizedOptions.populateCache(result as Data, committedData)
+          ? normalizedOptions.populateCache(result as MutationData, committedData)
           : (result as Data | undefined);
 
       client.setState<Data>(
@@ -204,6 +208,6 @@ export function createScopedMutator(client: SWRVClient): ScopedMutator {
       return undefined;
     }
 
-    return result as Data | undefined;
-  };
+    return result as MutationData | undefined;
+  } as ScopedMutator;
 }

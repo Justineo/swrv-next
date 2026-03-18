@@ -9,6 +9,7 @@ import type {
   BareFetcher,
   FetcherResponse,
   KeySource,
+  MutatorCallback,
   MutatorOptions,
   RawKey,
   RevalidateEventOptions,
@@ -563,16 +564,21 @@ function useSWRVHandler<Data = unknown, Error = unknown>(
     error,
     isLoading,
     isValidating,
-    mutate: async function mutate(value, options) {
+    mutate: async function mutate<MutationData = Data>(
+      value?:
+        | MutationData
+        | Promise<MutationData | undefined>
+        | MutatorCallback<Data, MutationData>,
+      options?: boolean | MutatorOptions<Data, MutationData>,
+    ) {
       if (arguments.length === 0) {
         return (await scopedMutate<Data>(currentKey.value.rawKey)) as Data | undefined;
       }
 
-      return (await scopedMutate<Data>(
-        currentKey.value.rawKey,
-        value as Data | Promise<Data | undefined> | undefined,
-        options as boolean | MutatorOptions<Data>,
-      )) as Data | undefined;
+      return (await scopedMutate<Data, MutationData>(currentKey.value.rawKey, value, options)) as
+        | Data
+        | MutationData
+        | undefined;
     },
   } as SWRVResponse<Data, Error>;
 }

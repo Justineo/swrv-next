@@ -1,6 +1,6 @@
 import { ref } from "vue";
 
-import useSWRV, { useSWRVImmutable } from "../src";
+import useSWRV, { mutate, useSWRVImmutable } from "../src";
 import useSWRVInfinite, { unstable_serialize as unstableSerializeInfinite } from "../src/infinite";
 import useSWRVMutation from "../src/mutation";
 import useSWRVSubscription from "../src/subscription";
@@ -42,6 +42,23 @@ const middlewareResponse = useSWRV<string, never, string>(
   "middleware",
   async (key: string) => key,
   middlewareConfig,
+);
+
+const boundMutateResponse = useSWRV<string[]>("bound-mutate");
+const boundMutateResult = boundMutateResponse.mutate<string>(Promise.resolve("Cherry"), {
+  populateCache: (result, currentData) => [...(currentData ?? []), result],
+  revalidate: false,
+});
+
+const scopedMutateResult = mutate<string[], string>("scoped-mutate", Promise.resolve("Cherry"), {
+  populateCache: (result, currentData) => [...(currentData ?? []), result],
+  revalidate: false,
+});
+
+const filteredMutateResult = mutate<string, string>(
+  (key) => key === "filtered-mutate",
+  Promise.resolve("updated"),
+  { revalidate: false },
 );
 
 const infiniteResponse = useSWRVInfinite<string>(
@@ -109,6 +126,13 @@ const typeAssertions = {
   refData: true as Expect<Equal<typeof refResponse.data.value, string | undefined>>,
   immutableData: true as Expect<Equal<typeof immutableResponse.data.value, string | undefined>>,
   middlewareData: true as Expect<Equal<typeof middlewareResponse.data.value, string | undefined>>,
+  boundMutateResult: true as Expect<
+    Equal<Awaited<typeof boundMutateResult>, string[] | string | undefined>
+  >,
+  scopedMutateResult: true as Expect<Equal<Awaited<typeof scopedMutateResult>, string | undefined>>,
+  filteredMutateResult: true as Expect<
+    Equal<Awaited<typeof filteredMutateResult>, Array<string | undefined>>
+  >,
   infiniteData: true as Expect<Equal<typeof infiniteResponse.data.value, string[] | undefined>>,
   infiniteSize: true as Expect<Equal<typeof infiniteResponse.size.value, number | undefined>>,
   infiniteMutate: true as Expect<Equal<Awaited<typeof infiniteMutate>, string[] | undefined>>,
@@ -130,6 +154,10 @@ void tupleResponse;
 void fallbackConfig;
 void middlewareConfig;
 void middlewareResponse;
+void boundMutateResponse;
+void boundMutateResult;
+void scopedMutateResult;
+void filteredMutateResult;
 void refResponse;
 void immutableResponse;
 void infiniteResponse;

@@ -36,6 +36,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - config-level `onErrorRetry`, `onLoadingSlow`, and `onDiscarded` now exist for retry scheduling, slow-request signaling, and stale-response races
   - the request path now holds onto the exact in-flight promise instead of re-reading it through the dedupe window, which fixes `dedupingInterval: 0` flakiness
   - request and mutation ordering now use high-resolution timestamps, which avoids false stale-response discards when revalidation starts immediately after a mutation
+  - base and global mutate coverage now explicitly includes `rollbackOnError: false`, committed-snapshot `populateCache` transforms, function-style `revalidate`, and filter-based function revalidation
 - The infinite and mutation helpers have also moved closer to SWR:
   - `swrv/infinite` now exposes `unstable_serialize`, resolves page keys safely, supports cursor-style sequential loading, and treats `setSize()` as a page-oriented operation instead of a raw aggregate refresh
   - `swrv/infinite` now revalidates the first page while loading new pages and lets no-arg `mutate()` revalidate all loaded pages
@@ -49,6 +50,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
 - Public typing and package-shape coverage are now materially stronger:
   - `useSWRV` and `useSWRVImmutable` now infer array-key fetcher arguments more precisely
   - public compile-time coverage exists for root and subpath APIs
+  - bound and scoped mutators now expose the mutation-result type instead of collapsing everything to cached-data type, and mutator callbacks can now model different output payloads from their input snapshot
   - the package export map now points at the emitted `.d.mts` declaration files and is checked by a package-export smoke test
 - The docs package now builds with VitePress and includes a first guide, API overview, and migration page.
 - The docs package now also includes examples, a current-scope page, and an explicit SSR guide built around provider-scoped clients plus config-level fallback data.

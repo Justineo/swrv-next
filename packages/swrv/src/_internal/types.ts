@@ -159,9 +159,9 @@ export interface RevalidateOptions {
   throwOnError?: boolean;
 }
 
-export type MutatorCallback<Data = unknown> = (
+export type MutatorCallback<Data = unknown, Result = Data> = (
   currentData: Data | undefined,
-) => Data | Promise<Data | undefined> | undefined;
+) => Result | Promise<Result | undefined> | undefined;
 
 export interface MutatorOptions<Data = unknown, Result = Data> {
   optimisticData?:
@@ -175,16 +175,23 @@ export interface MutatorOptions<Data = unknown, Result = Data> {
 
 export type KeyFilter = (key?: RawKey) => boolean;
 
-export type ScopedMutator = <Data = unknown>(
-  key: RawKey | KeyFilter,
-  data?: Data | Promise<Data | undefined> | MutatorCallback<Data>,
-  options?: boolean | MutatorOptions<Data>,
-) => Promise<Data | undefined | Array<Data | undefined>>;
+export interface ScopedMutator {
+  <Data = unknown, MutationData = Data>(
+    key: KeyFilter,
+    data?: MutationData | Promise<MutationData | undefined> | MutatorCallback<Data, MutationData>,
+    options?: boolean | MutatorOptions<Data, MutationData>,
+  ): Promise<Array<MutationData | undefined>>;
+  <Data = unknown, MutationData = Data>(
+    key: RawKey,
+    data?: MutationData | Promise<MutationData | undefined> | MutatorCallback<Data, MutationData>,
+    options?: boolean | MutatorOptions<Data, MutationData>,
+  ): Promise<MutationData | undefined>;
+}
 
-export type BoundMutator<Data = unknown> = <Result = Data>(
-  data?: Result | Promise<Result | undefined> | MutatorCallback<Result>,
-  options?: boolean | MutatorOptions<Data, Result>,
-) => Promise<Data | undefined>;
+export type BoundMutator<Data = unknown> = <MutationData = Data>(
+  data?: MutationData | Promise<MutationData | undefined> | MutatorCallback<Data, MutationData>,
+  options?: boolean | MutatorOptions<Data, MutationData>,
+) => Promise<Data | MutationData | undefined>;
 
 export interface SWRVResponse<Data = unknown, Error = unknown> {
   data: Ref<Data | undefined>;

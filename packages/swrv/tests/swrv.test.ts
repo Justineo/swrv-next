@@ -232,6 +232,154 @@ describe("swrv", () => {
     expect(state.data.value).toBe("server");
   });
 
+  it("does not rollback optimistic bound mutations when rollbackOnError is false", async () => {
+    const key = `rollback-disabled-${Date.now()}`;
+    let value = 0;
+
+    const state = runComposable(() =>
+      useSWRV<number | string>(key, async () => value++, {
+        dedupingInterval: 0,
+      }),
+    );
+
+    await settle();
+    expect(state.data.value).toBe(0);
+
+    let rejectMutation!: (reason?: unknown) => void;
+    const mutationPromise = state.mutate(
+      new Promise<string>((_resolve, reject) => {
+        rejectMutation = reject;
+      }),
+      {
+        optimisticData: "optimistic",
+        rollbackOnError: false,
+      },
+    );
+
+    await flush();
+    expect(state.data.value).toBe("optimistic");
+
+    rejectMutation(new Error("boom"));
+    await expect(mutationPromise).rejects.toThrow("boom");
+    await settle();
+
+    expect(state.data.value).toBe(1);
+  });
+
+  it("passes the committed snapshot to bound mutate populateCache transforms", async () => {
+    const key = `bound-populate-transform-${Date.now()}`;
+    const serverData = ["Apple", "Banana"];
+
+    const state = runComposable(() =>
+      useSWRV<string[]>(key, async () => [...serverData], {
+        dedupingInterval: 0,
+      }),
+    );
+
+    await settle();
+    expect(state.data.value).toEqual(["Apple", "Banana"]);
+
+    let resolveMutation!: (value: string) => void;
+    const mutationPromise = state.mutate(
+      new Promise<string>((resolve) => {
+        resolveMutation = resolve;
+      }),
+      {
+        optimisticData: (currentData) => [...(currentData ?? []), "cherry (optimistic)"],
+        populateCache: (result, currentData) => [...(currentData ?? []), `${result} (res)`],
+        revalidate: false,
+      },
+    );
+
+    await flush();
+    expect(state.data.value).toEqual(["Apple", "Banana", "cherry (optimistic)"]);
+
+    resolveMutation("Cherry");
+    await expect(mutationPromise).resolves.toBe("Cherry");
+    await settle();
+
+    expect(state.data.value).toEqual(["Apple", "Banana", "Cherry (res)"]);
+  });
+
+  it("supports function revalidate in bound mutate options", async () => {
+    const key = `bound-revalidate-fn-${Date.now()}`;
+    let value = 0;
+    const fetcher = vi.fn(async () => value++);
+
+    const state = runComposable(() =>
+      useSWRV<number>(key, fetcher, {
+        dedupingInterval: 0,
+      }),
+    );
+
+    await settle();
+    expect(state.data.value).toBe(0);
+    expect(fetcher).toHaveBeenCalledTimes(1);
+
+    const revalidate = (data: number | undefined, currentKey: unknown) =>
+      currentKey === key && data === 200;
+
+    await state.mutate(100, { revalidate });
+    await settle();
+
+    expect(state.data.value).toBe(100);
+    expect(fetcher).toHaveBeenCalledTimes(1);
+
+    await state.mutate(200, { revalidate });
+    await settle();
+
+    expect(state.data.value).toBe(1);
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+
+  it("supports function revalidate with mutate key filters", async () => {
+    const key1 = `filter-revalidate-1-${Date.now()}`;
+    const key2 = `filter-revalidate-2-${Date.now()}`;
+    const key3 = `filter-revalidate-3-${Date.now()}`;
+
+    let mockData = {
+      [key1]: "page1",
+      [key2]: "page2",
+      [key3]: "page3",
+    };
+
+    const state1 = runComposable(() =>
+      useSWRV<string>(key1, async () => mockData[key1], {
+        dedupingInterval: 0,
+      }),
+    );
+    const state2 = runComposable(() =>
+      useSWRV<string>(key2, async () => mockData[key2], {
+        dedupingInterval: 0,
+      }),
+    );
+    const state3 = runComposable(() =>
+      useSWRV<string>(key3, async () => mockData[key3], {
+        dedupingInterval: 0,
+      }),
+    );
+
+    await settle();
+    expect(state1.data.value).toBe("page1");
+    expect(state2.data.value).toBe("page2");
+    expect(state3.data.value).toBe("page3");
+
+    mockData = {
+      [key1]: "<page1>",
+      [key2]: "<page2>",
+      [key3]: "<page3>",
+    };
+
+    await mutate((currentKey) => currentKey !== key1, "updated", {
+      revalidate: (data, currentKey) => data === "updated" && currentKey === key3,
+    });
+    await settle();
+
+    expect(state1.data.value).toBe("page1");
+    expect(state2.data.value).toBe("updated");
+    expect(state3.data.value).toBe("<page3>");
+  });
+
   it("loads and expands infinite pages", async () => {
     const state = runComposable(() =>
       useSWRVInfinite<string>(
