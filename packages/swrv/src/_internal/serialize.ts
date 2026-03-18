@@ -2,9 +2,9 @@ import { isRef, unref } from "vue";
 
 import { stableHash } from "./hash";
 
-import type { BareFetcher, RawKey } from "./types";
+import type { BareFetcher, KeySource, RawKey } from "./types";
 
-export function resolveKeyValue<Key extends RawKey>(key: Key | (() => Key)): Key {
+export function resolveKeyValue<Key extends RawKey>(key: KeySource<Key>): Key {
   if (typeof key === "function") {
     try {
       return (key as () => Key)();
@@ -20,7 +20,7 @@ export function resolveKeyValue<Key extends RawKey>(key: Key | (() => Key)): Key
   return key;
 }
 
-export function serialize(key: RawKey | (() => RawKey)): [string, RawKey] {
+export function serialize<Key extends RawKey>(key: KeySource<Key>): [string, Key] {
   const resolvedKey = resolveKeyValue(key);
 
   const args = resolvedKey;

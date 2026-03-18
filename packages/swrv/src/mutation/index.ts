@@ -3,48 +3,59 @@ import { ref } from "vue";
 import { useSWRVConfig } from "../config";
 import { resolveKeyValue, serialize } from "../_internal/serialize";
 
-import type { RawKey, SWRVConfiguration, SWRVResponse } from "../_internal/types";
+import type { KeySource, RawKey, SWRVConfiguration, SWRVResponse } from "../_internal/types";
 
 export interface SWRVMutationConfiguration<
   Data = unknown,
   Error = unknown,
   ExtraArg = unknown,
+  Key extends RawKey = RawKey,
 > extends Omit<SWRVConfiguration<Data, Error>, "fetcher"> {
   onError?: (
     error: Error,
-    key: RawKey,
-    config: SWRVMutationConfiguration<Data, Error, ExtraArg>,
+    key: Key,
+    config: SWRVMutationConfiguration<Data, Error, ExtraArg, Key>,
   ) => void;
   onSuccess?: (
     data: Data,
-    key: RawKey,
-    config: SWRVMutationConfiguration<Data, Error, ExtraArg>,
+    key: Key,
+    config: SWRVMutationConfiguration<Data, Error, ExtraArg, Key>,
   ) => void;
   populateCache?: boolean | ((result: Data, currentData: Data | undefined) => Data);
   throwOnError?: boolean;
 }
 
-export type MutationFetcher<Data = unknown, ExtraArg = unknown> = (
-  key: RawKey,
+export type MutationFetcher<Data = unknown, ExtraArg = unknown, Key extends RawKey = RawKey> = (
+  key: Key,
   options: { arg: ExtraArg },
 ) => Data | Promise<Data>;
 
-export interface SWRVMutationResponse<Data = unknown, Error = unknown, ExtraArg = unknown> {
+export interface SWRVMutationResponse<
+  Data = unknown,
+  Error = unknown,
+  ExtraArg = unknown,
+  Key extends RawKey = RawKey,
+> {
   data: SWRVResponse<Data, Error>["data"];
   error: SWRVResponse<Data, Error>["error"];
   isMutating: SWRVResponse<boolean, never>["data"];
   reset: () => void;
   trigger: (
     arg: ExtraArg,
-    options?: SWRVMutationConfiguration<Data, Error, ExtraArg>,
+    options?: SWRVMutationConfiguration<Data, Error, ExtraArg, Key>,
   ) => Promise<Data | undefined>;
 }
 
-export default function useSWRVMutation<Data = unknown, Error = unknown, ExtraArg = unknown>(
-  key: RawKey | (() => RawKey),
-  fetcher: MutationFetcher<Data, ExtraArg> | null,
-  config: SWRVMutationConfiguration<Data, Error, ExtraArg> = {},
-): SWRVMutationResponse<Data, Error, ExtraArg> {
+export default function useSWRVMutation<
+  Data = unknown,
+  Error = unknown,
+  ExtraArg = unknown,
+  Key extends RawKey = RawKey,
+>(
+  key: KeySource<Key>,
+  fetcher: MutationFetcher<Data, ExtraArg, Key> | null,
+  config: SWRVMutationConfiguration<Data, Error, ExtraArg, Key> = {},
+): SWRVMutationResponse<Data, Error, ExtraArg, Key> {
   const { mutate } = useSWRVConfig();
 
   const data = ref<Data>();
@@ -55,9 +66,9 @@ export default function useSWRVMutation<Data = unknown, Error = unknown, ExtraAr
 
   const trigger = async (
     arg: ExtraArg,
-    options: SWRVMutationConfiguration<Data, Error, ExtraArg> = {},
+    options: SWRVMutationConfiguration<Data, Error, ExtraArg, Key> = {},
   ) => {
-    const resolvedKey = resolveKeyValue(key as RawKey | (() => RawKey));
+    const resolvedKey = resolveKeyValue(key as KeySource<Key>);
     const [serializedKey] = serialize(resolvedKey);
     if (!fetcher) {
       throw new Error("Can’t trigger the mutation: missing fetcher.");

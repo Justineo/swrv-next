@@ -30,3 +30,16 @@
   - fixed scoped `mutate()` to return the actual mutation result even when `populateCache` is disabled
 - Expanded the package tests with SWR-style checks for cursor pagination, infinite page growth, infinite mutate revalidation, safe invalid keys, mutation reset, and mutation race handling.
 - Revalidated the workspace with `vp run ready`.
+- Hardened `swrv/subscription`:
+  - aligned error handling so last good data remains visible when the subscription emits an error
+  - passed original keys through to subscription handlers
+  - added deduplication and isolation coverage for shared cache boundaries
+  - enforced the unsubscribe-function contract
+- Strengthened public type and package coverage:
+  - improved array-key fetcher inference for `useSWRV` and `useSWRVImmutable`
+  - added a compile-time public API coverage file for root and subpath exports
+  - fixed the package manifest to reference emitted `.d.mts` declarations
+  - added a package-export smoke test so export-map regressions fail in CI
+- Revalidated the workspace with `vp run ready`.
+- Phase 4 advanced APIs is now complete for the current roadmap cut.
+- Active work has moved into Phase 5 hardening and Phase 6 publishability/docs cleanup.

@@ -1,6 +1,6 @@
 # SWRV Next Design Snapshot
 
-Status: Baseline plus core, infinite, and mutation hardening passes
+Status: Baseline plus advanced-api completion and type/export hardening
 Last updated: 2026-03-18
 
 ## Mission
@@ -34,6 +34,14 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - `swrv/infinite` now revalidates the first page while loading new pages and lets no-arg `mutate()` revalidate all loaded pages
   - `swrv/mutation` now guards local state against stale trigger results after `reset()` or a newer trigger
   - scoped `mutate()` now returns the actual mutation result even when `populateCache` is disabled
+- The subscription helper has now received its first real parity pass:
+  - `swrv/subscription` preserves fallback and last good data across subscription errors
+  - it passes original keys through to handlers, deduplicates subscriptions per cache boundary, and enforces disposer return values
+  - it no longer conflicts with normal `useSWRV` state for the same logical key
+- Public typing and package-shape coverage are now materially stronger:
+  - `useSWRV` and `useSWRVImmutable` now infer array-key fetcher arguments more precisely
+  - public compile-time coverage exists for root and subpath APIs
+  - the package export map now points at the emitted `.d.mts` declaration files and is checked by a package-export smoke test
 - The docs package now builds with VitePress and includes a first guide, API overview, and migration page.
 - Repository maintenance scaffolding now exists for CI, Renovate, and release publishing.
 - The main reference materials for the rebuild remain:
@@ -69,6 +77,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
 - Supported Vue floor and supported TypeScript floor
 - Whether TTL/serverTTL remain first-class core APIs, move behind an extension layer, or become compatibility utilities
 - The exact SSR/Nuxt support contract and hydration story
-- How far the current `infinite`, `mutation`, and `subscription` implementations need to evolve to reach the desired SWR parity line
+- How far the current `infinite`, `mutation`, and `subscription` implementations still need to evolve to reach the desired SWR parity line
 - Whether the current infinite revalidation policy is enough, or if page-selective revalidation options need to get even closer to SWR's `revalidate` callback behavior
+- How much additional type-level precision is worth adding beyond the current public overloads before the API surface is frozen
 - Whether to replace any VitePress build-path warnings once Vite+ or VitePress upstream behavior changes

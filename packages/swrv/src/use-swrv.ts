@@ -6,6 +6,8 @@ import { callFetcher, resolveKeyValue, serialize } from "./_internal/serialize";
 
 import type {
   BareFetcher,
+  FetcherResponse,
+  KeySource,
   MutatorOptions,
   RawKey,
   RevalidateEventOptions,
@@ -19,6 +21,8 @@ type CurrentKeyState = {
   rawKey: RawKey;
   serializedKey: string;
 };
+
+type NonArrayKey = Exclude<RawKey, readonly unknown[] | null | undefined | false>;
 
 function hasDefinedValue<Data>(value: Data | undefined): value is Data {
   return value !== undefined;
@@ -68,16 +72,34 @@ export function unstable_serialize(key: RawKey | (() => RawKey)) {
   return serialize(key)[0];
 }
 
-export default function useSWRV<Data = unknown, Error = unknown>(
-  key: RawKey | (() => RawKey),
+export default function useSWRV<Data = unknown, Error = unknown, Key extends RawKey = RawKey>(
+  key: KeySource<Key>,
+): SWRVResponse<Data, Error>;
+export default function useSWRV<
+  Data = unknown,
+  Error = unknown,
+  Key extends readonly unknown[] = readonly unknown[],
+>(
+  key: KeySource<Key>,
+  fetcher: ((...args: Key) => FetcherResponse<Data>) | null | undefined,
+  config?: SWRVConfiguration<Data, Error>,
+): SWRVResponse<Data, Error>;
+export default function useSWRV<
+  Data = unknown,
+  Error = unknown,
+  Key extends NonArrayKey = NonArrayKey,
+>(
+  key: KeySource<Key>,
+  fetcher: ((arg: Key) => FetcherResponse<Data>) | null | undefined,
+  config?: SWRVConfiguration<Data, Error>,
 ): SWRVResponse<Data, Error>;
 export default function useSWRV<Data = unknown, Error = unknown>(
-  key: RawKey | (() => RawKey),
+  key: KeySource<RawKey>,
   fetcher: BareFetcher<Data> | null | undefined,
   config?: SWRVConfiguration<Data, Error>,
 ): SWRVResponse<Data, Error>;
 export default function useSWRV<Data = unknown, Error = unknown>(
-  key: RawKey | (() => RawKey),
+  key: KeySource<RawKey>,
   fetcher?: BareFetcher<Data> | null,
   config?: SWRVConfiguration<Data, Error>,
 ): SWRVResponse<Data, Error> {

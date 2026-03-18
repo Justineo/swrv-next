@@ -477,11 +477,158 @@ describe("swrv", () => {
     expect(disposed).toBe(true);
   });
 
+  it("supports fallback data and preserves data when subscription emits an error", async () => {
+    let nextValue!: (error?: Error | null, data?: string) => void;
+
+    const subscription = runComposable(() =>
+      useSWRVSubscription<string, Error>(
+        `subscription-fallback-${Date.now()}`,
+        (_resolvedKey, { next }) => {
+          nextValue = next;
+          return () => {};
+        },
+        {
+          fallbackData: "fallback",
+        },
+      ),
+    );
+
+    await settle();
+    expect(subscription.data.value).toBe("fallback");
+    expect(subscription.error.value).toBeUndefined();
+
+    nextValue(undefined, "live");
+    await settle();
+    expect(subscription.data.value).toBe("live");
+    expect(subscription.error.value).toBeUndefined();
+
+    nextValue(new Error("boom"));
+    await settle();
+    expect(subscription.data.value).toBe("live");
+    expect(subscription.error.value?.message).toBe("boom");
+
+    nextValue(undefined, "recovered");
+    await settle();
+    expect(subscription.data.value).toBe("recovered");
+    expect(subscription.error.value).toBeUndefined();
+  });
+
+  it("passes the original key shape to subscription handlers", async () => {
+    const originalKeys: Array<readonly string[]> = [];
+    const swrKey = `subscription-key-${Date.now()}`;
+    const key = [swrKey] as const;
+
+    runComposable(() =>
+      useSWRVSubscription<string, Error>(
+        () => key,
+        (resolvedKey, { next }) => {
+          const tupleKey = resolvedKey as typeof key;
+          originalKeys.push(tupleKey);
+          next(undefined, `${tupleKey[0]}:ok`);
+          return () => {};
+        },
+      ),
+    );
+
+    await settle();
+
+    expect(originalKeys).toEqual([[swrKey]]);
+  });
+
+  it("deduplicates subscriptions within the same cache boundary", async () => {
+    let subscriptionCount = 0;
+    const key = `subscription-dedupe-${Date.now()}`;
+
+    runComposable(() => {
+      useSWRVSubscription(key, (_key, { next }) => {
+        subscriptionCount += 1;
+        next(undefined, "one");
+        return () => {};
+      });
+      useSWRVSubscription(key, (_key, { next }) => {
+        next(undefined, "two");
+        return () => {};
+      });
+      useSWRVSubscription(key, (_key, { next }) => {
+        next(undefined, "three");
+        return () => {};
+      });
+    });
+
+    await settle();
+
+    expect(subscriptionCount).toBe(1);
+  });
+
+  it("supports updating subscription keys without subscribing to undefined", async () => {
+    const swrKey = `subscription-update-${Date.now()}`;
+    const seenKeys: string[] = [];
+    const key = ref<string | undefined>(undefined);
+
+    const subscription = runComposable(() =>
+      useSWRVSubscription<string, Error>(
+        () => key.value,
+        (resolvedKey, { next }) => {
+          seenKeys.push(resolvedKey as string);
+          next(undefined, resolvedKey as string);
+          return () => {};
+        },
+        {
+          fallbackData: "fallback",
+        },
+      ),
+    );
+
+    await settle();
+    expect(subscription.data.value).toBe("fallback");
+    expect(seenKeys).toEqual([]);
+
+    key.value = swrKey;
+    await settle();
+
+    expect(subscription.data.value).toBe(swrKey);
+    expect(seenKeys).toEqual([swrKey]);
+  });
+
+  it("does not conflict with normal useSWRV state for the same logical key", async () => {
+    const key = `subscription-isolation-${Date.now()}`;
+    let nextValue!: (error?: Error | null, data?: string) => void;
+
+    const swrv = runComposable(() => useSWRV(key, async () => "swr"));
+    const subscription = runComposable(() =>
+      useSWRVSubscription<string, Error>(key, (_resolvedKey, { next }) => {
+        nextValue = next;
+        return () => {};
+      }),
+    );
+
+    await settle();
+    expect(swrv.data.value).toBe("swr");
+
+    nextValue(undefined, "sub");
+    await settle();
+
+    expect(subscription.data.value).toBe("sub");
+    expect(swrv.data.value).toBe("swr");
+  });
+
+  it("requires subscriptions to return a dispose function", () => {
+    expect(() =>
+      runComposable(() =>
+        useSWRVSubscription<string, Error>(
+          `subscription-dispose-${Date.now()}`,
+          () => "no-dispose" as unknown as () => void,
+        ),
+      ),
+    ).toThrow("must return a function");
+  });
+
   it("does not fetch on the initial mount when revalidateOnMount is false", async () => {
     const fetcher = vi.fn(async () => "remote");
+    const key = `mount-disabled-${Date.now()}`;
 
     const state = runComposable(() =>
-      useSWRV<string>("mount-disabled", fetcher, {
+      useSWRV<string>(key, fetcher, {
         revalidateOnMount: false,
       }),
     );
@@ -517,9 +664,10 @@ describe("swrv", () => {
 
   it("keeps fallback data idle when revalidation is disabled", async () => {
     const fetcher = vi.fn(async () => "remote");
+    const key = `fallback-idle-${Date.now()}`;
 
     const state = runComposable(() =>
-      useSWRV<string>("fallback-idle", fetcher, {
+      useSWRV<string>(key, fetcher, {
         fallbackData: "fallback",
         revalidateIfStale: false,
         revalidateOnFocus: false,
@@ -537,8 +685,9 @@ describe("swrv", () => {
 
   it("revalidates on focus by default", async () => {
     let value = 0;
+    const key = `focus-default-${Date.now()}`;
     const state = runComposable(() =>
-      useSWRV<number>("focus-default", async () => value++, {
+      useSWRV<number>(key, async () => value++, {
         dedupingInterval: 0,
         focusThrottleInterval: 0,
       }),
@@ -556,8 +705,9 @@ describe("swrv", () => {
 
   it("does not revalidate on focus when the option is disabled", async () => {
     let value = 0;
+    const key = `focus-disabled-${Date.now()}`;
     const state = runComposable(() =>
-      useSWRV<number>("focus-disabled", async () => value++, {
+      useSWRV<number>(key, async () => value++, {
         dedupingInterval: 0,
         revalidateOnFocus: false,
       }),
@@ -577,8 +727,9 @@ describe("swrv", () => {
     vi.useFakeTimers();
 
     let value = 0;
+    const key = `focus-throttle-${Date.now()}`;
     const state = runComposable(() =>
-      useSWRV<number>("focus-throttle", async () => value++, {
+      useSWRV<number>(key, async () => value++, {
         dedupingInterval: 0,
         focusThrottleInterval: 50,
       }),
@@ -600,8 +751,9 @@ describe("swrv", () => {
 
   it("revalidates on reconnect by default", async () => {
     let value = 0;
+    const key = `reconnect-default-${Date.now()}`;
     const state = runComposable(() =>
-      useSWRV<number>("reconnect-default", async () => value++, {
+      useSWRV<number>(key, async () => value++, {
         dedupingInterval: 0,
       }),
     );
@@ -620,10 +772,11 @@ describe("swrv", () => {
   it("does not revalidate on reconnect when the document is hidden", async () => {
     let value = 0;
     const restoreVisibility = mockVisibilityState("hidden");
+    const key = `reconnect-hidden-${Date.now()}`;
 
     try {
       const state = runComposable(() =>
-        useSWRV<number>("reconnect-hidden", async () => value++, {
+        useSWRV<number>(key, async () => value++, {
           dedupingInterval: 0,
         }),
       );
@@ -644,6 +797,7 @@ describe("swrv", () => {
 
   it("retries failed requests after errorRetryInterval", async () => {
     vi.useFakeTimers();
+    const key = `retry-${Date.now()}`;
 
     const fetcher = vi
       .fn<() => Promise<string>>()
@@ -651,7 +805,7 @@ describe("swrv", () => {
       .mockResolvedValueOnce("recovered");
 
     const state = runComposable(() =>
-      useSWRV<string>("retry", fetcher, {
+      useSWRV<string>(key, fetcher, {
         dedupingInterval: 0,
         errorRetryCount: 1,
         errorRetryInterval: 50,

@@ -2,9 +2,9 @@ import { watch } from "vue";
 
 import { useSWRVConfig } from "../config";
 import useSWRV from "../use-swrv";
-import { resolveKeyValue, serialize } from "../_internal/serialize";
+import { serialize } from "../_internal/serialize";
 
-import type { RawKey } from "../_internal/types";
+import type { BareFetcher, KeySource, RawKey, SWRVConfiguration } from "../_internal/types";
 
 const SUBSCRIPTION_PREFIX = "$sub$";
 
@@ -16,8 +16,8 @@ export interface SWRVSubscriptionOptions<Data = unknown, Error = unknown> {
   next: (error?: Error | null, data?: Data) => void;
 }
 
-export type SWRVSubscription<Data = unknown, Error = unknown> = (
-  key: RawKey,
+export type SWRVSubscription<Data = unknown, Error = unknown, Key extends RawKey = RawKey> = (
+  key: Key,
   options: SWRVSubscriptionOptions<Data, Error>,
 ) => () => void;
 
@@ -26,9 +26,14 @@ export interface SWRVSubscriptionResponse<Data = unknown, Error = unknown> {
   error: ReturnType<typeof useSWRV<Data, Error>>["error"];
 }
 
-export default function useSWRVSubscription<Data = unknown, Error = unknown>(
-  key: RawKey | (() => RawKey),
-  subscribe: SWRVSubscription<Data, Error>,
+export default function useSWRVSubscription<
+  Data = unknown,
+  Error = unknown,
+  Key extends RawKey = RawKey,
+>(
+  key: KeySource<Key>,
+  subscribe: SWRVSubscription<Data, Error, Key>,
+  config: SWRVConfiguration<Data, Error> = {},
 ): SWRVSubscriptionResponse<Data, Error> {
   const { client } = useSWRVConfig();
   const storageKey = client.cache as object;
@@ -39,13 +44,14 @@ export default function useSWRVSubscription<Data = unknown, Error = unknown>(
 
   const [subscriptions, disposers] = subscriptionStorage.get(storageKey)!;
 
-  const swrv = useSWRV<Data, Error>(
-    () => {
-      const [serializedKey] = serialize(key as RawKey | (() => RawKey));
+  const swrv = useSWRV(
+    (() => {
+      const [serializedKey] = serialize(key as KeySource<Key>);
       return serializedKey ? `${SUBSCRIPTION_PREFIX}${serializedKey}` : null;
-    },
-    undefined,
+    }) as KeySource<RawKey>,
+    undefined as BareFetcher<Data> | undefined,
     {
+      ...config,
       revalidateIfStale: false,
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
@@ -53,14 +59,13 @@ export default function useSWRVSubscription<Data = unknown, Error = unknown>(
   );
 
   watch(
-    () => serialize(key as RawKey | (() => RawKey)),
-    ([serializedKey], _previous, onCleanup) => {
+    () => serialize(key as KeySource<Key>),
+    ([serializedKey, resolvedKey], _previous, onCleanup) => {
       if (!serializedKey) {
         return;
       }
 
       const subscriptionKey = `${SUBSCRIPTION_PREFIX}${serializedKey}`;
-      const resolvedKey = resolveKeyValue(key as RawKey | (() => RawKey));
       const currentCount = subscriptions.get(subscriptionKey) ?? 0;
 
       subscriptions.set(subscriptionKey, currentCount + 1);
@@ -68,19 +73,27 @@ export default function useSWRVSubscription<Data = unknown, Error = unknown>(
       if (!currentCount) {
         const dispose = subscribe(resolvedKey, {
           next: (subscriptionError, subscriptionData) => {
-            client.setState<Data, Error>(
-              subscriptionKey,
-              {
-                data: subscriptionData,
-                error: subscriptionError ?? undefined,
-                isLoading: false,
-                isValidating: false,
-              },
-              0,
-              resolvedKey,
-            );
+            if (subscriptionError !== null && subscriptionError !== undefined) {
+              client.setState<Data, Error>(
+                subscriptionKey,
+                {
+                  error: subscriptionError,
+                  isLoading: false,
+                  isValidating: false,
+                },
+                0,
+                resolvedKey,
+              );
+              return;
+            }
+
+            void swrv.mutate(subscriptionData as Data, false);
           },
         });
+
+        if (typeof dispose !== "function") {
+          throw new Error("The `subscribe` function must return a function to unsubscribe.");
+        }
 
         disposers.set(subscriptionKey, dispose);
       }

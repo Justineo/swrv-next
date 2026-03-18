@@ -4,7 +4,13 @@ import { useSWRVConfig } from "../config";
 import useSWRV from "../use-swrv";
 import { callFetcher, serialize } from "../_internal/serialize";
 
-import type { BareFetcher, RawKey, SWRVConfiguration, SWRVResponse } from "../_internal/types";
+import type {
+  BareFetcher,
+  KeySource,
+  RawKey,
+  SWRVConfiguration,
+  SWRVResponse,
+} from "../_internal/types";
 
 const INFINITE_PREFIX = "$inf$";
 const sizeStorage = new WeakMap<object, Map<string, number>>();
@@ -170,11 +176,11 @@ export default function useSWRVInfinite<Data = unknown, Error = unknown>(
     { immediate: true },
   );
 
-  const swrv = useSWRV<Data[], Error>(
-    () => resolveInfiniteKey() || null,
-    async () => resolvePages(resolveInfiniteKey()),
+  const swrv = useSWRV(
+    (() => resolveInfiniteKey() || null) as KeySource<RawKey>,
+    (async () => resolvePages(resolveInfiniteKey())) as BareFetcher<Data[]>,
     config,
-  );
+  ) as SWRVResponse<Data[], Error>;
 
   const mutatePages: SWRVInfiniteResponse<Data, Error>["mutate"] = async function (value, options) {
     if (arguments.length === 0) {
