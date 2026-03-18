@@ -1,9 +1,9 @@
 import useSWRV, { unstable_serialize } from "./use-swrv";
 
 import { GLOBAL_SWRV_CLIENT, SWRVConfig, createCacheProvider, useSWRVConfig } from "./config";
-import { createScopedMutator, serialize } from "./_internal";
+import { createScopedMutator, preloadKey } from "./_internal";
 
-import type { RawKey } from "./_internal";
+import type { Fetcher, KeySource, RawKey } from "./_internal";
 
 export { SWRVConfig, createCacheProvider, useSWRVConfig };
 export { createCache, createScopedMutator, createSWRVClient } from "./_internal";
@@ -13,14 +13,10 @@ export { default as useSWRVMutation } from "./mutation";
 export { default as useSWRVSubscription } from "./subscription";
 
 export const mutate = createScopedMutator(GLOBAL_SWRV_CLIENT);
-export const preload = <Data = unknown>(key: RawKey, fetcher: () => Promise<Data>) => {
-  const [serializedKey] = serialize(key);
-  if (!serializedKey) {
-    return fetcher();
-  }
-
-  return GLOBAL_SWRV_CLIENT.preload(serializedKey, fetcher());
-};
+export const preload = <Data = unknown, Key extends RawKey = RawKey>(
+  key: KeySource<Key>,
+  fetcher: Fetcher<Data, Key>,
+) => preloadKey(GLOBAL_SWRV_CLIENT, key, fetcher);
 
 export default useSWRV;
 

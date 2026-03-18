@@ -92,6 +92,10 @@ await preload("/api/user", async () => {
 });
 ```
 
+`preload()` also accepts tuple and function keys, dedupes repeated preloads for
+the same serialized key, and is consumed by `useSWRVInfinite` when you preload
+page keys ahead of time.
+
 ## Mutation
 
 ```ts

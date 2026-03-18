@@ -35,6 +35,20 @@ Key notes:
 - `fallbackData` is per-hook
 - `SWRVConfig` can provide app-level `fallback` values keyed by serialized key
 
+## `preload`
+
+```ts
+await preload(key, fetcher);
+```
+
+Key notes:
+
+- accepts string, tuple, object, ref, and function keys
+- resolves tuple keys into positional fetcher arguments
+- dedupes repeated preload calls until a hook consumes the request
+- failed preload requests are cleared so a later preload or hook fetch can retry
+- preloaded page keys are also consumed by `useSWRVInfinite`
+
 ## `SWRVConfig`
 
 ```ts
@@ -96,6 +110,7 @@ Current behavior highlights:
 - supports cursor-style sequential loading
 - supports `parallel: true`
 - exposes `unstable_serialize`
+- consumes preloaded page requests from `preload`
 - treats `setSize()` as a page-oriented operation
 - no-arg `mutate()` revalidates the loaded pages
 - bound `mutate(data, { revalidate })` supports page-selective revalidation callbacks

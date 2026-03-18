@@ -10,12 +10,11 @@ import {
 
 import { createSWRVClient } from "./_internal/client";
 import { createScopedMutator } from "./_internal/mutate";
-import { serialize } from "./_internal/serialize";
+import { preloadKey } from "./_internal/preload";
 
 import type {
   CacheAdapter,
   Compare,
-  RawKey,
   ResolvedSWRVConfiguration,
   SWRVClient,
   SWRVConfigAccessor,
@@ -167,14 +166,7 @@ export function useSWRVConfig(): SWRVConfigAccessor {
     client,
     config,
     mutate,
-    preload: <Data = unknown>(key: RawKey, fetcher: () => Promise<Data>) => {
-      const [serializedKey] = serialize(key);
-      if (!serializedKey) {
-        return fetcher();
-      }
-
-      return client.preload(serializedKey, fetcher());
-    },
+    preload: (key, fetcher) => preloadKey(client, key, fetcher),
   };
 }
 

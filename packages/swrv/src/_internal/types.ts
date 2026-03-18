@@ -258,7 +258,7 @@ export interface SWRVClient {
   getMutation(key: string): [number, number] | undefined;
   getState<Data = unknown, Error = unknown>(key: string): CacheState<Data, Error> | undefined;
   isLatestFetch(key: string, startedAt: number): boolean;
-  preload<Data = unknown>(key: string, value: Promise<Data>): Promise<Data>;
+  preload<Data = unknown>(key: string, value: Promise<Data> | (() => Promise<Data>)): Promise<Data>;
   setMutation(key: string, value: [number, number]): void;
   setState<Data = unknown, Error = unknown>(
     key: string,
@@ -285,7 +285,10 @@ export interface SWRVConfigAccessor {
   client: SWRVClient;
   config: ResolvedSWRVConfiguration<any, any>;
   mutate: ScopedMutator;
-  preload: <Data = unknown>(key: RawKey, fetcher: () => Promise<Data>) => Promise<Data>;
+  preload: <Data = unknown, Key extends RawKey = RawKey>(
+    key: KeySource<Key>,
+    fetcher: Fetcher<Data, Key>,
+  ) => Promise<Data>;
 }
 
 export type SWRVConfigComponent = DefineComponent<{

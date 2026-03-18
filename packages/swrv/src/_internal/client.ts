@@ -165,9 +165,24 @@ export function createSWRVClient(
     }, dedupingInterval);
   };
 
-  const preload = <Data = unknown>(key: string, value: Promise<Data>) => {
-    state.preloads.set(key, value);
-    return value;
+  const preload = <Data = unknown>(key: string, value: Promise<Data> | (() => Promise<Data>)) => {
+    const current = state.preloads.get(key) as Promise<Data> | undefined;
+    if (current) {
+      return current;
+    }
+
+    const tracked = Promise.resolve(typeof value === "function" ? value() : value).catch(
+      (error) => {
+        if (state.preloads.get(key) === tracked) {
+          state.preloads.delete(key);
+        }
+
+        throw error;
+      },
+    );
+
+    state.preloads.set(key, tracked);
+    return tracked;
   };
 
   const consumePreload = <Data = unknown>(key: string) => {

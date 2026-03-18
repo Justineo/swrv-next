@@ -165,7 +165,8 @@ const infinite = (<Data = unknown, Error = unknown>(useSWRVNext: SWRVHook) =>
           return;
         }
 
-        const result = await callFetcher(fetcher as BareFetcher<Data>, rawPageKey);
+        const preloaded = client.consumePreload<Data>(serializedPageKey);
+        const result = await (preloaded ?? callFetcher(fetcher as BareFetcher<Data>, rawPageKey));
         client.setState<Data, Error>(
           serializedPageKey,
           {

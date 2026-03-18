@@ -14,6 +14,7 @@ import {
   SWRVConfig,
   createSWRVClient,
   mutate,
+  preload,
   useSWRV,
   useSWRVConfig,
   useSWRVImmutable,
@@ -172,6 +173,61 @@ describe("swrv", () => {
     expect(fetcher).toHaveBeenCalledTimes(1);
     expect(first.data.value).toBe("data:dedupe-key");
     expect(second.data.value).toBe("data:dedupe-key");
+  });
+
+  it("dedupes preload requests and reuses them for the first hook fetch", async () => {
+    const key = `preload-dedupe-${Date.now()}`;
+    let resolveValue!: (value: string) => void;
+    const fetcher = vi.fn(
+      async (...args: readonly unknown[]) =>
+        await new Promise<string>((resolve) => {
+          resolveValue = (value) => {
+            resolve(`${value}:${String(args[0])}`);
+          };
+        }),
+    );
+
+    const firstPreload = preload(key, fetcher);
+    const secondPreload = preload(key, fetcher);
+    const state = runComposable(() => useSWRV<string>(key, fetcher, { dedupingInterval: 0 }));
+
+    expect(fetcher).toHaveBeenCalledTimes(1);
+
+    resolveValue("seed");
+    await expect(firstPreload).resolves.toBe(`seed:${key}`);
+    await expect(secondPreload).resolves.toBe(`seed:${key}`);
+    await settle();
+
+    expect(state.data.value).toBe(`seed:${key}`);
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+
+  it("clears failed preload entries so a later preload can retry", async () => {
+    const key = `preload-error-${Date.now()}`;
+    let attempts = 0;
+    const fetcher = vi.fn(async (_key: string) => {
+      attempts += 1;
+      if (attempts === 1) {
+        throw new Error("boom");
+      }
+
+      return "ok";
+    });
+
+    await expect(preload(key, fetcher)).rejects.toThrow("boom");
+    await expect(preload(key, fetcher)).resolves.toBe("ok");
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+
+  it("passes resolved function keys through preload fetchers", async () => {
+    const key = `preload-function-${Date.now()}`;
+    const fetcher = vi.fn(
+      async (...args: readonly unknown[]) => `${String(args[0])}:${String(args[1])}`,
+    );
+
+    await expect(preload(() => [key, 1] as const, fetcher)).resolves.toBe(`${key}:1`);
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(fetcher).toHaveBeenCalledWith(key, 1);
   });
 
   it("keeps provider clients isolated", async () => {
@@ -441,6 +497,50 @@ describe("swrv", () => {
       ],
       [],
     ]);
+  });
+
+  it("reuses preloaded page requests in useSWRVInfinite", async () => {
+    const key = `infinite-preload-${Date.now()}`;
+    const fetcher = vi.fn(
+      async (...args: readonly unknown[]) => `${String(args[0])}:${String(args[1])}`,
+    );
+
+    await expect(preload([key, 0] as const, fetcher)).resolves.toBe(`${key}:0`);
+
+    const state = runComposable(() =>
+      useSWRVInfinite<string>((index) => [key, index] as const, fetcher, { dedupingInterval: 0 }),
+    );
+
+    await settle();
+
+    expect(state.data.value).toEqual([`${key}:0`]);
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+
+  it("reuses multiple preloaded page requests in parallel mode", async () => {
+    const key = `infinite-preload-parallel-${Date.now()}`;
+    const fetcher = vi.fn(
+      async (...args: readonly unknown[]) => `${String(args[0])}:${String(args[1])}`,
+    );
+
+    await Promise.all([
+      preload([key, 0] as const, fetcher),
+      preload([key, 1] as const, fetcher),
+      preload([key, 2] as const, fetcher),
+    ]);
+
+    const state = runComposable(() =>
+      useSWRVInfinite<string>((index) => [key, index] as const, fetcher, {
+        dedupingInterval: 0,
+        initialSize: 3,
+        parallel: true,
+      }),
+    );
+
+    await settle(6);
+
+    expect(state.data.value).toEqual([`${key}:0`, `${key}:1`, `${key}:2`]);
+    expect(fetcher).toHaveBeenCalledTimes(3);
   });
 
   it("revalidates the first page and fetches only the new page when size grows", async () => {

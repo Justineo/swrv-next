@@ -1,6 +1,6 @@
 import { ref } from "vue";
 
-import useSWRV, { mutate, useSWRVImmutable } from "../src";
+import useSWRV, { mutate, preload, useSWRVImmutable } from "../src";
 import useSWRVInfinite, { unstable_serialize as unstableSerializeInfinite } from "../src/infinite";
 import useSWRVMutation from "../src/mutation";
 import useSWRVSubscription from "../src/subscription";
@@ -59,6 +59,12 @@ const filteredMutateResult = mutate<string, string>(
   (key) => key === "filtered-mutate",
   Promise.resolve("updated"),
   { revalidate: false },
+);
+
+const preloadedTuple = preload(tupleKey, async (resource, id) => `${resource}:${id}`);
+const preloadedFunctionKey = preload(
+  () => tupleKey,
+  async (resource, id) => `${resource}:${id}`,
 );
 
 const infiniteResponse = useSWRVInfinite<string>(
@@ -133,6 +139,8 @@ const typeAssertions = {
   filteredMutateResult: true as Expect<
     Equal<Awaited<typeof filteredMutateResult>, Array<string | undefined>>
   >,
+  preloadedTuple: true as Expect<Equal<Awaited<typeof preloadedTuple>, string>>,
+  preloadedFunctionKey: true as Expect<Equal<Awaited<typeof preloadedFunctionKey>, string>>,
   infiniteData: true as Expect<Equal<typeof infiniteResponse.data.value, string[] | undefined>>,
   infiniteSize: true as Expect<Equal<typeof infiniteResponse.size.value, number | undefined>>,
   infiniteMutate: true as Expect<Equal<Awaited<typeof infiniteMutate>, string[] | undefined>>,
@@ -158,6 +166,8 @@ void boundMutateResponse;
 void boundMutateResult;
 void scopedMutateResult;
 void filteredMutateResult;
+void preloadedTuple;
+void preloadedFunctionKey;
 void refResponse;
 void immutableResponse;
 void infiniteResponse;
