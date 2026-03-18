@@ -39,6 +39,8 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - base and global mutate coverage now explicitly includes `rollbackOnError: false`, committed-snapshot `populateCache` transforms, function-style `revalidate`, and filter-based function revalidation
   - filter-based global `mutate()` now skips the internal `$inf$` and `$sub$` cache records so implementation details do not leak through the public key-filter path
   - preload requests now dedupe by serialized key, clear failed entries for retries, accept function and tuple keys with typed fetcher arguments, and are consumed by the first matching hook fetch
+  - cache-listener updates now consume the listener payload directly instead of re-reading cache for the active hook, and local cache writes no longer redundantly re-apply state when the active subscription already covers the key
+  - key watchers for `useSWRV` and `useSWRVSubscription` now track stable serialized keys instead of fresh tuple objects, which avoids unnecessary reactivation, refetch, and resubscription work when reactive dependencies invalidate without changing the effective key
 - The infinite and mutation helpers have also moved closer to SWR:
   - `swrv/infinite` now exposes `unstable_serialize`, resolves page keys safely, supports cursor-style sequential loading, and treats `setSize()` as a page-oriented operation instead of a raw aggregate refresh
   - `swrv/infinite` now revalidates the first page while loading new pages and lets no-arg `mutate()` revalidate all loaded pages
@@ -70,6 +72,10 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
 - Browser-facing end-to-end coverage now exists through a Playwright fixture app under `packages/swrv/e2e`, covering focus revalidation, reconnect revalidation, optimistic mutation UI, and subscription pushes in a real browser runtime.
 - Repository maintenance scaffolding now exists for CI, Renovate, and release publishing.
 - Release publishing is now routed through `vp pm publish` in GitHub Actions so the workspace package manager remains responsible for `catalog:` dependency resolution and Trusted Publisher provenance.
+- The remaining `2.0` scope has now been narrowed further:
+  - Vue Suspense-compatible parity is in scope for `2.0`
+  - a lightweight built-in debug or devtools middleware story is in scope for `2.0`
+  - first-party Vue SSR and hydration helpers plus behavior tests are in scope for `2.0`, while Nuxt-specific adapters remain follow-up work
 - The package publish surface is now materially closer to launch-ready:
   - config-level `fallback` data is supported and stays visible during initial revalidation
   - nested `SWRVConfig` boundaries merge fallback maps in SWR-style order
@@ -100,8 +106,10 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
 - Keep project memory current in `journey/design.md`, use `journey/plans/` for milestone or phase plans, and use `journey/logs/` for implementation notes and dead ends.
 - Use plain VitePress scripts for docs builds inside `packages/docs`, but continue to drive workspace orchestration through `vp run ...`.
 - Keep the library build on stable declaration generation for now instead of the experimental `tsgo` path.
-- Treat explicit client scoping plus config-level `fallback` as the supported SSR path for the first launch-ready cut. Deeper Nuxt integration and dedicated hydration helpers are follow-up work, not blockers for the current release line.
+- Expand the `2.0` SSR scope beyond the first launch-ready cut to include first-party Vue SSR and hydration helpers, server-safe preload and fallback behavior, and dedicated SSR behavior tests. Nuxt-specific adapters or framework modules remain follow-up work, not `2.0` blockers.
 - Do not port SWR's getter-based dependency-collection mechanism into Vue. `swrv-next` already exposes separate refs, so Vue's native dependency tracking is the right model. Performance follow-up should focus on narrower issues such as redundant cache-to-ref sync and unstable watch sources instead.
+- Include a Vue Suspense-compatible parity lane in `2.0`, covering applicable SWR suspense behavior and type semantics, while excluding React-specific rendering mechanics.
+- Include a lightweight built-in debug or devtools middleware story in `2.0` that provides first-party inspection hooks and middleware-preset parity. A dedicated browser extension or deep Vue Devtools integration is follow-up work.
 - Freeze the rebuilt release line as a breaking `2.x` track, and keep prerelease automation on the `next` dist-tag until the first stable cut is ready.
 - Freeze the published Vue support range at `>=3.2.26 <4`.
 - Freeze the typed-consumer and contributor TypeScript baseline at `>=5.5`.
@@ -115,6 +123,5 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
 
 ## Follow-up Questions
 
-- How much dedicated Nuxt or hydration helper surface should exist beyond the current explicit client plus `fallback` contract
-- Whether any remaining advanced edge semantics in `infinite`, `mutation`, and `subscription` are worth tightening further before or after the first public prerelease
+- Whether any remaining advanced edge semantics in `infinite`, `mutation`, and `subscription` are worth tightening further before or after the first stable `2.0` release
 - How much additional type-level precision is worth adding beyond the current public overloads once the API surface is exercised by real consumers

@@ -1,5 +1,6 @@
 import {
   createApp,
+  computed,
   defineComponent,
   effectScope,
   h,
@@ -24,7 +25,7 @@ import {
 } from "../src";
 import { unstable_serialize as unstableSerializeInfinite } from "../src/infinite";
 import { serialize } from "../src/_internal";
-import type { SWRVMiddleware, SWRVMutationConfiguration } from "../src";
+import type { SWRVMiddleware, SWRVMutationConfiguration, SWRVSubscription } from "../src";
 
 async function flush() {
   await Promise.resolve();
@@ -231,6 +232,33 @@ describe("swrv", () => {
     expect(fetcher).toHaveBeenCalledWith(key, 1);
   });
 
+  it("does not revalidate when a reactive key source invalidates but the serialized key stays the same", async () => {
+    const trigger = ref(0);
+    const fetcher = vi.fn(async (...args: readonly unknown[]) => args.map(String).join(":"));
+
+    const state = runComposable(() =>
+      useSWRV<string>(
+        computed(() => {
+          void trigger.value;
+          return ["stable-key", 1] as const;
+        }),
+        fetcher,
+        { dedupingInterval: 0 },
+      ),
+    );
+
+    await settle();
+
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(state.data.value).toBe("stable-key:1");
+
+    trigger.value += 1;
+    await settle();
+
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(state.data.value).toBe("stable-key:1");
+  });
+
   it("keeps provider clients isolated", async () => {
     const key = "provider-isolation";
     const clientA = createSWRVClient();
@@ -256,6 +284,35 @@ describe("swrv", () => {
 
     expect(stateA().data.value).toBe("alpha");
     expect(stateB().data.value).toBeUndefined();
+  });
+
+  it("uses cache listener payloads without rereading the cache for the active hook", async () => {
+    const key = `listener-payload-${Date.now()}`;
+    const client = createSWRVClient();
+    const state = mountWithClient(client, key);
+    const [serializedKey] = serialize(key);
+
+    await flush();
+
+    const getStateSpy = vi.spyOn(client, "getState");
+    getStateSpy.mockClear();
+
+    client.setState(
+      serializedKey,
+      {
+        data: "payload",
+        error: undefined,
+        isLoading: false,
+        isValidating: false,
+      },
+      0,
+      key,
+    );
+
+    await flush();
+
+    expect(state().data.value).toBe("payload");
+    expect(getStateSpy).not.toHaveBeenCalled();
   });
 
   it("applies optimistic mutation updates before the remote value resolves", async () => {
@@ -2006,6 +2063,37 @@ describe("swrv", () => {
     emit(2);
     await settle();
     expect(subscription.data.value).toBe(3);
+  });
+
+  it("does not resubscribe when a reactive subscription key invalidates but the serialized key stays the same", async () => {
+    const trigger = ref(0);
+    const dispose = vi.fn();
+    const subscribe = vi.fn<SWRVSubscription<string, Error>>((_resolvedKey, { next }) => {
+      next(undefined, "subscription-data");
+      return dispose;
+    });
+
+    const subscription = runComposable(() =>
+      useSWRVSubscription<string, Error>(
+        computed(() => {
+          void trigger.value;
+          return "stable-subscription-key";
+        }),
+        subscribe,
+      ),
+    );
+
+    await settle();
+
+    expect(subscribe).toHaveBeenCalledTimes(1);
+    expect(subscription.data.value).toBe("subscription-data");
+
+    trigger.value += 1;
+    await settle();
+
+    expect(subscribe).toHaveBeenCalledTimes(1);
+    expect(dispose).not.toHaveBeenCalled();
+    expect(subscription.data.value).toBe("subscription-data");
   });
 
   it("does not conflict with normal useSWRV state for the same logical key", async () => {

@@ -7,6 +7,7 @@ import { getTimestamp } from "./_internal/timestamp";
 
 import type {
   BareFetcher,
+  CacheState,
   FetcherResponse,
   KeySource,
   MutatorCallback,
@@ -133,6 +134,7 @@ function useSWRVHandler<Data = unknown, Error = unknown>(
   let loadingSlowTimer: ReturnType<typeof setTimeout> | undefined;
   let refreshTimer: ReturnType<typeof setTimeout> | undefined;
   let retryTimer: ReturnType<typeof setTimeout> | undefined;
+  let activeCacheSubscriptionKey = "";
   let disposed = false;
   let hasMounted = false;
   let nextFocusRevalidatedAt = 0;
@@ -164,22 +166,35 @@ function useSWRVHandler<Data = unknown, Error = unknown>(
     clearRetryTimer();
   };
 
-  const applyState = () => {
+  const applyState = (
+    entry?: CacheState<Data, Error>,
+    serializedKey = currentKey.value.serializedKey,
+  ) => {
     const configValue = mergedConfig();
-    const fallbackData = resolveFallbackData(currentKey.value.serializedKey, configValue);
-    const entry = currentKey.value.serializedKey
-      ? client.getState<Data, Error>(currentKey.value.serializedKey)
-      : undefined;
+    const fallbackData = resolveFallbackData(serializedKey, configValue);
+    const resolvedEntry =
+      entry ?? (serializedKey ? client.getState<Data, Error>(serializedKey) : undefined);
 
-    if (!entry) {
+    if (!resolvedEntry) {
       data.value = fallbackData;
       return;
     }
 
-    data.value = resolveResolvedData(entry.data, fallbackData);
-    error.value = entry.error;
-    isLoading.value = entry.isLoading;
-    isValidating.value = entry.isValidating;
+    data.value = resolveResolvedData(resolvedEntry.data, fallbackData);
+    error.value = resolvedEntry.error;
+    isLoading.value = resolvedEntry.isLoading;
+    isValidating.value = resolvedEntry.isValidating;
+  };
+
+  const syncAfterStateWrite = (serializedKey: string, entry?: CacheState<Data, Error>) => {
+    if (
+      currentKey.value.serializedKey !== serializedKey ||
+      activeCacheSubscriptionKey === serializedKey
+    ) {
+      return;
+    }
+
+    applyState(entry, serializedKey);
   };
 
   const scheduleRefresh = () => {
@@ -237,7 +252,7 @@ function useSWRVHandler<Data = unknown, Error = unknown>(
 
     const cached = client.getState<Data, Error>(serializedKey);
     if (cached) {
-      applyState();
+      applyState(cached, serializedKey);
     }
 
     if (configValue.isPaused()) {
@@ -272,7 +287,7 @@ function useSWRVHandler<Data = unknown, Error = unknown>(
     let fetchPromise = currentFetch?.promise as Promise<Data> | undefined;
 
     if (!currentFetch) {
-      client.setState<Data, Error>(
+      const loadingState = client.setState<Data, Error>(
         serializedKey,
         {
           data: cached?.data,
@@ -283,7 +298,7 @@ function useSWRVHandler<Data = unknown, Error = unknown>(
         configValue.ttl,
         rawKey,
       );
-      applyState();
+      syncAfterStateWrite(serializedKey, loadingState);
 
       const preloaded = client.consumePreload<Data>(serializedKey);
       fetchPromise = preloaded ?? callFetcher(activeFetcher, rawKey);
@@ -315,7 +330,7 @@ function useSWRVHandler<Data = unknown, Error = unknown>(
       clearLoadingSlowTimer();
 
       if (mergedConfig().isPaused()) {
-        client.setState<Data, Error>(
+        const pausedState = client.setState<Data, Error>(
           serializedKey,
           {
             isLoading: false,
@@ -324,9 +339,9 @@ function useSWRVHandler<Data = unknown, Error = unknown>(
           configValue.ttl,
           rawKey,
         );
-        applyState();
+        syncAfterStateWrite(serializedKey, pausedState);
         scheduleRefresh();
-        return client.getState<Data, Error>(serializedKey)?.data;
+        return pausedState.data;
       }
 
       if (!client.isLatestFetch(serializedKey, startedAt)) {
@@ -345,7 +360,7 @@ function useSWRVHandler<Data = unknown, Error = unknown>(
       }
 
       const latestData = client.getState<Data, Error>(serializedKey)?.data;
-      client.setState<Data, Error>(
+      const successState = client.setState<Data, Error>(
         serializedKey,
         {
           data: configValue.compare(latestData, resolvedData) ? latestData : resolvedData,
@@ -356,7 +371,7 @@ function useSWRVHandler<Data = unknown, Error = unknown>(
         configValue.ttl,
         rawKey,
       );
-      applyState();
+      syncAfterStateWrite(serializedKey, successState);
       if (!currentFetch) {
         mergedConfig().onSuccess(resolvedData, serializedKey, mergedConfig());
       }
@@ -367,7 +382,7 @@ function useSWRVHandler<Data = unknown, Error = unknown>(
       clearLoadingSlowTimer();
 
       if (mergedConfig().isPaused()) {
-        client.setState<Data, Error>(
+        const pausedErrorState = client.setState<Data, Error>(
           serializedKey,
           {
             isLoading: false,
@@ -376,12 +391,12 @@ function useSWRVHandler<Data = unknown, Error = unknown>(
           configValue.ttl,
           rawKey,
         );
-        applyState();
+        syncAfterStateWrite(serializedKey, pausedErrorState);
         scheduleRefresh();
-        return client.getState<Data, Error>(serializedKey)?.data;
+        return pausedErrorState.data;
       }
 
-      client.setState<Data, Error>(
+      const errorState = client.setState<Data, Error>(
         serializedKey,
         {
           error: resolvedError,
@@ -391,7 +406,7 @@ function useSWRVHandler<Data = unknown, Error = unknown>(
         configValue.ttl,
         rawKey,
       );
-      applyState();
+      syncAfterStateWrite(serializedKey, errorState);
 
       const latestConfig = mergedConfig();
       if (!currentFetch) {
@@ -466,7 +481,6 @@ function useSWRVHandler<Data = unknown, Error = unknown>(
           : options?.revalidate !== false;
 
       if (!shouldRevalidate) {
-        applyState();
         scheduleRefresh();
         return undefined;
       }
@@ -484,16 +498,18 @@ function useSWRVHandler<Data = unknown, Error = unknown>(
     unsubscribeRevalidator();
     unsubscribeCache = () => {};
     unsubscribeRevalidator = () => {};
+    activeCacheSubscriptionKey = "";
   };
 
   watch(
-    () => serialize(key as RawKey | (() => RawKey)),
-    async ([serializedKey, rawKey]) => {
+    () => serialize(key as RawKey | (() => RawKey))[0],
+    async (serializedKey) => {
       clearTimers();
       resetSubscriptions();
 
       const isInitialActivation = !hasMounted;
       const configValue = mergedConfig();
+      const rawKey = resolveKeyValue(key as RawKey | (() => RawKey));
       const fallbackData = resolveFallbackData(serializedKey, configValue);
       currentKey.value = { rawKey, serializedKey };
 
@@ -509,15 +525,16 @@ function useSWRVHandler<Data = unknown, Error = unknown>(
         return;
       }
 
-      unsubscribeCache = client.subscribe(serializedKey, () => {
-        applyState();
+      unsubscribeCache = client.subscribe(serializedKey, (current) => {
+        applyState(current as CacheState<Data, Error> | undefined, serializedKey);
       });
+      activeCacheSubscriptionKey = serializedKey;
       unsubscribeRevalidator = client.addRevalidator(serializedKey, bindCurrentKey);
 
       const cached = client.getState<Data, Error>(serializedKey);
       const resolvedData = resolveResolvedData(cached?.data, fallbackData);
       if (cached) {
-        applyState();
+        applyState(cached, serializedKey);
       } else if (!configValue.keepPreviousData) {
         data.value = fallbackData;
         error.value = undefined;

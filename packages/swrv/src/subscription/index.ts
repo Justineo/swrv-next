@@ -3,7 +3,7 @@ import { watch } from "vue";
 import { useSWRVConfig } from "../config";
 import { withMiddleware } from "../_internal";
 import useSWRV from "../use-swrv";
-import { serialize } from "../_internal/serialize";
+import { resolveKeyValue, serialize } from "../_internal/serialize";
 
 import type {
   KeySource,
@@ -65,12 +65,13 @@ const subscription = (<Data = unknown, Error = unknown, Key extends RawKey = Raw
     );
 
     watch(
-      () => serialize(key as KeySource<Key>),
-      ([serializedKey, resolvedKey], _previous, onCleanup) => {
+      () => serialize(key as KeySource<Key>)[0],
+      (serializedKey, _previous, onCleanup) => {
         if (!serializedKey) {
           return;
         }
 
+        const resolvedKey = resolveKeyValue(key as KeySource<Key>);
         const subscriptionKey = `${SUBSCRIPTION_PREFIX}${serializedKey}`;
         const currentCount = subscriptions.get(subscriptionKey) ?? 0;
 
