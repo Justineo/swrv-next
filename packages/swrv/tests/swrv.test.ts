@@ -1061,61 +1061,67 @@ describe("swrv", () => {
     let value = 0;
     let visible = true;
     const key = `focus-visible-${Date.now()}`;
-    const state = runComposable(() =>
-      useSWRV<number>(key, async () => value++, {
-        dedupingInterval: 0,
-        focusThrottleInterval: 0,
-        isVisible: () => visible,
-      }),
+    const client = createSWRVClient();
+    const state = mountWithConfig(
+      () =>
+        useSWRV<number>(key, async () => value++, {
+          dedupingInterval: 0,
+          focusThrottleInterval: 0,
+          isVisible: () => visible,
+          revalidateOnMount: false,
+        }),
+      { client },
     );
 
+    await state().mutate();
     await settle();
-    expect(state.data.value).toBe(0);
+    await waitForMacrotask();
+    expect(state().data.value).toBe(0);
 
     visible = false;
-    await waitForMacrotask();
-    window.dispatchEvent(new Event("focus"));
+    await client.broadcastAll("focus");
     await settle();
 
-    expect(state.data.value).toBe(0);
+    expect(state().data.value).toBe(0);
 
     visible = true;
-    await waitForMacrotask();
-    window.dispatchEvent(new Event("focus"));
+    await client.broadcastAll("focus");
     await settle();
 
-    expect(state.data.value).toBe(1);
+    expect(state().data.value).toBe(1);
   });
 
   it("respects config.isOnline when handling reconnect revalidation", async () => {
     let value = 0;
     let online = true;
     const key = `reconnect-online-${Date.now()}`;
-    const state = runComposable(() =>
-      useSWRV<number>(key, async () => value++, {
-        dedupingInterval: 0,
-        isOnline: () => online,
-        revalidateOnMount: false,
-      }),
+    const client = createSWRVClient();
+    const state = mountWithConfig(
+      () =>
+        useSWRV<number>(key, async () => value++, {
+          dedupingInterval: 0,
+          isOnline: () => online,
+          revalidateOnMount: false,
+        }),
+      { client },
     );
 
-    await state.mutate();
+    await state().mutate();
     await settle();
-    expect(state.data.value).toBe(0);
+    await waitForMacrotask();
+    expect(state().data.value).toBe(0);
 
     online = false;
-    await waitForMacrotask();
-    window.dispatchEvent(new Event("online"));
+    await client.broadcastAll("reconnect");
     await settle();
 
-    expect(state.data.value).toBe(0);
+    expect(state().data.value).toBe(0);
 
     online = true;
-    await waitForMacrotask();
-    window.dispatchEvent(new Event("online"));
+    await client.broadcastAll("reconnect");
     await settle();
 
-    expect(state.data.value).toBe(1);
+    expect(state().data.value).toBe(1);
   });
 
   it("calls onSuccess only for the original deduped request", async () => {
@@ -1169,6 +1175,122 @@ describe("swrv", () => {
     expect(state.error.value).toBe(error);
     expect(onError).toHaveBeenCalledTimes(1);
     expect(onError).toHaveBeenCalledWith(error, key, expect.any(Object));
+  });
+
+  it("uses the onErrorRetry callback to schedule retries", async () => {
+    vi.useFakeTimers();
+
+    const key = `error-retry-callback-${Date.now()}`;
+    const onErrorRetry = vi.fn((_error, _retryKey, _config, revalidate, retryOptions) => {
+      setTimeout(() => {
+        void revalidate(retryOptions);
+      }, 25);
+    });
+    const fetcher = vi
+      .fn<() => Promise<string>>()
+      .mockRejectedValueOnce(new Error("boom"))
+      .mockResolvedValueOnce("recovered");
+
+    const state = runComposable(() =>
+      useSWRV<string>(key, fetcher, {
+        dedupingInterval: 0,
+        errorRetryInterval: 10,
+        onErrorRetry,
+      }),
+    );
+
+    await settle();
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(onErrorRetry).toHaveBeenCalledTimes(1);
+    expect(state.error.value).toBeInstanceOf(Error);
+
+    await vi.advanceTimersByTimeAsync(25);
+    await settle();
+
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(state.data.value).toBe("recovered");
+    expect(state.error.value).toBeUndefined();
+  });
+
+  it("calls onLoadingSlow for fresh requests that take too long", async () => {
+    vi.useFakeTimers();
+
+    const key = `loading-slow-${Date.now()}`;
+    const onLoadingSlow = vi.fn();
+    const onSuccess = vi.fn();
+    let resolveValue!: (value: string) => void;
+
+    const state = runComposable(() =>
+      useSWRV<string>(
+        key,
+        () =>
+          new Promise<string>((resolve) => {
+            resolveValue = resolve;
+          }),
+        {
+          loadingTimeout: 50,
+          onLoadingSlow,
+          onSuccess,
+        },
+      ),
+    );
+
+    await flush();
+    expect(state.isLoading.value).toBe(true);
+    expect(onLoadingSlow).not.toHaveBeenCalled();
+
+    await vi.advanceTimersByTimeAsync(60);
+    await flush();
+
+    expect(onLoadingSlow).toHaveBeenCalledTimes(1);
+    expect(onLoadingSlow).toHaveBeenCalledWith(key, expect.any(Object));
+    expect(onSuccess).not.toHaveBeenCalled();
+
+    resolveValue("data");
+    await settle();
+
+    expect(state.data.value).toBe("data");
+    expect(onSuccess).toHaveBeenCalledTimes(1);
+    expect(onSuccess).toHaveBeenCalledWith("data", key, expect.any(Object));
+  });
+
+  it("calls onDiscarded and skips onSuccess when a revalidation result is superseded", async () => {
+    vi.useFakeTimers();
+
+    const key = `discarded-${Date.now()}`;
+    const onDiscarded = vi.fn();
+    const onSuccess = vi.fn();
+
+    const state = runComposable(() =>
+      useSWRV<string>(
+        key,
+        () =>
+          new Promise<string>((resolve) => {
+            setTimeout(() => {
+              resolve("remote");
+            }, 50);
+          }),
+        {
+          dedupingInterval: 0,
+          onDiscarded,
+          onSuccess,
+        },
+      ),
+    );
+
+    await flush();
+    await state.mutate("local", { revalidate: false });
+    await flush();
+
+    expect(state.data.value).toBe("local");
+
+    await vi.advanceTimersByTimeAsync(60);
+    await settle();
+
+    expect(state.data.value).toBe("local");
+    expect(onDiscarded).toHaveBeenCalledTimes(1);
+    expect(onDiscarded).toHaveBeenCalledWith(key);
+    expect(onSuccess).not.toHaveBeenCalled();
   });
 
   it("retries failed requests after errorRetryInterval", async () => {

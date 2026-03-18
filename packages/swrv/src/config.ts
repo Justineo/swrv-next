@@ -29,6 +29,29 @@ const noop = () => {};
 const defaultIsOnline = () => typeof navigator === "undefined" || navigator.onLine !== false;
 const defaultIsVisible = () =>
   typeof document === "undefined" || document.visibilityState !== "hidden";
+const defaultOnErrorRetry = <Data = unknown, Error = unknown>(
+  _error: Error,
+  _key: string,
+  config: Readonly<ResolvedSWRVConfiguration<Data, Error>>,
+  revalidate: (options?: {
+    dedupe: boolean;
+    retryCount: number;
+    throwOnError: boolean;
+  }) => Promise<Data | undefined>,
+  options: {
+    dedupe: boolean;
+    retryCount: number;
+    throwOnError: boolean;
+  },
+) => {
+  if (options.retryCount > config.errorRetryCount) {
+    return;
+  }
+
+  setTimeout(() => {
+    void revalidate(options);
+  }, config.errorRetryInterval);
+};
 
 const DEFAULT_CONFIGURATION: ResolvedSWRVConfiguration<any, any> = {
   compare: defaultCompare,
@@ -41,7 +64,11 @@ const DEFAULT_CONFIGURATION: ResolvedSWRVConfiguration<any, any> = {
   isPaused: () => false,
   isVisible: defaultIsVisible,
   keepPreviousData: false,
+  loadingTimeout: 3000,
+  onDiscarded: noop,
   onError: noop,
+  onErrorRetry: defaultOnErrorRetry,
+  onLoadingSlow: noop,
   onSuccess: noop,
   refreshInterval: 0,
   refreshWhenHidden: false,
@@ -101,7 +128,11 @@ export function mergeConfiguration<Data = unknown, Error = unknown>(
   merged.isOnline = override?.isOnline ?? base.isOnline ?? defaultIsOnline;
   merged.isPaused = override?.isPaused ?? base.isPaused ?? (() => false);
   merged.isVisible = override?.isVisible ?? base.isVisible ?? defaultIsVisible;
+  merged.loadingTimeout = override?.loadingTimeout ?? base.loadingTimeout ?? 3000;
+  merged.onDiscarded = override?.onDiscarded ?? base.onDiscarded ?? noop;
   merged.onError = override?.onError ?? base.onError ?? noop;
+  merged.onErrorRetry = override?.onErrorRetry ?? base.onErrorRetry ?? defaultOnErrorRetry;
+  merged.onLoadingSlow = override?.onLoadingSlow ?? base.onLoadingSlow ?? noop;
   merged.onSuccess = override?.onSuccess ?? base.onSuccess ?? noop;
   return merged;
 }

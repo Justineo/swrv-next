@@ -131,6 +131,7 @@ export default function useSWRV<Data = unknown, Error = unknown>(
 
   let unsubscribeCache = () => {};
   let unsubscribeRevalidator = () => {};
+  let loadingSlowTimer: ReturnType<typeof setTimeout> | undefined;
   let refreshTimer: ReturnType<typeof setTimeout> | undefined;
   let retryTimer: ReturnType<typeof setTimeout> | undefined;
   let disposed = false;
@@ -144,6 +145,13 @@ export default function useSWRV<Data = unknown, Error = unknown>(
     }
   };
 
+  const clearLoadingSlowTimer = () => {
+    if (loadingSlowTimer) {
+      clearTimeout(loadingSlowTimer);
+      loadingSlowTimer = undefined;
+    }
+  };
+
   const clearRetryTimer = () => {
     if (retryTimer) {
       clearTimeout(retryTimer);
@@ -152,6 +160,7 @@ export default function useSWRV<Data = unknown, Error = unknown>(
   };
 
   const clearTimers = () => {
+    clearLoadingSlowTimer();
     clearRefreshTimer();
     clearRetryTimer();
   };
@@ -261,6 +270,7 @@ export default function useSWRV<Data = unknown, Error = unknown>(
         : client.getFetch(serializedKey, now, configValue.dedupingInterval);
 
     const startedAt = currentFetch?.startedAt ?? now;
+    let fetchPromise = currentFetch?.promise as Promise<Data> | undefined;
 
     if (!currentFetch) {
       client.setState<Data, Error>(
@@ -277,15 +287,33 @@ export default function useSWRV<Data = unknown, Error = unknown>(
       applyState();
 
       const preloaded = client.consumePreload<Data>(serializedKey);
-      const fetchPromise = preloaded ?? callFetcher(activeFetcher, rawKey);
+      fetchPromise = preloaded ?? callFetcher(activeFetcher, rawKey);
 
       client.startFetch(serializedKey, fetchPromise, startedAt, configValue.dedupingInterval);
+
+      if (configValue.loadingTimeout > 0 && cached?.data === undefined) {
+        clearLoadingSlowTimer();
+        loadingSlowTimer = setTimeout(() => {
+          const latestState = client.getState<Data, Error>(serializedKey);
+          if (
+            disposed ||
+            currentKey.value.serializedKey !== serializedKey ||
+            !client.isLatestFetch(serializedKey, startedAt) ||
+            latestState?.data !== undefined ||
+            !latestState?.isLoading
+          ) {
+            return;
+          }
+
+          const latestConfig = mergedConfig();
+          latestConfig.onLoadingSlow(serializedKey, latestConfig);
+        }, configValue.loadingTimeout);
+      }
     }
 
     try {
-      const fetchRecord = client.getFetch(serializedKey, Date.now(), configValue.dedupingInterval);
-
-      const resolvedData = await (fetchRecord?.promise as Promise<Data>);
+      const resolvedData = await fetchPromise;
+      clearLoadingSlowTimer();
 
       if (mergedConfig().isPaused()) {
         client.setState<Data, Error>(
@@ -303,11 +331,17 @@ export default function useSWRV<Data = unknown, Error = unknown>(
       }
 
       if (!client.isLatestFetch(serializedKey, startedAt)) {
+        if (!currentFetch) {
+          mergedConfig().onDiscarded(serializedKey);
+        }
         return client.getState<Data, Error>(serializedKey)?.data;
       }
 
       const mutation = client.getMutation(serializedKey);
-      if (mutation && mutation[0] > startedAt) {
+      if (mutation && (startedAt <= mutation[0] || startedAt <= mutation[1] || mutation[1] === 0)) {
+        if (!currentFetch) {
+          mergedConfig().onDiscarded(serializedKey);
+        }
         return client.getState<Data, Error>(serializedKey)?.data;
       }
 
@@ -331,6 +365,7 @@ export default function useSWRV<Data = unknown, Error = unknown>(
       return resolvedData;
     } catch (caught) {
       const resolvedError = caught as Error;
+      clearLoadingSlowTimer();
 
       if (mergedConfig().isPaused()) {
         client.setState<Data, Error>(
@@ -365,22 +400,36 @@ export default function useSWRV<Data = unknown, Error = unknown>(
       }
 
       const shouldRetry = resolveRetryableError(latestConfig.shouldRetryOnError, resolvedError);
-      const shouldScheduleRetry =
+      const shouldRetryWhileActive =
         shouldRetry &&
-        (options.retryCount ?? 0) < latestConfig.errorRetryCount &&
         !disposed &&
         (!latestConfig.revalidateOnFocus ||
           !latestConfig.revalidateOnReconnect ||
           isActive(latestConfig));
 
-      if (shouldScheduleRetry) {
+      if (shouldRetryWhileActive && !currentFetch) {
         clearRetryTimer();
-        retryTimer = setTimeout(() => {
-          void revalidate({
+        latestConfig.onErrorRetry(
+          resolvedError,
+          serializedKey,
+          latestConfig,
+          (retryOptions) => {
+            if (disposed || currentKey.value.serializedKey !== serializedKey) {
+              return Promise.resolve(client.getState<Data, Error>(serializedKey)?.data);
+            }
+
+            return revalidate({
+              dedupe: retryOptions?.dedupe ?? true,
+              retryCount: retryOptions?.retryCount ?? (options.retryCount ?? 0) + 1,
+              throwOnError: retryOptions?.throwOnError ?? false,
+            });
+          },
+          {
             dedupe: true,
             retryCount: (options.retryCount ?? 0) + 1,
-          });
-        }, latestConfig.errorRetryInterval);
+            throwOnError: false,
+          },
+        );
       }
 
       if (options.throwOnError) {

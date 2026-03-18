@@ -51,6 +51,8 @@ Current supported high-value options include:
 - revalidation controls such as `revalidateOnMount`, `revalidateOnFocus`, `revalidateOnReconnect`, and `isPaused`
 - activity overrides through `isVisible` and `isOnline`
 - lifecycle callbacks through `onSuccess` and `onError`
+- retry and race callbacks through `onErrorRetry` and `onDiscarded`
+- slow-request handling through `loadingTimeout` and `onLoadingSlow`
 - `refreshInterval`, `dedupingInterval`, and `ttl`
 
 ## `swrv/mutation`

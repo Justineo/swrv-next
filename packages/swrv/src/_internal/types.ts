@@ -59,8 +59,21 @@ export interface SWRVConfiguration<
   isPaused?: () => boolean;
   isVisible?: () => boolean;
   keepPreviousData?: boolean;
+  loadingTimeout?: number;
+  onDiscarded?: (key: string) => void;
   onError?: (
     error: Error,
+    key: string,
+    config: Readonly<ResolvedSWRVConfiguration<Data, Error, Fn>>,
+  ) => void;
+  onErrorRetry?: (
+    error: Error,
+    key: string,
+    config: Readonly<ResolvedSWRVConfiguration<Data, Error, Fn>>,
+    revalidate: (options?: RevalidateOptions) => Promise<Data | undefined>,
+    options: Required<Pick<RevalidateOptions, "dedupe" | "retryCount" | "throwOnError">>,
+  ) => void;
+  onLoadingSlow?: (
     key: string,
     config: Readonly<ResolvedSWRVConfiguration<Data, Error, Fn>>,
   ) => void;
@@ -96,8 +109,21 @@ export interface ResolvedSWRVConfiguration<
   isPaused: () => boolean;
   isVisible: () => boolean;
   keepPreviousData: boolean;
+  loadingTimeout: number;
+  onDiscarded: (key: string) => void;
   onError: (
     error: Error,
+    key: string,
+    config: Readonly<ResolvedSWRVConfiguration<Data, Error, Fn>>,
+  ) => void;
+  onErrorRetry: (
+    error: Error,
+    key: string,
+    config: Readonly<ResolvedSWRVConfiguration<Data, Error, Fn>>,
+    revalidate: (options?: RevalidateOptions) => Promise<Data | undefined>,
+    options: Required<Pick<RevalidateOptions, "dedupe" | "retryCount" | "throwOnError">>,
+  ) => void;
+  onLoadingSlow: (
     key: string,
     config: Readonly<ResolvedSWRVConfiguration<Data, Error, Fn>>,
   ) => void;
