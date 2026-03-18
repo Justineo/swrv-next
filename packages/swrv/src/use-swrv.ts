@@ -502,6 +502,36 @@ function useSWRVHandler<Data = unknown, Error = unknown>(
   };
 
   watch(
+    () => {
+      const configValue = mergedConfig();
+      const refreshInterval =
+        typeof configValue.refreshInterval === "function"
+          ? configValue.refreshInterval(data.value)
+          : configValue.refreshInterval;
+
+      return [
+        refreshInterval,
+        configValue.refreshWhenHidden,
+        configValue.refreshWhenOffline,
+        configValue.isPaused(),
+      ];
+    },
+    () => {
+      if (!hasMounted || !currentKey.value.serializedKey) {
+        return;
+      }
+
+      clearRefreshTimer();
+
+      if (isValidating.value) {
+        return;
+      }
+
+      scheduleRefresh();
+    },
+  );
+
+  watch(
     () => serialize(key as RawKey | (() => RawKey))[0],
     async (serializedKey) => {
       clearTimers();
