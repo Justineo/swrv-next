@@ -3,6 +3,7 @@ export { createSWRVClient } from "./client";
 export { stableHash } from "./hash";
 export { createScopedMutator } from "./mutate";
 export { callFetcher, resolveKeyValue, serialize } from "./serialize";
+export { getTimestamp } from "./timestamp";
 export { withMiddleware } from "./with-middleware";
 
 export type {

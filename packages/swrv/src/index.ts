@@ -49,7 +49,10 @@ export type {
 export type { MutationFetcher, SWRVMutationConfiguration, SWRVMutationResponse } from "./mutation";
 export type {
   SWRVInfiniteConfiguration,
+  SWRVInfiniteKeyedMutator,
   SWRVInfiniteKeyLoader,
+  SWRVInfiniteMutatorOptions,
+  SWRVInfiniteRevalidateFn,
   SWRVInfiniteResponse,
 } from "./infinite";
 export type {

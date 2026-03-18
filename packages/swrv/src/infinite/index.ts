@@ -8,6 +8,8 @@ import { callFetcher, serialize } from "../_internal/serialize";
 import type {
   BareFetcher,
   KeySource,
+  MutatorCallback,
+  MutatorOptions,
   RawKey,
   SWRVConfiguration,
   SWRVHook,
@@ -17,6 +19,7 @@ import type {
 
 const INFINITE_PREFIX = "$inf$";
 const sizeStorage = new WeakMap<object, Map<string, number>>();
+const revalidationStorage = new WeakMap<object, Map<string, InfiniteRevalidationState<any>>>();
 
 export type SWRVInfiniteKeyLoader<Data = unknown> = (
   index: number,
@@ -34,12 +37,34 @@ export interface SWRVInfiniteConfiguration<
   revalidateFirstPage?: boolean;
 }
 
-export interface SWRVInfiniteResponse<Data = unknown, Error = unknown> extends SWRVResponse<
-  Data[],
-  Error
+export interface SWRVInfiniteRevalidateFn<Data = unknown> {
+  (data: Data | undefined, key: RawKey): boolean;
+}
+
+export type SWRVInfiniteKeyedMutator<Data> = <MutationData = Data>(
+  data?: Data | Promise<Data | undefined> | MutatorCallback<Data>,
+  options?: boolean | SWRVInfiniteMutatorOptions<Data, MutationData>,
+) => Promise<Data | MutationData | undefined>;
+
+export interface SWRVInfiniteMutatorOptions<Data = unknown, MutationData = Data> extends Omit<
+  MutatorOptions<Data, MutationData>,
+  "revalidate"
 > {
+  revalidate?: boolean | SWRVInfiniteRevalidateFn<Data extends unknown[] ? Data[number] : never>;
+}
+
+export interface SWRVInfiniteResponse<Data = unknown, Error = unknown> extends Omit<
+  SWRVResponse<Data[], Error>,
+  "mutate"
+> {
+  mutate: SWRVInfiniteKeyedMutator<Data[]>;
   setSize: (size: number | ((currentSize: number) => number)) => Promise<Data[] | undefined>;
   size: SWRVResponse<number, never>["data"];
+}
+
+interface InfiniteRevalidationState<Data = unknown> {
+  revalidate?: boolean | SWRVInfiniteRevalidateFn<Data>;
+  revalidateAll?: boolean;
 }
 
 function getSizeStore(storageKey: object) {
@@ -50,6 +75,17 @@ function getSizeStore(storageKey: object) {
 
   const next = new Map<string, number>();
   sizeStorage.set(storageKey, next);
+  return next;
+}
+
+function getRevalidationStore(storageKey: object) {
+  const current = revalidationStorage.get(storageKey);
+  if (current) {
+    return current;
+  }
+
+  const next = new Map<string, InfiniteRevalidationState<any>>();
+  revalidationStorage.set(storageKey, next);
   return next;
 }
 
@@ -78,6 +114,7 @@ const infinite = (<Data = unknown, Error = unknown>(useSWRVNext: SWRVHook) =>
   ): SWRVInfiniteResponse<Data, Error> => {
     const { client } = useSWRVConfig();
     const sizeStore = getSizeStore(client.cache as object);
+    const revalidationStore = getRevalidationStore(client.cache as object);
     const initialSize = config.initialSize ?? 1;
 
     const size = ref(initialSize);
@@ -87,6 +124,10 @@ const infinite = (<Data = unknown, Error = unknown>(useSWRVNext: SWRVHook) =>
     const resolvePages = async (infiniteKey: string, options: { revalidateAll?: boolean } = {}) => {
       const pages: Data[] = [];
       const tasks: Array<Promise<void>> = [];
+      const pendingRevalidation = revalidationStore.get(infiniteKey);
+      if (pendingRevalidation) {
+        revalidationStore.delete(infiniteKey);
+      }
       const revalidateFirstPage =
         config.revalidateFirstPage !== false &&
         client.getState<Data[], Error>(infiniteKey)?.data !== undefined;
@@ -100,13 +141,21 @@ const infinite = (<Data = unknown, Error = unknown>(useSWRVNext: SWRVHook) =>
 
         const cached = client.getState<Data, Error>(serializedPageKey);
         const shouldFetchPage =
+          options.revalidateAll ||
+          pendingRevalidation?.revalidateAll ||
+          config.revalidateAll ||
+          cached?.data === undefined ||
+          (revalidateFirstPage && index === 0);
+        const shouldRevalidatePage = pendingRevalidation?.revalidate;
+        const shouldFetchCurrentPage =
           Boolean(fetcher) &&
-          (options.revalidateAll ||
-            config.revalidateAll ||
-            cached?.data === undefined ||
-            (revalidateFirstPage && index === 0));
+          (typeof shouldRevalidatePage === "function"
+            ? shouldRevalidatePage(cached?.data, rawPageKey)
+            : shouldRevalidatePage === true
+              ? true
+              : shouldFetchPage);
 
-        if (!shouldFetchPage) {
+        if (!shouldFetchCurrentPage) {
           if (cached?.data !== undefined) {
             pages[index] = cached.data;
             if (!config.parallel) {
@@ -190,18 +239,31 @@ const infinite = (<Data = unknown, Error = unknown>(useSWRVNext: SWRVHook) =>
       value,
       options,
     ) {
-      if (arguments.length === 0) {
-        const infiniteKey = resolveInfiniteKey();
-        if (!infiniteKey) {
-          return undefined;
-        }
-
-        const pages = await resolvePages(infiniteKey, { revalidateAll: true });
-        await swrv.mutate(pages, { revalidate: false });
-        return pages;
+      const infiniteKey = resolveInfiniteKey();
+      if (!infiniteKey) {
+        return undefined;
       }
 
-      return swrv.mutate(value, options as never);
+      const normalizedOptions = (
+        typeof options === "boolean" ? { revalidate: options } : (options ?? {})
+      ) as SWRVInfiniteMutatorOptions<Data[], any>;
+      const shouldRevalidate = normalizedOptions.revalidate !== false;
+
+      if (shouldRevalidate) {
+        revalidationStore.set(infiniteKey, {
+          revalidateAll: arguments.length === 0,
+          revalidate: normalizedOptions.revalidate,
+        });
+      }
+
+      if (arguments.length === 0) {
+        return swrv.mutate();
+      }
+
+      return swrv.mutate(value, {
+        ...normalizedOptions,
+        revalidate: shouldRevalidate,
+      } as never);
     };
 
     return {
@@ -216,9 +278,39 @@ const infinite = (<Data = unknown, Error = unknown>(useSWRVNext: SWRVHook) =>
         size.value = typeof nextSize === "function" ? nextSize(size.value) : nextSize;
         sizeStore.set(infiniteKey, size.value);
 
-        const pages = await resolvePages(infiniteKey);
-        await swrv.mutate(pages, { revalidate: false });
-        return pages;
+        const pages: Data[] = [];
+        let previousPageData: Data | null = null;
+
+        for (let index = 0; index < size.value; index += 1) {
+          const [serializedPageKey]: [string, RawKey] = serializePage(
+            getKey,
+            index,
+            config.parallel ? null : previousPageData,
+          );
+
+          if (!serializedPageKey) {
+            break;
+          }
+
+          const cachedPageData: Data | undefined = client.getState<Data, Error>(
+            serializedPageKey,
+          )?.data;
+          if (cachedPageData === undefined) {
+            const currentPages = client.getState<Data[], Error>(infiniteKey)?.data;
+            if (currentPages === undefined) {
+              return mutatePages();
+            }
+
+            return mutatePages(currentPages);
+          }
+
+          pages.push(cachedPageData);
+          if (!config.parallel) {
+            previousPageData = cachedPageData;
+          }
+        }
+
+        return mutatePages(pages);
       },
       size,
     };

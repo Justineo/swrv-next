@@ -1,4 +1,5 @@
 import { serialize } from "./serialize";
+import { getTimestamp } from "./timestamp";
 
 import type {
   CacheState,
@@ -88,7 +89,7 @@ export function createScopedMutator(client: SWRVClient): ScopedMutator {
 
     const committedData = currentState._c === undefined ? currentState.data : currentState._c;
 
-    const mutationStartedAt = Date.now();
+    const mutationStartedAt = getTimestamp();
     client.setMutation(serializedKey, [mutationStartedAt, 0]);
 
     if (normalizedOptions.optimisticData !== undefined) {
@@ -180,7 +181,7 @@ export function createScopedMutator(client: SWRVClient): ScopedMutator {
       );
     }
 
-    client.setMutation(serializedKey, [mutationStartedAt, Date.now()]);
+    client.setMutation(serializedKey, [mutationStartedAt, getTimestamp()]);
 
     const revalidate = shouldRevalidate(
       normalizedOptions.revalidate,

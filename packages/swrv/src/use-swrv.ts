@@ -3,6 +3,7 @@ import { getCurrentScope, onScopeDispose, ref, watch } from "vue";
 import { mergeConfiguration, useSWRVContext } from "./config";
 import { createScopedMutator } from "./_internal/mutate";
 import { callFetcher, resolveKeyValue, serialize } from "./_internal/serialize";
+import { getTimestamp } from "./_internal/timestamp";
 
 import type {
   BareFetcher,
@@ -260,7 +261,7 @@ function useSWRVHandler<Data = unknown, Error = unknown>(
       }
     }
 
-    const now = Date.now();
+    const now = getTimestamp();
     const currentFetch =
       options.dedupe === false
         ? undefined

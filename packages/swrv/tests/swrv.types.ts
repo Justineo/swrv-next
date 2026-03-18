@@ -55,6 +55,10 @@ const infiniteResponse = useSWRVInfinite<string>(
   async (...args: readonly unknown[]) => `${String(args[0])}:${String(args[1])}`,
 );
 
+const infiniteMutate = infiniteResponse.mutate(["page:0"], {
+  revalidate: (page, key) => page === "page:0" && Array.isArray(key),
+});
+
 const infiniteSerialized = unstableSerializeInfinite<string>((index, previousPageData) => {
   if (previousPageData) {
     return [previousPageData, index] as const;
@@ -99,6 +103,7 @@ const typeAssertions = {
   middlewareData: true as Expect<Equal<typeof middlewareResponse.data.value, string | undefined>>,
   infiniteData: true as Expect<Equal<typeof infiniteResponse.data.value, string[] | undefined>>,
   infiniteSize: true as Expect<Equal<typeof infiniteResponse.size.value, number | undefined>>,
+  infiniteMutate: true as Expect<Equal<Awaited<typeof infiniteMutate>, string[] | undefined>>,
   infiniteSerialized: true as Expect<Equal<typeof infiniteSerialized, string>>,
   mutationArg: true as Expect<Equal<Parameters<typeof mutation.trigger>[0], { name: string }>>,
   mutationResult: true as Expect<
@@ -117,6 +122,7 @@ void middlewareResponse;
 void refResponse;
 void immutableResponse;
 void infiniteResponse;
+void infiniteMutate;
 void mutation;
 void subscription;
 void typeAssertions;

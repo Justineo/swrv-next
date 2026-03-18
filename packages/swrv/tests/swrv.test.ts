@@ -326,6 +326,34 @@ describe("swrv", () => {
     expect(state.data.value).toEqual(["page 0, ", "page 1, ", "page 2, "]);
   });
 
+  it("does not revalidate the first page when revalidateFirstPage is false", async () => {
+    let requests = 0;
+    const key = `infinite-no-first-page-${Date.now()}`;
+
+    const state = runComposable(() =>
+      useSWRVInfinite<string>(
+        (index) => [key, index] as const,
+        async (...args: readonly unknown[]) => {
+          requests += 1;
+          return `page ${String(args[1])}, `;
+        },
+        {
+          revalidateFirstPage: false,
+        },
+      ),
+    );
+
+    await settle();
+    expect(requests).toBe(1);
+    expect(state.data.value).toEqual(["page 0, "]);
+
+    await state.setSize(2);
+    await settle();
+
+    expect(requests).toBe(2);
+    expect(state.data.value).toEqual(["page 0, ", "page 1, "]);
+  });
+
   it("revalidates all loaded pages when infinite mutate() is called without data", async () => {
     const pageData = ["apple", "banana", "pineapple"];
     const key = `infinite-mutate-${Date.now()}`;
@@ -346,6 +374,31 @@ describe("swrv", () => {
     await settle(6);
 
     expect(state.data.value).toEqual(["apple, ", "watermelon, ", "pineapple, "]);
+  });
+
+  it("supports page-selective revalidation in infinite bound mutate", async () => {
+    let pageData = ["apple", "banana", "pineapple"];
+    const key = `infinite-selective-${Date.now()}`;
+
+    const state = runComposable(() =>
+      useSWRVInfinite<string>(
+        (index) => [key, index] as const,
+        async (...args: readonly unknown[]) => pageData[Number(args[1])],
+        { initialSize: 3 },
+      ),
+    );
+
+    await settle(6);
+    expect(state.data.value).toEqual(["apple", "banana", "pineapple"]);
+
+    pageData = pageData.map((value) => `[${value}]`);
+    await state.mutate(state.data.value, {
+      revalidate: (page, pageKey) =>
+        page === "apple" || (Array.isArray(pageKey) && pageKey[1] === 2),
+    });
+    await settle(6);
+
+    expect(state.data.value).toEqual(["[apple]", "banana", "[pineapple]"]);
   });
 
   it("does not throw when infinite getKey is not ready and mutate() is called", async () => {

@@ -97,6 +97,7 @@ Current behavior highlights:
 - exposes `unstable_serialize`
 - treats `setSize()` as a page-oriented operation
 - no-arg `mutate()` revalidates the loaded pages
+- bound `mutate(data, { revalidate })` supports page-selective revalidation callbacks
 
 ## `swrv/immutable`
 

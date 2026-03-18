@@ -35,9 +35,11 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - config-level `isVisible()` and `isOnline()` overrides now participate in focus, reconnect, and active-state gating
   - config-level `onErrorRetry`, `onLoadingSlow`, and `onDiscarded` now exist for retry scheduling, slow-request signaling, and stale-response races
   - the request path now holds onto the exact in-flight promise instead of re-reading it through the dedupe window, which fixes `dedupingInterval: 0` flakiness
+  - request and mutation ordering now use high-resolution timestamps, which avoids false stale-response discards when revalidation starts immediately after a mutation
 - The infinite and mutation helpers have also moved closer to SWR:
   - `swrv/infinite` now exposes `unstable_serialize`, resolves page keys safely, supports cursor-style sequential loading, and treats `setSize()` as a page-oriented operation instead of a raw aggregate refresh
   - `swrv/infinite` now revalidates the first page while loading new pages and lets no-arg `mutate()` revalidate all loaded pages
+  - `swrv/infinite` now respects `revalidateFirstPage: false` while growing, uses cached data first in `setSize()`, and supports page-selective revalidation callbacks through bound `mutate(data, { revalidate })`
   - `swrv/mutation` now guards local state against stale trigger results after `reset()` or a newer trigger
   - scoped `mutate()` now returns the actual mutation result even when `populateCache` is disabled
 - The subscription helper has now received its first real parity pass:
