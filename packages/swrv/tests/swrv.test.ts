@@ -440,6 +440,111 @@ describe("swrv", () => {
     expect(previousPageDataLogs.every((value) => value === null)).toBe(true);
   });
 
+  it("persists page size when the infinite key changes", async () => {
+    const key = `infinite-persist-size-${Date.now()}`;
+    const toggle = ref(false);
+
+    const state = runComposable(() =>
+      useSWRVInfinite<string>(
+        (index) => [key, index, toggle.value ? "A" : "B"] as const,
+        async (...args: readonly unknown[]) => `${String(args[2])}:${String(args[1])}`,
+        {
+          persistSize: true,
+        },
+      ),
+    );
+
+    await settle();
+    expect(state.data.value).toEqual(["B:0"]);
+
+    await state.setSize(2);
+    await settle();
+    expect(state.size.value).toBe(2);
+    expect(state.data.value).toEqual(["B:0", "B:1"]);
+
+    toggle.value = true;
+    await settle(6);
+
+    expect(state.size.value).toBe(2);
+    expect(state.data.value).toEqual(["A:0", "A:1"]);
+  });
+
+  it("supports callback-style setSize updates", async () => {
+    const key = `infinite-set-size-callback-${Date.now()}`;
+
+    const state = runComposable(() =>
+      useSWRVInfinite<string>(
+        (index) => `${key}-${index}`,
+        async (...args: readonly unknown[]) => `page-${String(args[0])}`,
+      ),
+    );
+
+    await settle();
+    expect(state.size.value).toBe(1);
+    expect(state.data.value).toEqual([`page-${key}-0`]);
+
+    await state.setSize((size) => size + 1);
+    await settle();
+    expect(state.size.value).toBe(2);
+    expect(state.data.value).toEqual([`page-${key}-0`, `page-${key}-1`]);
+
+    await state.setSize((size) => size + 1);
+    await settle();
+    expect(state.size.value).toBe(3);
+    expect(state.data.value).toEqual([`page-${key}-0`, `page-${key}-1`, `page-${key}-2`]);
+  });
+
+  it("uses cached page data immediately while revalidating infinite size growth in the background", async () => {
+    vi.useFakeTimers();
+
+    const key = `infinite-cached-page-${Date.now()}`;
+    const client = createSWRVClient();
+    const fetcher = vi.fn(
+      async (..._args: readonly unknown[]) =>
+        await new Promise<string>((resolve) => {
+          setTimeout(() => {
+            resolve("response value");
+          }, 30);
+        }),
+    );
+
+    client.setState<string, Error>(
+      `${key}-1`,
+      {
+        data: "cached value",
+        error: undefined,
+        isLoading: false,
+        isValidating: false,
+      },
+      0,
+      `${key}-1`,
+    );
+
+    const state = mountWithConfig(
+      () => useSWRVInfinite<string>((index) => `${key}-${index}`, fetcher),
+      { client },
+    );
+
+    await flush();
+    await vi.advanceTimersByTimeAsync(30);
+    await settle();
+
+    expect(state().data.value).toEqual(["response value"]);
+    expect(fetcher).toHaveBeenCalledTimes(1);
+
+    const setSizePromise = state().setSize(2);
+    await flush();
+
+    expect(state().data.value).toEqual(["response value", "cached value"]);
+    expect(fetcher).toHaveBeenCalledTimes(2);
+
+    await vi.advanceTimersByTimeAsync(30);
+    await setSizePromise;
+    await settle();
+
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+
   it("supports mutation hooks updating cache when populateCache is enabled", async () => {
     const key = `mutation-${Date.now()}`;
     const swrv = runComposable(() => useSWRV<string>(key));
