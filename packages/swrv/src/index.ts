@@ -51,6 +51,7 @@ export type {
   TriggerWithoutArgs,
 } from "./mutation";
 export type {
+  SWRVInfiniteCompareFn,
   SWRVInfiniteConfiguration,
   SWRVInfiniteKeyedMutator,
   SWRVInfiniteKeyLoader,

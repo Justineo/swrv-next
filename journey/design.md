@@ -44,6 +44,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - `swrv/infinite` now revalidates the first page while loading new pages and lets no-arg `mutate()` revalidate all loaded pages
   - `swrv/infinite` now respects `revalidateFirstPage: false` while growing, uses cached data first in `setSize()`, and supports page-selective revalidation callbacks through bound `mutate(data, { revalidate })`
   - `swrv/infinite` now consumes preloaded page requests, including multiple preloaded pages in parallel mode
+  - `swrv/infinite` now revalidates page entries when the aggregate infinite cache and per-page cache diverge after local mutation, which keeps later size growth aligned with SWR's aggregate/page cache model
   - infinite behavior coverage now includes `unstable_serialize` mutation paths, scoped custom-cache revalidation, and null-key `setSize()` handling
   - `swrv/mutation` now guards local state against stale trigger results after `reset()` or a newer trigger, and it still records local error state when `throwOnError` is disabled
   - scoped `mutate()` now returns the actual mutation result even when `populateCache` is disabled

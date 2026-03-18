@@ -26,15 +26,21 @@ export type SWRVInfiniteKeyLoader<Data = unknown> = (
   previousPageData: Data | null,
 ) => RawKey;
 
-export interface SWRVInfiniteConfiguration<
-  Data = unknown,
-  Error = unknown,
-> extends SWRVConfiguration<Data[], Error> {
+export interface SWRVInfiniteConfiguration<Data = unknown, Error = unknown> extends Omit<
+  SWRVConfiguration<Data[], Error>,
+  "compare"
+> {
   initialSize?: number;
   parallel?: boolean;
   persistSize?: boolean;
   revalidateAll?: boolean;
   revalidateFirstPage?: boolean;
+  compare?: SWRVInfiniteCompareFn<Data>;
+}
+
+export interface SWRVInfiniteCompareFn<Data = unknown> {
+  (left: Data | undefined, right: Data | undefined): boolean;
+  (left: Data[] | undefined, right: Data[] | undefined): boolean;
 }
 
 export interface SWRVInfiniteRevalidateFn<Data = unknown> {
@@ -128,9 +134,8 @@ const infinite = (<Data = unknown, Error = unknown>(useSWRVNext: SWRVHook) =>
       if (pendingRevalidation) {
         revalidationStore.delete(infiniteKey);
       }
-      const revalidateFirstPage =
-        config.revalidateFirstPage !== false &&
-        client.getState<Data[], Error>(infiniteKey)?.data !== undefined;
+      const cachedPages = client.getState<Data[], Error>(infiniteKey)?.data;
+      const revalidateFirstPage = config.revalidateFirstPage !== false && cachedPages !== undefined;
       let previousPageData: Data | null = null;
 
       const loadPage = async (index: number, pageKey: RawKey) => {
@@ -140,12 +145,16 @@ const infinite = (<Data = unknown, Error = unknown>(useSWRVNext: SWRVHook) =>
         }
 
         const cached = client.getState<Data, Error>(serializedPageKey);
+        const aggregatePageData =
+          Array.isArray(cachedPages) && index < cachedPages.length ? cachedPages[index] : undefined;
         const shouldFetchPage =
           options.revalidateAll ||
           pendingRevalidation?.revalidateAll ||
           config.revalidateAll ||
           cached?.data === undefined ||
-          (revalidateFirstPage && index === 0);
+          (revalidateFirstPage && index === 0) ||
+          (aggregatePageData !== undefined &&
+            !(config.compare ?? Object.is)(aggregatePageData, cached?.data));
         const shouldRevalidatePage = pendingRevalidation?.revalidate;
         const shouldFetchCurrentPage =
           Boolean(fetcher) &&

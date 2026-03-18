@@ -879,6 +879,36 @@ describe("swrv", () => {
     expect(state.data.value).toEqual(["(edited)page 0, ", "(edited)page 1, "]);
   });
 
+  it("keeps mutated aggregate infinite data when size grows later", async () => {
+    const key = `infinite-grow-after-mutate-${Date.now()}`;
+    const fetchCounts = [0, 0, 0];
+    const fetcher = vi.fn(async (...args: readonly unknown[]) => {
+      const index = Number(args[1]);
+      const version = fetchCounts[index] ?? 0;
+      fetchCounts[index] = version + 1;
+      return `page ${index}:${version}`;
+    });
+
+    const state = runComposable(() =>
+      useSWRVInfinite<string>((index) => [key, index] as const, fetcher, {
+        dedupingInterval: 0,
+        initialSize: 2,
+      }),
+    );
+
+    await settle();
+    expect(state.data.value).toEqual(["page 0:0", "page 1:0"]);
+
+    await state.mutate(["(edited)page 0", "(edited)page 1"], false);
+    await settle();
+    expect(state.data.value).toEqual(["(edited)page 0", "(edited)page 1"]);
+
+    await state.setSize(3);
+    await settle();
+
+    expect(state.data.value).toEqual(["page 0:1", "page 1:1", "page 2:0"]);
+  });
+
   it("uses seeded first-page cache data with unstable_serialize revalidation", async () => {
     const key = `infinite-seeded-${Date.now()}`;
     const client = createSWRVClient();
