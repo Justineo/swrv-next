@@ -81,6 +81,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - the workspace and published package manifests are now aligned to the intended prerelease line at `2.0.0-next.0`
 - The main reference materials for the rebuild remain:
   - `journey/research/swr-vs-swrv.md`
+  - `journey/research/2026-03-18-swrv-next-vs-swr-and-swrv-current-state.md`
   - `/Users/yiling.gu@konghq.com/Developer/Justineo/swr` (local SWR source, version 2.4.1)
   - `/Users/yiling.gu@konghq.com/Developer/Kong/swrv` (local legacy SWRV source, version 1.1.0)
 
@@ -100,6 +101,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
 - Use plain VitePress scripts for docs builds inside `packages/docs`, but continue to drive workspace orchestration through `vp run ...`.
 - Keep the library build on stable declaration generation for now instead of the experimental `tsgo` path.
 - Treat explicit client scoping plus config-level `fallback` as the supported SSR path for the first launch-ready cut. Deeper Nuxt integration and dedicated hydration helpers are follow-up work, not blockers for the current release line.
+- Do not port SWR's getter-based dependency-collection mechanism into Vue. `swrv-next` already exposes separate refs, so Vue's native dependency tracking is the right model. Performance follow-up should focus on narrower issues such as redundant cache-to-ref sync and unstable watch sources instead.
 - Freeze the rebuilt release line as a breaking `2.x` track, and keep prerelease automation on the `next` dist-tag until the first stable cut is ready.
 - Freeze the published Vue support range at `>=3.2.26 <4`.
 - Freeze the typed-consumer and contributor TypeScript baseline at `>=5.5`.
