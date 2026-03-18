@@ -40,6 +40,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - filter-based global `mutate()` now skips the internal `$inf$` and `$sub$` cache records so implementation details do not leak through the public key-filter path
   - preload requests now dedupe by serialized key, clear failed entries for retries, accept function and tuple keys with typed fetcher arguments, and are consumed by the first matching hook fetch
   - cache-listener updates now consume the listener payload directly instead of re-reading cache for the active hook, and local cache writes no longer redundantly re-apply state when the active subscription already covers the key
+  - cache write notifications are now normalized through the adapter's read path before listeners fire, so custom provider caches that transform `get()` results stay consistent for active hooks as well as later reads
   - key watchers for `useSWRV` and `useSWRVSubscription` now track stable serialized keys instead of fresh tuple objects, which avoids unnecessary reactivation, refetch, and resubscription work when reactive dependencies invalidate without changing the effective key
   - polling timers now reschedule when provider-driven refresh settings change, including reactive `refreshInterval` updates and function-style intervals that derive their next delay from the latest data
   - stale per-hook refresh completions no longer reset polling or fire hook-local success or error callbacks after the hook has switched to a different key, while cache updates for the old key still land for other consumers
@@ -76,6 +77,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
 - The test suite has now started splitting into domain files instead of a single monolith, with the first extracted `core-config-revalidate` coverage file carrying config fallback, focus, reconnect, retry, callback, and immutable revalidation behavior plus an upstream-inspired reactive `SWRVConfig` focus test.
 - Upstream parity ingestion has now also started at the unit and context layer, with dedicated coverage for root `unstable_serialize`, Vue key-source serialization, and the SWR-style "mutate before mount still renders prefetched data and then revalidates" behavior.
 - A dedicated `core-loading-key` domain file now covers upstream-inspired loading and key behavior as well, including shared validating state, key-switch race suppression, clearing stale data on key change without `keepPreviousData`, function-key failure handling, and deep-equal object-key deduplication.
+- A dedicated `core-cache-provider` domain file now covers provider-scoped cache behavior, including isolated clients, seeded cache reads, scoped cache mutation through `useSWRVConfig`, nested provider boundaries, and parent-cache extension through `provider(parentCache)`.
 - A dedicated `core-refresh-compare` domain file now covers upstream-inspired interval polling and compare behavior, including deduped polling, reactive provider interval changes, function-style refresh intervals, stop-polling updates, and compare-only-on-data semantics.
 - The same `core-refresh-compare` domain file now also covers fast key-switch polling behavior so stale refresh completions cannot shift the new key's timer lane or fire stale `onSuccess` callbacks.
 - A dedicated `core-error-state` domain file now covers upstream-inspired error semantics, including synchronous and asynchronous fetcher failures, deduped `onError`, preserved error state during manual revalidation, `shouldRetryOnError` gating, and stale-key error callback suppression.
@@ -89,6 +91,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - config-level `fallback` data is supported and stays visible during initial revalidation
   - nested `SWRVConfig` boundaries merge fallback maps in SWR-style order
   - `SWRVConfig` now also supports the SWR-style functional `value` form, which receives the parent config but replaces parent overrides with its returned object
+  - `SWRVConfig.provider` now also receives the parent cache, so nested providers can extend rather than only replace the inherited cache view
   - SWR-style `use` middleware composition now works across `useSWRV`, `immutable`, `infinite`, `mutation`, and `subscription`
   - the published package includes explicit typed subpath exports, a package README, and an Apache-2.0 license file
   - root contributor and security guidance now exist for repository users and maintainers

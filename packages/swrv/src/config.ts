@@ -113,7 +113,7 @@ function createClientFromValue(
   }
 
   if (value.provider) {
-    return createSWRVClient(value.provider());
+    return createSWRVClient(value.provider(fallback.cache));
   }
 
   return fallback;

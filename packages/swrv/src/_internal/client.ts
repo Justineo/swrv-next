@@ -87,8 +87,9 @@ export function createSWRVClient(
     } satisfies CacheState<Data, Error>;
 
     cache.set(key, next);
-    notifyListeners(key, next, previous);
-    return next;
+    const current = getState<Data, Error>(key) ?? next;
+    notifyListeners(key, current, previous);
+    return current;
   };
 
   const subscribe = (key: string, callback: CacheListener) => {

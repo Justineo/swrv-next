@@ -82,7 +82,9 @@ export interface SWRVConfiguration<
     key: string,
     config: Readonly<ResolvedSWRVConfiguration<Data, Error, Fn>>,
   ) => void;
-  provider?: () => CacheAdapter<CacheState<any, any>>;
+  provider?: (
+    parentCache: CacheAdapter<CacheState<any, any>>,
+  ) => CacheAdapter<CacheState<any, any>>;
   refreshInterval?: number | ((latestData: Data | undefined) => number);
   refreshWhenHidden?: boolean;
   refreshWhenOffline?: boolean;

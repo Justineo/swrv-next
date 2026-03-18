@@ -130,33 +130,6 @@ describe("swrv", () => {
     expect(state.data.value).toBe("stable-key:1");
   });
 
-  it("keeps provider clients isolated", async () => {
-    const key = "provider-isolation";
-    const clientA = createSWRVClient();
-    const clientB = createSWRVClient();
-
-    const stateA = mountWithClient(clientA, key);
-    const stateB = mountWithClient(clientB, key);
-
-    const [serializedKey] = serialize(key);
-    clientA.setState(
-      serializedKey,
-      {
-        data: "alpha",
-        error: undefined,
-        isLoading: false,
-        isValidating: false,
-      },
-      0,
-      key,
-    );
-
-    await flush();
-
-    expect(stateA().data.value).toBe("alpha");
-    expect(stateB().data.value).toBeUndefined();
-  });
-
   it("uses cache listener payloads without rereading the cache for the active hook", async () => {
     const key = `listener-payload-${Date.now()}`;
     const client = createSWRVClient();
