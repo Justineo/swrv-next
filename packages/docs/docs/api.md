@@ -43,11 +43,15 @@ Key notes:
 </SWRVConfig>
 ```
 
+`value` can also be a function that receives the parent config and returns a
+replacement config object.
+
 Current supported high-value options include:
 
 - `client`, `cache`, and `provider` for cache boundaries
 - `fallback` for config-level initial data
 - `fetcher` for a shared fetcher
+- `use` for SWR-style middleware composition across `useSWRV` and companion hooks
 - revalidation controls such as `revalidateOnMount`, `revalidateOnFocus`, `revalidateOnReconnect`, and `isPaused`
 - activity overrides through `isVisible` and `isOnline`
 - lifecycle callbacks through `onSuccess` and `onError`

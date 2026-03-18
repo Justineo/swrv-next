@@ -54,6 +54,8 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
 - The package publish surface is now materially closer to launch-ready:
   - config-level `fallback` data is supported and stays visible during initial revalidation
   - nested `SWRVConfig` boundaries merge fallback maps in SWR-style order
+  - `SWRVConfig` now also supports the SWR-style functional `value` form, which receives the parent config but replaces parent overrides with its returned object
+  - SWR-style `use` middleware composition now works across `useSWRV`, `immutable`, `infinite`, `mutation`, and `subscription`
   - the published package includes explicit typed subpath exports, a package README, and an Apache-2.0 license file
   - root contributor and security guidance now exist for repository users and maintainers
 - The main reference materials for the rebuild remain:

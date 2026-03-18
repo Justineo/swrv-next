@@ -13,6 +13,7 @@ import type {
   RevalidateEventOptions,
   RevalidateOptions,
   ResolvedSWRVConfiguration,
+  SWRVHook,
   SWRVConfiguration,
   SWRVResponse,
 } from "./_internal/types";
@@ -79,10 +80,10 @@ export function unstable_serialize(key: RawKey | (() => RawKey)) {
   return serialize(key)[0];
 }
 
-export default function useSWRV<Data = unknown, Error = unknown, Key extends RawKey = RawKey>(
+function useSWRVHandler<Data = unknown, Error = unknown, Key extends RawKey = RawKey>(
   key: KeySource<Key>,
 ): SWRVResponse<Data, Error>;
-export default function useSWRV<
+function useSWRVHandler<
   Data = unknown,
   Error = unknown,
   Key extends readonly unknown[] = readonly unknown[],
@@ -91,21 +92,17 @@ export default function useSWRV<
   fetcher: ((...args: Key) => FetcherResponse<Data>) | null | undefined,
   config?: SWRVConfiguration<Data, Error>,
 ): SWRVResponse<Data, Error>;
-export default function useSWRV<
-  Data = unknown,
-  Error = unknown,
-  Key extends NonArrayKey = NonArrayKey,
->(
+function useSWRVHandler<Data = unknown, Error = unknown, Key extends NonArrayKey = NonArrayKey>(
   key: KeySource<Key>,
   fetcher: ((arg: Key) => FetcherResponse<Data>) | null | undefined,
   config?: SWRVConfiguration<Data, Error>,
 ): SWRVResponse<Data, Error>;
-export default function useSWRV<Data = unknown, Error = unknown>(
+function useSWRVHandler<Data = unknown, Error = unknown>(
   key: KeySource<RawKey>,
   fetcher: BareFetcher<Data> | null | undefined,
   config?: SWRVConfiguration<Data, Error>,
 ): SWRVResponse<Data, Error>;
-export default function useSWRV<Data = unknown, Error = unknown>(
+function useSWRVHandler<Data = unknown, Error = unknown>(
   key: KeySource<RawKey>,
   fetcher?: BareFetcher<Data> | null,
   config?: SWRVConfiguration<Data, Error>,
@@ -577,4 +574,50 @@ export default function useSWRV<Data = unknown, Error = unknown>(
       )) as Data | undefined;
     },
   } as SWRVResponse<Data, Error>;
+}
+
+export default function useSWRV<Data = unknown, Error = unknown, Key extends RawKey = RawKey>(
+  key: KeySource<Key>,
+): SWRVResponse<Data, Error>;
+export default function useSWRV<
+  Data = unknown,
+  Error = unknown,
+  Key extends readonly unknown[] = readonly unknown[],
+>(
+  key: KeySource<Key>,
+  fetcher: ((...args: Key) => FetcherResponse<Data>) | null | undefined,
+  config?: SWRVConfiguration<Data, Error>,
+): SWRVResponse<Data, Error>;
+export default function useSWRV<
+  Data = unknown,
+  Error = unknown,
+  Key extends NonArrayKey = NonArrayKey,
+>(
+  key: KeySource<Key>,
+  fetcher: ((arg: Key) => FetcherResponse<Data>) | null | undefined,
+  config?: SWRVConfiguration<Data, Error>,
+): SWRVResponse<Data, Error>;
+export default function useSWRV<Data = unknown, Error = unknown>(
+  key: KeySource<RawKey>,
+  fetcher: BareFetcher<Data> | null | undefined,
+  config?: SWRVConfiguration<Data, Error>,
+): SWRVResponse<Data, Error>;
+export default function useSWRV<Data = unknown, Error = unknown>(
+  key: KeySource<RawKey>,
+  fetcher?: BareFetcher<Data> | null,
+  config?: SWRVConfiguration<Data, Error>,
+): SWRVResponse<Data, Error> {
+  const context = useSWRVContext();
+  const middlewares = mergeConfiguration(context.config.value, config).use;
+
+  if (middlewares.length === 0) {
+    return useSWRVHandler(key, fetcher, config);
+  }
+
+  let next = useSWRVHandler as SWRVHook;
+  for (let index = middlewares.length - 1; index >= 0; index -= 1) {
+    next = middlewares[index](next);
+  }
+
+  return next(key, fetcher, config);
 }

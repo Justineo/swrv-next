@@ -92,7 +92,16 @@ export interface SWRVConfiguration<
   revalidateOnReconnect?: boolean;
   shouldRetryOnError?: boolean | ((error: Error) => boolean);
   ttl?: number;
+  use?: SWRVMiddleware[];
 }
+
+export type SWRVConfigurationValue<
+  Data = unknown,
+  Error = unknown,
+  Fn extends BareFetcher<Data> = BareFetcher<Data>,
+> =
+  | SWRVConfiguration<Data, Error, Fn>
+  | ((parent: ResolvedSWRVConfiguration<Data, Error, Fn>) => SWRVConfiguration<Data, Error, Fn>);
 
 export interface ResolvedSWRVConfiguration<
   Data = unknown,
@@ -140,6 +149,7 @@ export interface ResolvedSWRVConfiguration<
   revalidateOnReconnect: boolean;
   shouldRetryOnError: boolean | ((error: Error) => boolean);
   ttl: number;
+  use: SWRVMiddleware[];
 }
 
 export interface RevalidateOptions {
@@ -183,6 +193,14 @@ export interface SWRVResponse<Data = unknown, Error = unknown> {
   isValidating: Ref<boolean>;
   mutate: BoundMutator<Data>;
 }
+
+export type SWRVHook = <Data = unknown, Error = unknown, Key extends RawKey = RawKey>(
+  key: KeySource<Key>,
+  fetcher?: BareFetcher<Data> | null,
+  config?: SWRVConfiguration<Data, Error>,
+) => SWRVResponse<Data, Error>;
+
+export type SWRVMiddleware = (useSWRNext: SWRVHook) => SWRVHook;
 
 export type RevalidateEvent = "focus" | "reconnect" | "mutate" | "error-revalidate";
 
@@ -264,5 +282,5 @@ export interface SWRVConfigAccessor {
 }
 
 export type SWRVConfigComponent = DefineComponent<{
-  value?: SWRVConfiguration<any, any>;
+  value?: SWRVConfigurationValue<any, any>;
 }>;

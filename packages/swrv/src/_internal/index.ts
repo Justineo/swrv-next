@@ -3,6 +3,7 @@ export { createSWRVClient } from "./client";
 export { stableHash } from "./hash";
 export { createScopedMutator } from "./mutate";
 export { callFetcher, resolveKeyValue, serialize } from "./serialize";
+export { withMiddleware } from "./with-middleware";
 
 export type {
   BareFetcher,
@@ -24,5 +25,8 @@ export type {
   SWRVClient,
   SWRVConfigAccessor,
   SWRVConfiguration,
+  SWRVConfigurationValue,
+  SWRVHook,
+  SWRVMiddleware,
   SWRVResponse,
 } from "./types";

@@ -21,6 +21,7 @@ import type {
   SWRVConfigAccessor,
   SWRVConfigComponent,
   SWRVConfiguration,
+  SWRVConfigurationValue,
   SWRVContextValue,
 } from "./_internal/types";
 
@@ -78,6 +79,7 @@ const DEFAULT_CONFIGURATION: ResolvedSWRVConfiguration<any, any> = {
   revalidateOnReconnect: true,
   shouldRetryOnError: true,
   ttl: 0,
+  use: [],
 };
 
 const defaultClient = createSWRVClient();
@@ -87,6 +89,13 @@ const defaultContext = {
 } satisfies SWRVContextValue;
 
 const contextKey = Symbol("swrv-config");
+
+function resolveConfigurationValue<Data = unknown, Error = unknown>(
+  parent: ResolvedSWRVConfiguration<Data, Error>,
+  value?: SWRVConfigurationValue<Data, Error>,
+) {
+  return typeof value === "function" ? value(parent) : value;
+}
 
 function createClientFromValue(
   value: SWRVConfiguration<any, any> | undefined,
@@ -134,6 +143,8 @@ export function mergeConfiguration<Data = unknown, Error = unknown>(
   merged.onErrorRetry = override?.onErrorRetry ?? base.onErrorRetry ?? defaultOnErrorRetry;
   merged.onLoadingSlow = override?.onLoadingSlow ?? base.onLoadingSlow ?? noop;
   merged.onSuccess = override?.onSuccess ?? base.onSuccess ?? noop;
+  merged.use =
+    base.use && override?.use ? base.use.concat(override.use) : (override?.use ?? base.use ?? []);
   return merged;
 }
 
@@ -171,16 +182,22 @@ export const SWRVConfig = defineComponent({
   name: "SWRVConfig",
   props: {
     value: {
-      type: Object as PropType<SWRVConfiguration<any, any>>,
+      type: [Object, Function] as PropType<SWRVConfigurationValue<any, any>>,
       default: undefined,
     },
   },
   setup(props, { slots }) {
     const parentContext = useSWRVContext();
-    const client = createClientFromValue(props.value, parentContext.client);
-    const resolvedConfig = computed(() =>
-      mergeConfiguration(parentContext.config.value, props.value),
-    );
+    const resolvedValue = () => resolveConfigurationValue(parentContext.config.value, props.value);
+    const client = createClientFromValue(resolvedValue(), parentContext.client);
+    const resolvedConfig = computed(() => {
+      const value = resolvedValue();
+      if (typeof props.value === "function") {
+        return mergeConfiguration(INTERNAL_DEFAULT_CONFIGURATION, value);
+      }
+
+      return mergeConfiguration(parentContext.config.value, value);
+    });
 
     provide(contextKey, {
       client,

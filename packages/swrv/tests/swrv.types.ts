@@ -4,7 +4,7 @@ import useSWRV, { useSWRVImmutable } from "../src";
 import useSWRVInfinite, { unstable_serialize as unstableSerializeInfinite } from "../src/infinite";
 import useSWRVMutation from "../src/mutation";
 import useSWRVSubscription from "../src/subscription";
-import type { SWRVConfiguration } from "../src";
+import type { SWRVConfiguration, SWRVMiddleware } from "../src";
 
 type Equal<Left, Right> =
   (<Value>() => Value extends Left ? 1 : 2) extends <Value>() => Value extends Right ? 1 : 2
@@ -30,6 +30,19 @@ const fallbackConfig = {
     user: "seed",
   },
 } satisfies SWRVConfiguration<string>;
+
+const loggerMiddleware: SWRVMiddleware = (useSWRVNext) => (key, fetcher, config) =>
+  useSWRVNext(key, fetcher, config);
+
+const middlewareConfig = {
+  use: [loggerMiddleware],
+} satisfies SWRVConfiguration<string>;
+
+const middlewareResponse = useSWRV<string, never, string>(
+  "middleware",
+  async (key: string) => key,
+  middlewareConfig,
+);
 
 const infiniteResponse = useSWRVInfinite<string>(
   (index, previousPageData) => {
@@ -83,6 +96,7 @@ const typeAssertions = {
   >,
   refData: true as Expect<Equal<typeof refResponse.data.value, string | undefined>>,
   immutableData: true as Expect<Equal<typeof immutableResponse.data.value, string | undefined>>,
+  middlewareData: true as Expect<Equal<typeof middlewareResponse.data.value, string | undefined>>,
   infiniteData: true as Expect<Equal<typeof infiniteResponse.data.value, string[] | undefined>>,
   infiniteSize: true as Expect<Equal<typeof infiniteResponse.size.value, number | undefined>>,
   infiniteSerialized: true as Expect<Equal<typeof infiniteSerialized, string>>,
@@ -98,6 +112,8 @@ const typeAssertions = {
 
 void tupleResponse;
 void fallbackConfig;
+void middlewareConfig;
+void middlewareResponse;
 void refResponse;
 void immutableResponse;
 void infiniteResponse;

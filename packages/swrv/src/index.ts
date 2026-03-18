@@ -41,6 +41,9 @@ export type {
   ScopedMutator,
   SWRVClient,
   SWRVConfiguration,
+  SWRVConfigurationValue,
+  SWRVHook,
+  SWRVMiddleware,
   SWRVResponse,
 } from "./_internal";
 export type { MutationFetcher, SWRVMutationConfiguration, SWRVMutationResponse } from "./mutation";
