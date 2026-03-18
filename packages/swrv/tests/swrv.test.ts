@@ -456,6 +456,89 @@ describe("swrv", () => {
     expect(swrv.data.value).toBe("updated");
   });
 
+  it("passes the current cached value to mutation populateCache transforms", async () => {
+    const key = `mutation-populate-transform-${Date.now()}`;
+    const swrv = runComposable(() => useSWRV<string>(key));
+    const mutation = runComposable(() =>
+      useSWRVMutation<string, Error, string>(key, async (_key, { arg }) => arg),
+    );
+
+    await swrv.mutate("current", { revalidate: false });
+    await mutation.trigger("next", {
+      populateCache: (result, current) => `${current}:${result}`,
+      revalidate: false,
+    });
+    await settle();
+
+    expect(mutation.data.value).toBe("next");
+    expect(swrv.data.value).toBe("current:next");
+  });
+
+  it("does not throw mutation errors when throwOnError is false", async () => {
+    const key = `mutation-no-throw-${Date.now()}`;
+    const onError = vi.fn();
+
+    const mutation = runComposable(() =>
+      useSWRVMutation<string, Error, void>(
+        key,
+        async () => {
+          throw new Error("boom");
+        },
+        {
+          onError,
+          throwOnError: false,
+        },
+      ),
+    );
+
+    await expect(mutation.trigger(undefined)).resolves.toBeUndefined();
+    expect(mutation.error.value).toBeInstanceOf(Error);
+    expect(mutation.error.value?.message).toBe("boom");
+    expect(onError).toHaveBeenCalledTimes(1);
+  });
+
+  it("supports function revalidate in mutation trigger options", async () => {
+    const key = `mutation-revalidate-fn-${Date.now()}`;
+    let value = 0;
+    const fetcher = vi.fn(async () => ++value);
+
+    const swrv = runComposable(() =>
+      useSWRV<number>(key, fetcher, {
+        dedupingInterval: 0,
+      }),
+    );
+    const mutation = runComposable(() =>
+      useSWRVMutation<number, Error, void, string>(key, async () => {
+        value += 10;
+        return value;
+      }),
+    );
+
+    await settle();
+    expect(swrv.data.value).toBe(1);
+    expect(fetcher).toHaveBeenCalledTimes(1);
+
+    const options: NonNullable<Parameters<typeof mutation.trigger>[1]> = {
+      populateCache: true,
+      revalidate: (data, currentKey) => currentKey === key && (data ?? 0) < 30,
+    };
+
+    await mutation.trigger(undefined, options);
+    await settle();
+    expect(swrv.data.value).toBe(12);
+    expect(fetcher).toHaveBeenCalledTimes(2);
+
+    await mutation.trigger(undefined, options);
+    await settle();
+    expect(swrv.data.value).toBe(23);
+    expect(fetcher).toHaveBeenCalledTimes(3);
+
+    await mutation.trigger(undefined, options);
+    await settle();
+    expect(swrv.data.value).toBe(33);
+    expect(fetcher).toHaveBeenCalledTimes(3);
+  });
+
   it("can reset mutation-local state", async () => {
     const mutation = runComposable(() =>
       useSWRVMutation<string, Error, void>("mutation-reset", async () => "updated"),

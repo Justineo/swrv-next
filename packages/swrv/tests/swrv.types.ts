@@ -72,6 +72,14 @@ const mutation = useSWRVMutation(
   async (key, { arg }: { arg: { name: string } }) => `${key}:${arg.name}`,
 );
 
+const mutationWithOptions = mutation.trigger(
+  { name: "alice" },
+  {
+    populateCache: true,
+    revalidate: (data, key) => key === "user" && (data?.length ?? 0) > 0,
+  },
+);
+
 const subscription = useSWRVSubscription(
   ["room", 1] as [string, number],
   (key, { next }) => {
@@ -109,6 +117,9 @@ const typeAssertions = {
   mutationResult: true as Expect<
     Equal<Awaited<ReturnType<typeof mutation.trigger>>, string | undefined>
   >,
+  mutationWithOptions: true as Expect<
+    Equal<Awaited<typeof mutationWithOptions>, string | undefined>
+  >,
   subscriptionData: true as Expect<Equal<typeof subscription.data.value, string | undefined>>,
   subscriptionKey: true as Expect<
     Equal<Parameters<typeof typedSubscriptionHandler>[0], [string, number]>
@@ -124,5 +135,6 @@ void immutableResponse;
 void infiniteResponse;
 void infiniteMutate;
 void mutation;
+void mutationWithOptions;
 void subscription;
 void typeAssertions;

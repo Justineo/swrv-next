@@ -7,6 +7,7 @@ import { resolveKeyValue, serialize } from "../_internal/serialize";
 
 import type {
   KeySource,
+  MutatorOptions,
   RawKey,
   SWRVConfiguration,
   SWRVHook,
@@ -19,7 +20,10 @@ export interface SWRVMutationConfiguration<
   Error = unknown,
   ExtraArg = unknown,
   Key extends RawKey = RawKey,
-> extends Omit<SWRVConfiguration<Data, Error>, "fetcher" | "onError" | "onSuccess"> {
+>
+  extends
+    Omit<SWRVConfiguration<Data, Error>, "fetcher" | "onError" | "onSuccess">,
+    MutatorOptions<Data> {
   onError?: (
     error: Error,
     key: Key,
@@ -30,8 +34,6 @@ export interface SWRVMutationConfiguration<
     key: Key,
     config: SWRVMutationConfiguration<Data, Error, ExtraArg, Key>,
   ) => void;
-  populateCache?: boolean | ((result: Data, currentData: Data | undefined) => Data);
-  throwOnError?: boolean;
 }
 
 export type MutationFetcher<Data = unknown, ExtraArg = unknown, Key extends RawKey = RawKey> = (
@@ -101,11 +103,10 @@ const mutation = (<
       };
 
       try {
-        const result = (await mutate<Data>(
-          resolvedKey,
-          fetcher(resolvedKey, { arg }),
-          mergedOptions,
-        )) as Data | undefined;
+        const result = (await mutate<Data>(resolvedKey, fetcher(resolvedKey, { arg }), {
+          ...mergedOptions,
+          throwOnError: true,
+        })) as Data | undefined;
 
         if (ditchMutationsUntil <= mutationStartedAt) {
           data.value = result;

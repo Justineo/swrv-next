@@ -70,6 +70,7 @@ const { data, error, isMutating, trigger, reset } = useSWRVMutation(
 ```
 
 `trigger(arg, options?)` returns the mutation result and now ignores stale local results after `reset()` or a newer trigger.
+When `throwOnError` is `false`, the hook still records local error state and fires `onError`.
 
 ## `swrv/subscription`
 
