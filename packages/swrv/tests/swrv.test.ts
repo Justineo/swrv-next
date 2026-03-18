@@ -22,6 +22,7 @@ import {
   useSWRVMutation,
   useSWRVSubscription,
 } from "../src";
+import { unstable_serialize as unstableSerializeInfinite } from "../src/infinite";
 import { serialize } from "../src/_internal";
 import type { SWRVMiddleware, SWRVMutationConfiguration } from "../src";
 
@@ -821,6 +822,121 @@ describe("swrv", () => {
     await settle();
     expect(state.size.value).toBe(3);
     expect(state.data.value).toEqual([`page-${key}-0`, `page-${key}-1`, `page-${key}-2`]);
+  });
+
+  it("mutates infinite caches through unstable_serialize", async () => {
+    let count = 0;
+    const key = `infinite-serialize-${Date.now()}`;
+    const getKey = (index: number) => `page-test-${key}-${index}`;
+
+    const state = runComposable(() =>
+      useSWRVInfinite<any>(
+        (index) => getKey(index),
+        async (...args: readonly unknown[]) => `${String(args[0])}:${++count}`,
+        { dedupingInterval: 0 },
+      ),
+    );
+
+    await settle();
+    expect(state.data.value).toEqual([`${getKey(0)}:1`]);
+
+    await mutate(unstableSerializeInfinite((index) => getKey(index)));
+    await settle();
+    expect(state.data.value).toEqual([`${getKey(0)}:2`]);
+
+    await mutate(
+      unstableSerializeInfinite((index) => getKey(index)),
+      "local-mutation",
+      false,
+    );
+    await settle();
+    expect(state.data.value).toBe("local-mutation");
+  });
+
+  it("mutates infinite caches through unstable_serialize based on current data", async () => {
+    const key = `infinite-serialize-current-${Date.now()}`;
+    const getKey = (index: number) => [key, index] as const;
+
+    const state = runComposable(() =>
+      useSWRVInfinite<string>(
+        getKey,
+        async (...args: readonly unknown[]) => `page ${String(args[1])}, `,
+      ),
+    );
+
+    await settle();
+    await state.setSize(2);
+    await settle();
+    expect(state.data.value).toEqual(["page 0, ", "page 1, "]);
+
+    await mutate<string[]>(
+      unstableSerializeInfinite(getKey),
+      (current) => (current ?? []).map((value) => `(edited)${value}`),
+      false,
+    );
+    await settle();
+
+    expect(state.data.value).toEqual(["(edited)page 0, ", "(edited)page 1, "]);
+  });
+
+  it("uses seeded first-page cache data with unstable_serialize revalidation", async () => {
+    const key = `infinite-seeded-${Date.now()}`;
+    const client = createSWRVClient();
+    client.setState<string, Error>(
+      key,
+      {
+        data: "initial-cache",
+        error: undefined,
+        isLoading: false,
+        isValidating: false,
+      },
+      0,
+      key,
+    );
+
+    const state = mountWithConfig(
+      () => {
+        const { mutate: scopedMutate } = useSWRVConfig();
+        const swrv = useSWRVInfinite<any>(
+          () => key,
+          async () => "response data",
+          {
+            dedupingInterval: 0,
+          },
+        );
+
+        return { scopedMutate, swrv };
+      },
+      { client },
+    );
+
+    await settle();
+    expect(state().swrv.data.value).toEqual(["initial-cache"]);
+
+    await state().scopedMutate(unstableSerializeInfinite(() => key));
+    await settle();
+    expect(state().swrv.data.value).toEqual(["response data"]);
+
+    await state().scopedMutate(
+      unstableSerializeInfinite(() => key),
+      "local-mutation",
+      false,
+    );
+    await settle();
+    expect(state().swrv.data.value).toBe("local-mutation");
+  });
+
+  it("keeps the initial size when the infinite key is null", async () => {
+    const state = runComposable(() =>
+      useSWRVInfinite<string>(
+        () => null,
+        async (...args: readonly unknown[]) => `page:${String(args[0])}`,
+      ),
+    );
+
+    expect(state.size.value).toBe(1);
+    await expect(state.setSize(2)).resolves.toBeUndefined();
+    expect(state.size.value).toBe(1);
   });
 
   it("uses cached page data immediately while revalidating infinite size growth in the background", async () => {
