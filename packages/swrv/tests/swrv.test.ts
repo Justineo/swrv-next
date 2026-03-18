@@ -436,6 +436,45 @@ describe("swrv", () => {
     expect(state3.data.value).toBe("<page3>");
   });
 
+  it("skips internal infinite and subscription cache keys when mutating with a filter", async () => {
+    const key = `filter-skip-internal-${Date.now()}`;
+    const seenKeys: unknown[] = [];
+
+    runComposable(() => useSWRV<string>(key, async () => "root"));
+    runComposable(() =>
+      useSWRVInfinite<string>(
+        (index) => [key, "page", index] as const,
+        async (...args: readonly unknown[]) => args.map(String).join(":"),
+        { initialSize: 2 },
+      ),
+    );
+    runComposable(() =>
+      useSWRVSubscription<string, Error>(key, (_resolvedKey, { next }) => {
+        next(undefined, "subscription");
+        return () => {};
+      }),
+    );
+
+    await settle(6);
+
+    await mutate((currentKey) => {
+      seenKeys.push(currentKey);
+      return false;
+    });
+
+    expect(seenKeys).toContain(key);
+    expect(
+      seenKeys.some(
+        (currentKey) => typeof currentKey === "string" && currentKey.startsWith("$inf$"),
+      ),
+    ).toBe(false);
+    expect(
+      seenKeys.some(
+        (currentKey) => typeof currentKey === "string" && currentKey.startsWith("$sub$"),
+      ),
+    ).toBe(false);
+  });
+
   it("loads and expands infinite pages", async () => {
     const state = runComposable(() =>
       useSWRVInfinite<string>(
