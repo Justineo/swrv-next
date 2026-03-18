@@ -31,6 +31,7 @@ const DEFAULT_CONFIGURATION: ResolvedSWRVConfiguration<any, any> = {
   dedupingInterval: 2000,
   errorRetryCount: 5,
   errorRetryInterval: 5000,
+  fallback: {},
   focusThrottleInterval: 5000,
   keepPreviousData: false,
   refreshInterval: 0,
@@ -84,6 +85,10 @@ export function mergeConfiguration<Data = unknown, Error = unknown>(
   } satisfies ResolvedSWRVConfiguration<Data, Error>;
 
   merged.compare = override?.compare ?? base.compare ?? defaultCompare;
+  merged.fallback =
+    base.fallback && override?.fallback
+      ? { ...base.fallback, ...override.fallback }
+      : (override?.fallback ?? base.fallback ?? {});
   return merged;
 }
 

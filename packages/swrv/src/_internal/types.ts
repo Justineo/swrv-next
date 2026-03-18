@@ -51,6 +51,7 @@ export interface SWRVConfiguration<
   dedupingInterval?: number;
   errorRetryCount?: number;
   errorRetryInterval?: number;
+  fallback?: Record<string, unknown>;
   fallbackData?: Data;
   fetcher?: Fn | null;
   focusThrottleInterval?: number;
@@ -76,6 +77,7 @@ export interface ResolvedSWRVConfiguration<
   dedupingInterval: number;
   errorRetryCount: number;
   errorRetryInterval: number;
+  fallback: Record<string, unknown>;
   focusThrottleInterval: number;
   keepPreviousData: boolean;
   refreshInterval: number | ((latestData: Data | undefined) => number);

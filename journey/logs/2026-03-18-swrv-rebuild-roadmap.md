@@ -43,3 +43,17 @@
 - Revalidated the workspace with `vp run ready`.
 - Phase 4 advanced APIs is now complete for the current roadmap cut.
 - Active work has moved into Phase 5 hardening and Phase 6 publishability/docs cleanup.
+- Hardened config-level fallback behavior:
+  - added SWR-style `fallback` support on `SWRVConfig`
+  - preserved fallback values during initial revalidation instead of blanking them while the fetch is in flight
+  - merged nested fallback maps in provider order
+- Expanded coverage for the fallback/SSR path:
+  - added runtime tests for config fallback visibility, cache precedence, and nested config merging
+  - added type coverage for the new config surface
+- Finished the repo-side publishability pass:
+  - package exports now declare explicit runtime and type entry points per subpath
+  - the npm package now includes a package README and Apache-2.0 license file
+  - root contributor and security guidance now exist
+  - the docs site now documents the current SSR contract and config-level fallback usage
+- Revalidated the workspace with `vp run ready`, `vp pm pack -- --json --dry-run`, and `vp pm publish -- --dry-run --access public --provenance --no-git-checks --tag next`.
+- Phase 6 docs and repo-side launch readiness is now complete for the current roadmap cut.

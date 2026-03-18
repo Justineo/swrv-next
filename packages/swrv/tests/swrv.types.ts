@@ -4,6 +4,7 @@ import useSWRV, { useSWRVImmutable } from "../src";
 import useSWRVInfinite, { unstable_serialize as unstableSerializeInfinite } from "../src/infinite";
 import useSWRVMutation from "../src/mutation";
 import useSWRVSubscription from "../src/subscription";
+import type { SWRVConfiguration } from "../src";
 
 type Equal<Left, Right> =
   (<Value>() => Value extends Left ? 1 : 2) extends <Value>() => Value extends Right ? 1 : 2
@@ -23,6 +24,12 @@ const refKey = ref<[string, number]>(["team", 7]);
 const refResponse = useSWRV(refKey, async (resource, id) => `${resource}:${id}`);
 
 const immutableResponse = useSWRVImmutable(tupleKey, async (resource, id) => `${resource}:${id}`);
+
+const fallbackConfig = {
+  fallback: {
+    user: "seed",
+  },
+} satisfies SWRVConfiguration<string>;
 
 const infiniteResponse = useSWRVInfinite<string>(
   (index, previousPageData) => {
@@ -90,6 +97,7 @@ const typeAssertions = {
 };
 
 void tupleResponse;
+void fallbackConfig;
 void refResponse;
 void immutableResponse;
 void infiniteResponse;

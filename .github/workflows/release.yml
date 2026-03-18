@@ -75,9 +75,17 @@ jobs:
           vp run test -r
           vp run build -r
 
+      - name: Package dry-run
+        working-directory: packages/swrv
+        run: vp pm pack -- --json --dry-run
+
+      - name: Publish dry-run
+        working-directory: packages/swrv
+        run: vp pm publish -- --dry-run --access public --provenance --no-git-checks --tag next
+
       - name: Publish package
         working-directory: packages/swrv
-        run: npm publish --access public --provenance
+        run: npm publish --access public --provenance --tag next
 
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2

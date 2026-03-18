@@ -15,6 +15,7 @@ import {
   createSWRVClient,
   mutate,
   useSWRV,
+  useSWRVConfig,
   useSWRVImmutable,
   useSWRVInfinite,
   useSWRVMutation,
@@ -100,6 +101,37 @@ function mountWithClient(client: ReturnType<typeof createSWRVClient>, key: strin
   app.mount(container);
 
   return () => state;
+}
+
+function mountWithConfig<T>(factory: () => T, config?: Record<string, unknown>) {
+  let value!: T;
+
+  const Child = defineComponent({
+    setup() {
+      value = factory();
+      return () => h("div");
+    },
+  });
+
+  const container = document.createElement("div");
+  document.body.appendChild(container);
+  containers.push(container);
+
+  const app = createApp({
+    render: () =>
+      h(
+        SWRVConfig,
+        { value: config },
+        {
+          default: () => h(Child),
+        },
+      ),
+  });
+
+  apps.push(app);
+  app.mount(container);
+
+  return () => value;
 }
 
 function mockVisibilityState(state: DocumentVisibilityState) {
@@ -681,6 +713,129 @@ describe("swrv", () => {
     expect(state.data.value).toBe("fallback");
     expect(state.isLoading.value).toBe(false);
     expect(state.isValidating.value).toBe(false);
+  });
+
+  it("keeps config fallback data visible while the first request is validating", async () => {
+    const key = `fallback-config-${Date.now()}`;
+    let resolveValue!: (value: string) => void;
+
+    const state = mountWithConfig(
+      () =>
+        useSWRV<string>(
+          key,
+          () =>
+            new Promise<string>((resolve) => {
+              resolveValue = resolve;
+            }),
+        ),
+      {
+        fallback: {
+          [key]: "fallback",
+        },
+      },
+    );
+
+    await flush();
+
+    expect(state().data.value).toBe("fallback");
+    expect(state().isLoading.value).toBe(true);
+    expect(state().isValidating.value).toBe(true);
+
+    resolveValue("remote");
+    await settle();
+
+    expect(state().data.value).toBe("remote");
+    expect(state().isLoading.value).toBe(false);
+    expect(state().isValidating.value).toBe(false);
+  });
+
+  it("prefers cached data over config fallback", async () => {
+    const key = `fallback-cache-${Date.now()}`;
+    const client = createSWRVClient();
+    const [serializedKey] = serialize(key);
+
+    client.setState(
+      serializedKey,
+      {
+        data: "cached",
+        error: undefined,
+        isLoading: false,
+        isValidating: false,
+      },
+      0,
+      key,
+    );
+
+    const state = mountWithConfig(() => useSWRV<string>(key), {
+      client,
+      fallback: {
+        [key]: "fallback",
+      },
+    });
+
+    await flush();
+
+    expect(state().data.value).toBe("cached");
+    expect(state().isLoading.value).toBe(false);
+    expect(state().isValidating.value).toBe(false);
+  });
+
+  it("merges nested fallback maps across SWRVConfig boundaries", async () => {
+    let config!: ReturnType<typeof useSWRVConfig>["config"];
+
+    const Child = defineComponent({
+      setup() {
+        config = useSWRVConfig().config;
+        return () => h("div");
+      },
+    });
+
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    containers.push(container);
+
+    const app = createApp({
+      render: () =>
+        h(
+          SWRVConfig,
+          {
+            value: {
+              fallback: {
+                a: 1,
+                b: 1,
+              },
+            },
+          },
+          {
+            default: () =>
+              h(
+                SWRVConfig,
+                {
+                  value: {
+                    fallback: {
+                      a: 2,
+                      c: 2,
+                    },
+                  },
+                },
+                {
+                  default: () => h(Child),
+                },
+              ),
+          },
+        ),
+    });
+
+    apps.push(app);
+    app.mount(container);
+
+    await flush();
+
+    expect(config.fallback).toEqual({
+      a: 2,
+      b: 1,
+      c: 2,
+    });
   });
 
   it("revalidates on focus by default", async () => {

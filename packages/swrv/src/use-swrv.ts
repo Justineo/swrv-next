@@ -51,6 +51,21 @@ function resolveResolvedData<Data>(cachedData: Data | undefined, fallbackData: D
   return hasDefinedValue(cachedData) ? cachedData : fallbackData;
 }
 
+function resolveFallbackData<Data>(
+  serializedKey: string,
+  config: ResolvedSWRVConfiguration<Data, any>,
+) {
+  if (hasDefinedValue(config.fallbackData)) {
+    return config.fallbackData;
+  }
+
+  if (!serializedKey) {
+    return undefined;
+  }
+
+  return config.fallback[serializedKey] as Data | undefined;
+}
+
 function shouldRevalidateOnActivation<Data>(
   isInitialActivation: boolean,
   currentData: Data | undefined,
@@ -150,15 +165,18 @@ export default function useSWRV<Data = unknown, Error = unknown>(
   };
 
   const applyState = () => {
+    const configValue = mergedConfig();
+    const fallbackData = resolveFallbackData(currentKey.value.serializedKey, configValue);
     const entry = currentKey.value.serializedKey
       ? client.getState<Data, Error>(currentKey.value.serializedKey)
       : undefined;
 
     if (!entry) {
+      data.value = fallbackData;
       return;
     }
 
-    data.value = entry.data;
+    data.value = resolveResolvedData(entry.data, fallbackData);
     error.value = entry.error;
     isLoading.value = entry.isLoading;
     isValidating.value = entry.isValidating;
@@ -386,12 +404,13 @@ export default function useSWRV<Data = unknown, Error = unknown>(
 
       const isInitialActivation = !hasMounted;
       const configValue = mergedConfig();
+      const fallbackData = resolveFallbackData(serializedKey, configValue);
       currentKey.value = { rawKey, serializedKey };
 
       if (!serializedKey) {
         nextFocusRevalidatedAt = 0;
         if (!configValue.keepPreviousData) {
-          data.value = configValue.fallbackData;
+          data.value = fallbackData;
           error.value = undefined;
         }
         isLoading.value = false;
@@ -406,11 +425,11 @@ export default function useSWRV<Data = unknown, Error = unknown>(
       unsubscribeRevalidator = client.addRevalidator(serializedKey, bindCurrentKey);
 
       const cached = client.getState<Data, Error>(serializedKey);
-      const resolvedData = resolveResolvedData(cached?.data, configValue.fallbackData);
+      const resolvedData = resolveResolvedData(cached?.data, fallbackData);
       if (cached) {
         applyState();
       } else if (!configValue.keepPreviousData) {
-        data.value = configValue.fallbackData;
+        data.value = fallbackData;
         error.value = undefined;
         isLoading.value = false;
         isValidating.value = false;

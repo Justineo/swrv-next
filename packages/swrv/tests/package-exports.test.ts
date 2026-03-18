@@ -13,6 +13,7 @@ const currentDir = dirname(fileURLToPath(import.meta.url));
 const packageJsonPath = resolve(currentDir, "../package.json");
 const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8")) as {
   exports: Record<string, string | ExportTarget>;
+  files: string[];
   types: string;
 };
 
@@ -37,5 +38,12 @@ describe("package exports", () => {
       expect(existsSync(importTarget), `${subpath} import file`).toBe(true);
       expect(existsSync(typesTarget), `${subpath} type file`).toBe(true);
     }
+  });
+
+  it("includes the package readme and license in the published files", () => {
+    expect(packageJson.files).toContain("README.md");
+    expect(packageJson.files).toContain("LICENSE");
+    expect(existsSync(resolve(currentDir, "../README.md"))).toBe(true);
+    expect(existsSync(resolve(currentDir, "../LICENSE"))).toBe(true);
   });
 });

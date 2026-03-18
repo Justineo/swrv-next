@@ -2,9 +2,27 @@
   "name": "swrv",
   "version": "0.0.0",
   "description": "Vue-native stale-while-revalidate data fetching",
+  "keywords": [
+    "cache",
+    "data-fetching",
+    "stale-while-revalidate",
+    "swr",
+    "swrv",
+    "vue"
+  ],
+  "homepage": "https://github.com/Kong/swrv",
+  "bugs": {
+    "url": "https://github.com/Kong/swrv/issues"
+  },
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Kong/swrv.git"
+  },
   "files": [
-    "dist"
+    "dist",
+    "LICENSE",
+    "README.md"
   ],
   "type": "module",
   "sideEffects": false,

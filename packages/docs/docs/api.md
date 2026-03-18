@@ -11,6 +11,7 @@
 - `preload`
 - `createSWRVClient`
 - `createCache`
+- `unstable_serialize`
 
 ## `useSWRV`
 
@@ -26,6 +27,30 @@ Response shape:
 - `isValidating`
 - `mutate`
 
+Key notes:
+
+- array keys are supported and typed as positional fetcher arguments
+- function and ref keys are supported
+- state values are Vue refs
+- `fallbackData` is per-hook
+- `SWRVConfig` can provide app-level `fallback` values keyed by serialized key
+
+## `SWRVConfig`
+
+```ts
+<SWRVConfig :value="{ client, fallback, dedupingInterval }">
+  <App />
+</SWRVConfig>
+```
+
+Current supported high-value options include:
+
+- `client`, `cache`, and `provider` for cache boundaries
+- `fallback` for config-level initial data
+- `fetcher` for a shared fetcher
+- revalidation controls such as `revalidateOnMount`, `revalidateOnFocus`, and `revalidateOnReconnect`
+- `refreshInterval`, `dedupingInterval`, and `ttl`
+
 ## `swrv/mutation`
 
 ```ts
@@ -36,13 +61,19 @@ const { data, error, isMutating, trigger, reset } = useSWRVMutation(
 );
 ```
 
+`trigger(arg, options?)` returns the mutation result and now ignores stale local results after `reset()` or a newer trigger.
+
 ## `swrv/subscription`
 
 ```ts
 const { data, error } = useSWRVSubscription(key, subscribe);
 ```
 
-The `subscribe` callback receives `{ next }` and must return an unsubscribe function.
+The `subscribe` callback:
+
+- receives the original key value plus `{ next }`
+- must return an unsubscribe function
+- can report errors with `next(error)` without discarding the last good data value
 
 ## `swrv/infinite`
 
@@ -50,6 +81,14 @@ The `subscribe` callback receives `{ next }` and must return an unsubscribe func
 const { data, error, isLoading, isValidating, mutate, size, setSize } =
   useSWRVInfinite(getKey, fetcher, config?)
 ```
+
+Current behavior highlights:
+
+- supports cursor-style sequential loading
+- supports `parallel: true`
+- exposes `unstable_serialize`
+- treats `setSize()` as a page-oriented operation
+- no-arg `mutate()` revalidates the loaded pages
 
 ## `swrv/immutable`
 

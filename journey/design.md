@@ -1,6 +1,6 @@
 # SWRV Next Design Snapshot
 
-Status: Baseline plus advanced-api completion and type/export hardening
+Status: Runtime parity plus repo-side launch readiness
 Last updated: 2026-03-18
 
 ## Mission
@@ -43,7 +43,13 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - public compile-time coverage exists for root and subpath APIs
   - the package export map now points at the emitted `.d.mts` declaration files and is checked by a package-export smoke test
 - The docs package now builds with VitePress and includes a first guide, API overview, and migration page.
+- The docs package now also includes examples, a current-scope page, and an explicit SSR guide built around provider-scoped clients plus config-level fallback data.
 - Repository maintenance scaffolding now exists for CI, Renovate, and release publishing.
+- The package publish surface is now materially closer to launch-ready:
+  - config-level `fallback` data is supported and stays visible during initial revalidation
+  - nested `SWRVConfig` boundaries merge fallback maps in SWR-style order
+  - the published package includes explicit typed subpath exports, a package README, and an Apache-2.0 license file
+  - root contributor and security guidance now exist for repository users and maintainers
 - The main reference materials for the rebuild remain:
   - `journey/research/swr-vs-swrv.md`
   - `/Users/yiling.gu@konghq.com/Developer/Justineo/swr` (local SWR source, version 2.4.1)
@@ -64,6 +70,8 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
 - Keep project memory current in `journey/design.md`, use `journey/plans/` for milestone or phase plans, and use `journey/logs/` for implementation notes and dead ends.
 - Use plain VitePress scripts for docs builds inside `packages/docs`, but continue to drive workspace orchestration through `vp run ...`.
 - Keep the library build on stable declaration generation for now instead of the experimental `tsgo` path.
+- Treat explicit client scoping plus config-level `fallback` as the supported SSR path for the current cut. Deeper Nuxt integration and dedicated hydration helpers can remain follow-up work.
+- Keep publish automation on the `next` dist-tag until the final version line is explicitly chosen.
 
 ## Planned Repository Shape
 
@@ -76,7 +84,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
 - Versioning strategy for the rebuilt release: continue the `1.x` line or treat the rewrite as a breaking `2.0`-style release
 - Supported Vue floor and supported TypeScript floor
 - Whether TTL/serverTTL remain first-class core APIs, move behind an extension layer, or become compatibility utilities
-- The exact SSR/Nuxt support contract and hydration story
+- How much dedicated Nuxt or hydration helper surface should exist beyond the current explicit client plus `fallback` contract
 - How far the current `infinite`, `mutation`, and `subscription` implementations still need to evolve to reach the desired SWR parity line
 - Whether the current infinite revalidation policy is enough, or if page-selective revalidation options need to get even closer to SWR's `revalidate` callback behavior
 - How much additional type-level precision is worth adding beyond the current public overloads before the API surface is frozen

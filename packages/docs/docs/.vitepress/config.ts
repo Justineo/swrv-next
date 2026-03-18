@@ -9,7 +9,10 @@ export default defineConfig({
     logo: "/mark.svg",
     nav: [
       { text: "Guide", link: "/guide" },
+      { text: "SSR", link: "/ssr" },
+      { text: "Examples", link: "/examples" },
       { text: "API", link: "/api" },
+      { text: "Current Scope", link: "/parity" },
       { text: "Migration", link: "/migration" },
       { text: "GitHub", link: "https://github.com/Kong/swrv" },
     ],
@@ -24,7 +27,10 @@ export default defineConfig({
         items: [
           { text: "What SWRV Next Is", link: "/" },
           { text: "Guide", link: "/guide" },
+          { text: "SSR", link: "/ssr" },
+          { text: "Examples", link: "/examples" },
           { text: "API", link: "/api" },
+          { text: "Current Scope", link: "/parity" },
           { text: "Migration", link: "/migration" },
         ],
       },
