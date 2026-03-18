@@ -82,6 +82,28 @@ const infiniteMutate = infiniteResponse.mutate(["page:0"], {
   revalidate: (page, key) => page === "page:0" && Array.isArray(key),
 });
 
+const infiniteMutateTransform = infiniteResponse.mutate<string>(Promise.resolve("updated"), {
+  populateCache: (result, currentData) => [...(currentData ?? []), result],
+  revalidate: false,
+});
+
+const multiPageInfiniteResponse = useSWRVInfinite<string[]>(
+  (index) => ["multi-page", index] as const,
+  async (...args: readonly unknown[]) => [`page:${String(args[1])}`],
+);
+
+const multiPageInfiniteMutate = multiPageInfiniteResponse.mutate<string[]>(
+  Promise.resolve(["B4"]),
+  {
+    optimisticData: (current) => [current?.[0] ?? [], [...(current?.[1] ?? []), "optimistic"]],
+    populateCache: (result, currentData) => [
+      currentData?.[0] ?? [],
+      [...(currentData?.[1] ?? []), ...result],
+    ],
+    revalidate: false,
+  },
+);
+
 const infiniteSerialized = unstableSerializeInfinite<string>((index, previousPageData) => {
   if (previousPageData) {
     return [previousPageData, index] as const;
@@ -174,6 +196,24 @@ const typedSubscriptionHandler: Parameters<
   return () => {};
 };
 
+const maybeSubscriptionKey = Math.random() > 0.5 ? "subscription-key" : undefined;
+useSWRVSubscription(maybeSubscriptionKey, (key, { next }) => {
+  next(undefined, key.toUpperCase());
+  return () => {};
+});
+
+const maybeSubscriptionTupleKey = Math.random() > 0.5 ? (["room", 1] as const) : undefined;
+useSWRVSubscription(maybeSubscriptionTupleKey, (key, { next }) => {
+  next(undefined, `${key[0]}:${key[1]}`);
+  return () => {};
+});
+
+const maybeSubscriptionObjectKey = Math.random() > 0.5 ? { room: "alpha" } : undefined;
+useSWRVSubscription(maybeSubscriptionObjectKey, (key, { next }) => {
+  next(undefined, key.room.toUpperCase());
+  return () => {};
+});
+
 // @ts-expect-error subscription handlers must return a dispose function
 useSWRVSubscription("invalid", (_key, { next }) => {
   next(undefined, "value");
@@ -199,6 +239,15 @@ const typeAssertions = {
   infiniteData: true as Expect<Equal<typeof infiniteResponse.data.value, string[] | undefined>>,
   infiniteSize: true as Expect<Equal<typeof infiniteResponse.size.value, number | undefined>>,
   infiniteMutate: true as Expect<Equal<Awaited<typeof infiniteMutate>, string[] | undefined>>,
+  infiniteMutateTransform: true as Expect<
+    Equal<Awaited<typeof infiniteMutateTransform>, string[] | string | undefined>
+  >,
+  multiPageInfiniteData: true as Expect<
+    Equal<typeof multiPageInfiniteResponse.data.value, string[][] | undefined>
+  >,
+  multiPageInfiniteMutate: true as Expect<
+    Equal<Awaited<typeof multiPageInfiniteMutate>, string[][] | string[] | undefined>
+  >,
   infiniteSerialized: true as Expect<Equal<typeof infiniteSerialized, string>>,
   mutationArg: true as Expect<Equal<Parameters<typeof mutation.trigger>[0], { name: string }>>,
   mutationResult: true as Expect<Equal<Awaited<typeof mutationResult>, string>>,
@@ -242,6 +291,9 @@ void refResponse;
 void immutableResponse;
 void infiniteResponse;
 void infiniteMutate;
+void infiniteMutateTransform;
+void multiPageInfiniteResponse;
+void multiPageInfiniteMutate;
 void mutation;
 void mutationResult;
 void mutationWithOptions;

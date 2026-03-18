@@ -24,7 +24,7 @@ export interface SWRVSubscriptionOptions<Data = unknown, Error = unknown> {
 }
 
 export type SWRVSubscription<Data = unknown, Error = unknown, Key extends RawKey = RawKey> = (
-  key: Key,
+  key: Exclude<Key, null | undefined | false>,
   options: SWRVSubscriptionOptions<Data, Error>,
 ) => () => void;
 
@@ -77,7 +77,7 @@ const subscription = (<Data = unknown, Error = unknown, Key extends RawKey = Raw
         subscriptions.set(subscriptionKey, currentCount + 1);
 
         if (!currentCount) {
-          const dispose = subscribe(resolvedKey, {
+          const dispose = subscribe(resolvedKey as Exclude<Key, null | undefined | false>, {
             next: (subscriptionError, subscriptionData) => {
               if (subscriptionError !== null && subscriptionError !== undefined) {
                 client.setState<Data, Error>(

@@ -10,6 +10,7 @@ const remoteState = {
 };
 
 let pushSubscription: ((value: string) => void) | undefined;
+let resolveMutation: (() => void) | undefined;
 
 function renderSection(
   title: string,
@@ -105,9 +106,10 @@ const MutationPanel = defineComponent({
     const triggerMutation = async () => {
       await state.mutate(
         new Promise<string>((resolve) => {
-          setTimeout(() => {
+          resolveMutation = () => {
             resolve("mutation-result");
-          }, 200);
+            resolveMutation = undefined;
+          };
         }),
         {
           optimisticData: "optimistic",
@@ -129,6 +131,17 @@ const MutationPanel = defineComponent({
             type: "button",
           },
           "Trigger optimistic mutation",
+        ),
+        h(
+          "button",
+          {
+            "data-testid": "mutation-resolve",
+            onClick: () => {
+              resolveMutation?.();
+            },
+            type: "button",
+          },
+          "Resolve optimistic mutation",
         ),
       ]);
   },

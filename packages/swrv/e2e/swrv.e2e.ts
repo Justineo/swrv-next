@@ -29,6 +29,7 @@ test.describe("swrv browser fixture", () => {
     await page.getByTestId("mutation-trigger").click();
 
     await expect(page.getByTestId("mutation-data")).toHaveText("optimistic");
+    await page.getByTestId("mutation-resolve").click();
     await expect(page.getByTestId("mutation-data")).toHaveText("server-0|mutation-result");
   });
 

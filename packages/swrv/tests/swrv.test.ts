@@ -731,6 +731,309 @@ describe("swrv", () => {
     expect(fetcher).toHaveBeenCalledTimes(1);
   });
 
+  it("supports optimisticData in infinite bound mutate", async () => {
+    let value = 0;
+    const key = `infinite-optimistic-${Date.now()}`;
+    const state = runComposable(() =>
+      useSWRVInfinite<string>(
+        (index) => (index === 0 ? key : null),
+        async () => `foo-${value++}`,
+        {
+          dedupingInterval: 0,
+        },
+      ),
+    );
+
+    await settle();
+    expect(state.data.value).toEqual(["foo-0"]);
+
+    let resolveMutation!: (value: string[]) => void;
+    const mutationPromise = state.mutate(
+      new Promise<string[]>((resolve) => {
+        resolveMutation = resolve;
+      }),
+      {
+        optimisticData: ["optimistic"],
+      },
+    );
+
+    await flush();
+    expect(state.data.value).toEqual(["optimistic"]);
+
+    resolveMutation(["updated"]);
+    await expect(mutationPromise).resolves.toEqual(["updated"]);
+    await settle();
+
+    expect(state.data.value).toEqual(["foo-1"]);
+  });
+
+  it("supports functional optimisticData in infinite bound mutate", async () => {
+    let value = 0;
+    const key = `infinite-functional-optimistic-${Date.now()}`;
+    const state = runComposable(() =>
+      useSWRVInfinite<string>(
+        (index) => (index === 0 ? key : null),
+        async () => `foo-${value++}`,
+        {
+          dedupingInterval: 0,
+        },
+      ),
+    );
+
+    await settle();
+    expect(state.data.value).toEqual(["foo-0"]);
+
+    let resolveMutation!: (value: string[]) => void;
+    const mutationPromise = state.mutate(
+      new Promise<string[]>((resolve) => {
+        resolveMutation = resolve;
+      }),
+      {
+        optimisticData: (current) => [...(current ?? []), "optimistic"],
+      },
+    );
+
+    await flush();
+    expect(state.data.value).toEqual(["foo-0", "optimistic"]);
+
+    resolveMutation(["updated"]);
+    await expect(mutationPromise).resolves.toEqual(["updated"]);
+    await settle();
+
+    expect(state.data.value).toEqual(["foo-1"]);
+  });
+
+  it("supports functional populateCache in infinite bound mutate", async () => {
+    let value = 0;
+    const key = `infinite-populate-transform-${Date.now()}`;
+    const state = runComposable(() =>
+      useSWRVInfinite<string>(
+        (index) => (index === 0 ? key : null),
+        async () => `foo-${value++}`,
+        {
+          dedupingInterval: 0,
+        },
+      ),
+    );
+
+    await settle();
+    expect(state.data.value).toEqual(["foo-0"]);
+
+    await expect(
+      state.mutate(Promise.resolve(["updated"]), {
+        populateCache: (result, currentData) => [...(currentData ?? []), ...result],
+        revalidate: false,
+      }),
+    ).resolves.toEqual(["updated"]);
+    await settle();
+
+    expect(state.data.value).toEqual(["foo-0", "updated"]);
+  });
+
+  it("supports disabling populateCache in infinite bound mutate", async () => {
+    let value = 0;
+    const key = `infinite-populate-disabled-${Date.now()}`;
+    const state = runComposable(() =>
+      useSWRVInfinite<string>(
+        (index) => (index === 0 ? key : null),
+        async () => `foo-${value++}`,
+        {
+          dedupingInterval: 0,
+        },
+      ),
+    );
+
+    await settle();
+    expect(state.data.value).toEqual(["foo-0"]);
+
+    await expect(
+      state.mutate(Promise.resolve(["updated"]), {
+        populateCache: false,
+        revalidate: false,
+      }),
+    ).resolves.toEqual(["updated"]);
+    await settle();
+
+    expect(state.data.value).toEqual(["foo-0"]);
+  });
+
+  it("supports optimistic multi-page transforms in infinite bound mutate", async () => {
+    const key = `infinite-multi-page-mutate-${Date.now()}`;
+    const apiData: Record<number, string[]> = {
+      0: ["A1", "A2", "A3"],
+      1: ["B1", "B2", "B3"],
+    };
+
+    const state = runComposable(() =>
+      useSWRVInfinite<string[]>(
+        (index) => [key, index] as const,
+        async (...args: readonly unknown[]) => [...apiData[Number(args[1])]],
+        {
+          dedupingInterval: 0,
+          initialSize: 2,
+        },
+      ),
+    );
+
+    await settle(6);
+    expect(state.data.value).toEqual([
+      ["A1", "A2", "A3"],
+      ["B1", "B2", "B3"],
+    ]);
+
+    let resolveMutation!: (value: string[]) => void;
+    const mutationPromise = state.mutate(
+      new Promise<string[]>((resolve) => {
+        resolveMutation = resolve;
+      }),
+      {
+        optimisticData: (current) => [current?.[0] ?? [], [...(current?.[1] ?? []), "B4"]],
+        populateCache: (result, currentData) => [
+          currentData?.[0] ?? [],
+          [...(currentData?.[1] ?? []), ...result],
+        ],
+        revalidate: false,
+      },
+    );
+
+    await flush();
+    expect(state.data.value).toEqual([
+      ["A1", "A2", "A3"],
+      ["B1", "B2", "B3", "B4"],
+    ]);
+
+    resolveMutation(["updated"]);
+    await expect(mutationPromise).resolves.toEqual(["updated"]);
+    await settle();
+
+    expect(state.data.value).toEqual([
+      ["A1", "A2", "A3"],
+      ["B1", "B2", "B3", "updated"],
+    ]);
+  });
+
+  it("rolls back optimistic infinite mutations when rollbackOnError is enabled", async () => {
+    let value = 0;
+    const key = `infinite-rollback-${Date.now()}`;
+    const state = runComposable(() =>
+      useSWRVInfinite<string>(
+        (index) => (index === 0 ? key : null),
+        async () => `foo-${value++}`,
+        {
+          dedupingInterval: 0,
+        },
+      ),
+    );
+
+    await settle();
+    expect(state.data.value).toEqual(["foo-0"]);
+
+    let rejectMutation!: (reason?: unknown) => void;
+    const mutationPromise = state.mutate(
+      new Promise<string[]>((_resolve, reject) => {
+        rejectMutation = reject;
+      }),
+      {
+        optimisticData: ["optimistic"],
+        rollbackOnError: true,
+        revalidate: false,
+      },
+    );
+
+    await flush();
+    expect(state.data.value).toEqual(["optimistic"]);
+
+    rejectMutation(new Error("boom"));
+    await expect(mutationPromise).rejects.toThrow("boom");
+    await settle();
+
+    expect(state.data.value).toEqual(["foo-0"]);
+  });
+
+  it("keeps optimistic infinite mutations when rollbackOnError is false", async () => {
+    let value = 0;
+    const key = `infinite-no-rollback-${Date.now()}`;
+    const state = runComposable(() =>
+      useSWRVInfinite<string>(
+        (index) => (index === 0 ? key : null),
+        async () => `foo-${value++}`,
+        {
+          dedupingInterval: 0,
+        },
+      ),
+    );
+
+    await settle();
+    expect(state.data.value).toEqual(["foo-0"]);
+
+    let rejectMutation!: (reason?: unknown) => void;
+    const mutationPromise = state.mutate(
+      new Promise<string[]>((_resolve, reject) => {
+        rejectMutation = reject;
+      }),
+      {
+        optimisticData: ["optimistic"],
+        rollbackOnError: false,
+        revalidate: false,
+      },
+    );
+
+    await flush();
+    expect(state.data.value).toEqual(["optimistic"]);
+
+    rejectMutation(new Error("boom"));
+    await expect(mutationPromise).rejects.toThrow("boom");
+    await settle();
+
+    expect(state.data.value).toEqual(["optimistic"]);
+  });
+
+  it("throws infinite mutation errors when throwOnError is enabled", async () => {
+    let value = 0;
+    const key = `infinite-throw-on-error-${Date.now()}`;
+    const state = runComposable(() =>
+      useSWRVInfinite<string>(
+        (index) => (index === 0 ? key : null),
+        async () => `foo-${value++}`,
+        {
+          dedupingInterval: 0,
+        },
+      ),
+    );
+
+    await settle();
+
+    await expect(
+      state.mutate(Promise.reject(new Error("mutation error")), {
+        throwOnError: true,
+        revalidate: false,
+      }),
+    ).rejects.toThrow("mutation error");
+  });
+
+  it("does not throw infinite mutation errors when throwOnError is false", async () => {
+    let value = 0;
+    const key = `infinite-no-throw-on-error-${Date.now()}`;
+    const state = runComposable(() =>
+      useSWRVInfinite<string>(
+        (index) => (index === 0 ? key : null),
+        async () => `foo-${value++}`,
+        {
+          dedupingInterval: 0,
+        },
+      ),
+    );
+
+    await settle();
+
+    await expect(
+      state.mutate(Promise.reject(new Error("mutation error")), {
+        throwOnError: false,
+        revalidate: false,
+      }),
+    ).resolves.toBeUndefined();
+  });
+
   it("does not throw when infinite getKey is not ready and mutate() is called", async () => {
     const state = runComposable(() =>
       useSWRVInfinite<string>(
@@ -1401,6 +1704,39 @@ describe("swrv", () => {
 
     expect(subscription.data.value).toBe(swrKey);
     expect(seenKeys).toEqual([swrKey]);
+  });
+
+  it("supports singleton subscriptions while switching keys", async () => {
+    const noop = (_value: number) => {};
+    const key = ref(0);
+    let emit = noop;
+
+    const subscription = runComposable(() =>
+      useSWRVSubscription<number, Error>(
+        () => key.value.toString(),
+        (resolvedKey, { next }) => {
+          const offset = Number(resolvedKey);
+          emit = (value) => {
+            next(null, value + offset);
+          };
+
+          return () => {
+            emit = noop;
+          };
+        },
+      ),
+    );
+
+    emit(1);
+    await settle();
+    expect(subscription.data.value).toBe(1);
+
+    key.value = 1;
+    await settle();
+
+    emit(2);
+    await settle();
+    expect(subscription.data.value).toBe(3);
   });
 
   it("does not conflict with normal useSWRV state for the same logical key", async () => {

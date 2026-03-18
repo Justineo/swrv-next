@@ -48,7 +48,7 @@ export interface SWRVInfiniteRevalidateFn<Data = unknown> {
 }
 
 export type SWRVInfiniteKeyedMutator<Data> = <MutationData = Data>(
-  data?: Data | Promise<Data | undefined> | MutatorCallback<Data>,
+  data?: MutationData | Promise<MutationData | undefined> | MutatorCallback<Data, MutationData>,
   options?: boolean | SWRVInfiniteMutatorOptions<Data, MutationData>,
 ) => Promise<Data | MutationData | undefined>;
 

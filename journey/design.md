@@ -45,18 +45,21 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - `swrv/infinite` now respects `revalidateFirstPage: false` while growing, uses cached data first in `setSize()`, and supports page-selective revalidation callbacks through bound `mutate(data, { revalidate })`
   - `swrv/infinite` now consumes preloaded page requests, including multiple preloaded pages in parallel mode
   - `swrv/infinite` now revalidates page entries when the aggregate infinite cache and per-page cache diverge after local mutation, which keeps later size growth aligned with SWR's aggregate/page cache model
-  - infinite behavior coverage now includes `unstable_serialize` mutation paths, scoped custom-cache revalidation, null-key `setSize()` handling, fallback retention during size growth, and page-cache sharing with plain `useSWRV` consumers
+  - infinite behavior coverage now includes `unstable_serialize` mutation paths, scoped custom-cache revalidation, null-key `setSize()` handling, fallback retention during size growth, page-cache sharing with plain `useSWRV` consumers, and SWR-style bound `mutate()` option behavior for `optimisticData`, `populateCache`, `rollbackOnError`, and `throwOnError`
   - `swrv/mutation` now guards local state against stale trigger results after `reset()` or a newer trigger, and it still records local error state when `throwOnError` is disabled
   - scoped `mutate()` now returns the actual mutation result even when `populateCache` is disabled
 - The subscription helper has now received its first real parity pass:
   - `swrv/subscription` preserves fallback and last good data across subscription errors
   - it passes original keys through to handlers, deduplicates subscriptions per cache boundary, and enforces disposer return values
+  - it now also covers singleton-style subscriptions that switch keys over time without keeping the previous callback wired up
   - it no longer conflicts with normal `useSWRV` state for the same logical key
 - Public typing and package-shape coverage are now materially stronger:
   - `useSWRV` and `useSWRVImmutable` now infer array-key fetcher arguments more precisely
   - public compile-time coverage exists for root and subpath APIs
   - bound and scoped mutators now expose the mutation-result type instead of collapsing everything to cached-data type, and mutator callbacks can now model different output payloads from their input snapshot
+  - `useSWRVInfinite` bound mutators now also accept mutation payload types distinct from the aggregate page-array shape, which keeps `populateCache` and optimistic transform flows type-safe for both single-page and multi-page cases
   - `useSWRVMutation` now models SWR-style trigger overloads more closely, including no-arg and optional-arg triggers, hook-level `throwOnError` defaults, and separate cache-data typing for `optimisticData` and `populateCache`
+  - `useSWRVSubscription` handler keys now narrow to the resolved non-nullish key type even when the key source itself is conditional
   - the package export map now points at the emitted `.d.mts` declaration files and is checked by a package-export smoke test
 - The docs package now builds with VitePress and includes a first guide, API overview, and migration page.
 - The docs package now also includes examples, a current-scope page, and an explicit SSR guide built around provider-scoped clients plus config-level fallback data.
