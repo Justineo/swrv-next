@@ -24,11 +24,17 @@ jobs:
       - name: Install dependencies
         run: vp install
 
+      - name: Install Playwright browsers
+        run: vp exec playwright install --with-deps chromium
+
       - name: Check
         run: vp check
 
       - name: Test
         run: vp run test -r
+
+      - name: Browser E2E
+        run: vp exec playwright test
 
       - name: Build
         run: vp run build -r

@@ -10,6 +10,8 @@ commands.
 vp install
 vp check
 vp run test -r
+vp exec playwright install chromium
+vp run test:e2e
 vp run build -r
 ```
 
@@ -38,7 +40,7 @@ vp pm publish -- --dry-run --access public --provenance --no-git-checks --tag ne
   boundaries.
 - Update `journey/design.md` whenever effective project decisions change.
 - Add or update tests for behavior, type surface, or packaging changes.
-- Validate with `vp check` and `vp run test -r` before sending a patch.
+- Validate with `vp check`, `vp run test -r`, and `vp run test:e2e` before sending a patch.
 
 ## Releases
 

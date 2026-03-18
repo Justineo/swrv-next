@@ -12,7 +12,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
 - The repository now uses the intended monorepo shape:
   - `packages/swrv`
   - `packages/docs`
-- The root workspace is validated through `vp check`, `vp test`, and `vp run build -r`.
+- The root workspace is validated through `vp check`, `vp test`, `vp exec playwright test`, and `vp run build -r`.
 - The `swrv` package now contains an initial provider-scoped runtime with:
   - `useSWRV`
   - `SWRVConfig`
@@ -54,6 +54,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - the package export map now points at the emitted `.d.mts` declaration files and is checked by a package-export smoke test
 - The docs package now builds with VitePress and includes a first guide, API overview, and migration page.
 - The docs package now also includes examples, a current-scope page, and an explicit SSR guide built around provider-scoped clients plus config-level fallback data.
+- Browser-facing end-to-end coverage now exists through a Playwright fixture app under `packages/swrv/e2e`, covering focus revalidation, reconnect revalidation, optimistic mutation UI, and subscription pushes in a real browser runtime.
 - Repository maintenance scaffolding now exists for CI, Renovate, and release publishing.
 - The package publish surface is now materially closer to launch-ready:
   - config-level `fallback` data is supported and stays visible during initial revalidation

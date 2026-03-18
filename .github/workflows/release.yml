@@ -69,10 +69,14 @@ jobs:
       - name: Install dependencies
         run: vp install
 
+      - name: Install Playwright browsers
+        run: vp exec playwright install --with-deps chromium
+
       - name: Validate
         run: |
           vp check
           vp run test -r
+          vp exec playwright test
           vp run build -r
 
       - name: Package dry-run

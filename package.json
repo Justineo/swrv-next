@@ -7,14 +7,16 @@
     "build": "vp run build -r",
     "check": "vp check",
     "dev": "vp run docs#dev",
-    "ready": "vp check && vp run test -r && vp run build -r",
+    "ready": "vp check && vp run test -r && vp run build -r && vp exec playwright test",
     "release:major": "vp exec bumpp --all --recursive --commit --tag --push --yes --release major",
     "release:minor": "vp exec bumpp --all --recursive --commit --tag --push --yes --release minor",
     "release:patch": "vp exec bumpp --all --recursive --commit --tag --push --yes --release patch",
     "test": "vp run test -r",
+    "test:e2e": "vp exec playwright test",
     "prepare": "vp config"
   },
   "devDependencies": {
+    "@playwright/test": "catalog:",
     "bumpp": "catalog:",
     "vite-plus": "catalog:"
   },
