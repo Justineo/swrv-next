@@ -3,7 +3,7 @@ import { isServerEnvironment } from "./env";
 
 import type { BareFetcher, Fetcher, KeySource, PreloadResponse, RawKey, SWRVClient } from "./types";
 
-export function preloadKey<Data = unknown, Key extends RawKey = RawKey>(
+export function preloadKey<Key extends RawKey = RawKey, Data = unknown>(
   client: SWRVClient,
   key: KeySource<Key>,
   fetcher: Fetcher<Data, Key>,

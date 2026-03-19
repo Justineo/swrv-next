@@ -16,6 +16,9 @@ import { preloadKey } from "./_internal/preload";
 import type {
   CacheAdapter,
   Compare,
+  Fetcher,
+  KeySource,
+  RawKey,
   ResolvedSWRVConfiguration,
   SWRVClient,
   SWRVConfigAccessor,
@@ -182,13 +185,15 @@ export function useSWRVConfig(): SWRVConfigAccessor {
   const client = context.client;
   const config = context.config.value;
   const mutate = createScopedMutator(client);
+  const scopedPreload = ((key: KeySource<RawKey>, fetcher: Fetcher<unknown, RawKey>) =>
+    preloadKey(client, key, fetcher)) as SWRVConfigAccessor["preload"];
 
   return {
     cache: client.cache,
     client,
     config,
     mutate,
-    preload: (key, fetcher) => preloadKey(client, key, fetcher),
+    preload: scopedPreload,
   };
 }
 

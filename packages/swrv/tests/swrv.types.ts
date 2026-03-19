@@ -21,6 +21,8 @@ type Equal<Left, Right> =
 
 type Expect<Value extends true> = Value;
 
+type SWRVConfigProps = InstanceType<typeof SWRVConfig>["$props"];
+
 const tupleKey: [string, number] = ["user", 1];
 
 const tupleResponse = useSWRV(tupleKey, async (resource, id) => ({
@@ -69,6 +71,18 @@ const fallbackConfig = {
     user: "seed",
   },
 } satisfies SWRVConfiguration<string>;
+const validUndefinedConfigProps: SWRVConfigProps = {
+  value: undefined,
+};
+const validCallbackConfigProps: SWRVConfigProps = {
+  value: () => ({}),
+};
+
+// @ts-expect-error SWRVConfig.value should not accept null
+const _invalidNullConfigProps: SWRVConfigProps = { value: null };
+
+// @ts-expect-error SWRVConfig.value callback should return a config object
+const _invalidNumericConfigProps: SWRVConfigProps = { value: () => 0 };
 
 const loggerMiddleware: SWRVMiddleware = (useSWRVNext) => (key, fetcher, config) =>
   useSWRVNext(key, fetcher, config);
@@ -113,6 +127,17 @@ const filteredMutateResult = mutate<string, string>(
   { revalidate: false },
 );
 
+const literalPreload = preload<"value">("literal-key" as const, () =>
+  Promise.resolve("value" as const),
+);
+const syncLiteralPreload = preload<"value">(
+  () => "sync-literal-key" as const,
+  () => "value" as const,
+);
+const explicitLiteralPreload = preload<"value">(
+  () => "explicit-literal-key" as const,
+  () => "value" as const,
+);
 const preloadedTuple = preload(tupleKey, async (resource, id) => `${resource}:${id}`);
 const preloadedFunctionKey = preload(
   () => tupleKey,
@@ -179,6 +204,14 @@ const mutation = useSWRVMutation(
   "user",
   async (key, { arg }: { arg: { name: string } }) => `${key}:${arg.name}`,
 );
+const extraParamMutation = useSWRVMutation("extra-param" as const, (key, opts) => {
+  type ExtraParamKey = Expect<Equal<typeof key, "extra-param">>;
+  void (true as ExtraParamKey);
+  void opts;
+  return key;
+});
+const extraParamTrigger: TriggerWithoutArgs<"extra-param", unknown, never, "extra-param"> =
+  extraParamMutation.trigger;
 
 const mutationWithOptions = mutation.trigger(
   { name: "alice" },
@@ -326,6 +359,13 @@ const typeAssertions = {
   filteredMutateResult: true as Expect<
     Equal<Awaited<typeof filteredMutateResult>, Array<string | undefined>>
   >,
+  literalPreload: true as Expect<Equal<typeof literalPreload, Promise<"value"> | undefined>>,
+  syncLiteralPreload: true as Expect<
+    Equal<typeof syncLiteralPreload, Promise<"value"> | undefined>
+  >,
+  explicitLiteralPreload: true as Expect<
+    Equal<typeof explicitLiteralPreload, Promise<"value"> | undefined>
+  >,
   preloadedTuple: true as Expect<Equal<Awaited<typeof preloadedTuple>, string | undefined>>,
   preloadedFunctionKey: true as Expect<
     Equal<Awaited<typeof preloadedFunctionKey>, string | undefined>
@@ -347,6 +387,12 @@ const typeAssertions = {
     Equal<typeof infiniteConfigFetcherResponse.data.value, string[] | undefined>
   >,
   mutationArg: true as Expect<Equal<Parameters<typeof mutation.trigger>[0], { name: string }>>,
+  extraParamMutationArg: true as Expect<
+    Equal<
+      typeof extraParamTrigger,
+      TriggerWithoutArgs<"extra-param", unknown, never, "extra-param">
+    >
+  >,
   mutationResult: true as Expect<Equal<Awaited<typeof mutationResult>, string>>,
   mutationWithOptions: true as Expect<Equal<Awaited<typeof mutationWithOptions>, string>>,
   numericMutationArg: true as Expect<Equal<Parameters<typeof numericMutation.trigger>[0], number>>,
@@ -385,6 +431,9 @@ void boundMutateResponse;
 void boundMutateResult;
 void scopedMutateResult;
 void filteredMutateResult;
+void literalPreload;
+void syncLiteralPreload;
+void explicitLiteralPreload;
 void preloadedTuple;
 void preloadedFunctionKey;
 void refResponse;
@@ -400,6 +449,8 @@ void multiPageInfiniteResponse;
 void multiPageInfiniteMutate;
 void infiniteConfigFetcherResponse;
 void mutation;
+void extraParamMutation;
+void extraParamTrigger;
 void mutationResult;
 void mutationWithOptions;
 void numericMutation;
@@ -417,3 +468,5 @@ void mutationThrowOffByDefault;
 void mutationThrowOffResult;
 void subscription;
 void typeAssertions;
+void validUndefinedConfigProps;
+void validCallbackConfigProps;

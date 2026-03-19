@@ -296,10 +296,26 @@ export interface SWRVConfigAccessor {
   client: SWRVClient;
   config: ResolvedSWRVConfiguration<any, any>;
   mutate: ScopedMutator;
-  preload: <Data = unknown, Key extends RawKey = RawKey>(
-    key: KeySource<Key>,
-    fetcher: Fetcher<Data, Key>,
-  ) => PreloadResponse<Data>;
+  preload: {
+    <Data = unknown, Key extends readonly unknown[] = readonly unknown[]>(
+      key: KeySource<Key>,
+      fetcher: (...args: Key) => FetcherResponse<Data>,
+    ): PreloadResponse<Data>;
+    <
+      Data = unknown,
+      Key extends Exclude<RawKey, readonly unknown[] | null | undefined | false> = Exclude<
+        RawKey,
+        readonly unknown[] | null | undefined | false
+      >,
+    >(
+      key: KeySource<Key>,
+      fetcher: (arg: Key) => FetcherResponse<Data>,
+    ): PreloadResponse<Data>;
+    <Data = unknown, Key extends RawKey = RawKey>(
+      key: KeySource<Key>,
+      fetcher: Fetcher<Data, Key>,
+    ): PreloadResponse<Data>;
+  };
 }
 
 export type SWRVConfigComponent = DefineComponent<{

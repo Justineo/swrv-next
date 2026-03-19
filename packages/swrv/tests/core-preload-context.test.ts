@@ -70,11 +70,11 @@ describe("swrv preload and context behavior", () => {
 
   it("passes resolved function keys through preload fetchers", async () => {
     const key = `preload-function-${Date.now()}`;
-    const fetcher = vi.fn(
-      async (...args: readonly unknown[]) => `${String(args[0])}:${String(args[1])}`,
-    );
+    const fetcher = vi.fn(async (resource: string, id: number) => `${resource}:${id}`);
 
-    await expect(preload(() => [key, 1] as const, fetcher)).resolves.toBe(`${key}:1`);
+    await expect(
+      preload<string, readonly [string, number]>(() => [key, 1] as const, fetcher),
+    ).resolves.toBe(`${key}:1`);
     expect(fetcher).toHaveBeenCalledTimes(1);
     expect(fetcher).toHaveBeenCalledWith(key, 1);
   });
