@@ -1,7 +1,7 @@
 # SWRV Next Design Snapshot
 
 Status: Launch-ready current cut
-Last updated: 2026-03-18
+Last updated: 2026-03-19
 
 ## Mission
 
@@ -81,6 +81,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
 - A dedicated `core-cache-provider` domain file now covers provider-scoped cache behavior, including isolated clients, seeded cache reads, scoped cache mutation through `useSWRVConfig`, nested provider boundaries, and parent-cache extension through `provider(parentCache)`.
 - A dedicated `core-middleware` domain file now covers base and cross-API middleware behavior, including original-key forwarding, null fetchers, config-boundary `use` composition order, key rewriting, non-serialized key forwarding, and middleware passthrough for `infinite`, `mutation`, and `subscription`.
 - A dedicated `core-subscription` domain file now covers subscription behavior end to end, including push updates, scope cleanup, fallback and error recovery, original-key forwarding, deduped subscriptions, key updates, singleton switching, stable-key no-resubscribe behavior, SWR/cache isolation, and disposer enforcement.
+- A dedicated `core-mutation` domain file now covers `useSWRVMutation` end to end, including upstream-inspired trigger result semantics, hook-level and per-trigger callbacks, populateCache and optimistic shared-cache updates, non-deduped triggers, latest-closure usage, reset and race handling, missing-key and missing-fetcher errors, and falsey rejection behavior.
 - A dedicated `core-refresh-compare` domain file now covers upstream-inspired interval polling and compare behavior, including deduped polling, reactive provider interval changes, function-style refresh intervals, stop-polling updates, and compare-only-on-data semantics.
 - The same `core-refresh-compare` domain file now also covers fast key-switch polling behavior so stale refresh completions cannot shift the new key's timer lane or fire stale `onSuccess` callbacks.
 - A dedicated `core-error-state` domain file now covers upstream-inspired error semantics, including synchronous and asynchronous fetcher failures, deduped `onError`, preserved error state during manual revalidation, `shouldRetryOnError` gating, and stale-key error callback suppression.
