@@ -1,6 +1,6 @@
 # SWRV Next Design Snapshot
 
-Status: Launch-ready current cut
+Status: Launch-ready current cut, with a new pre-stable refinement lane
 Last updated: 2026-03-19
 
 ## Mission
@@ -148,6 +148,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - the docs site now also has an explicit status page that classifies shipped, deferred, and intentionally different behavior for the current release line
   - the repo now contains a concrete stable-release checklist under `journey/logs/2026-03-19-stable-release-checklist.md`
   - the remaining non-suspense release work is now mostly outside the repo: Trusted Publisher production verification, stable release-note preparation, and the actual stable tag decision
+  - stable release is now intentionally paused while a final in-repo refinement plan addresses type precision, one more simplification and naming pass, a docs information-architecture rebuild, and a full docs-site redesign
 - Internal simplification work has now started after parity closure:
   - web-preset defaults and event initializers now live in a dedicated `_internal/web-preset.ts` module instead of being mixed into `config.ts` and `client.ts`
   - provider-scoped runtime maps now live behind `_internal/provider-state.ts`, and cache read/write concerns now live behind `_internal/cache-helper.ts`
@@ -166,6 +167,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - `journey/research/2026-03-19-fallback-data-typing-gap.md`
   - `journey/research/2026-03-19-swrv-next-complexity-and-simplification.md`
   - `/Users/yiling.gu@konghq.com/Developer/Justineo/swr` (local SWR source, version 2.4.1)
+  - `/Users/yiling.gu@konghq.com/Developer/Justineo/swr-site/content/docs` (local SWR docs source tree for docs IA and content structure)
   - `/Users/yiling.gu@konghq.com/Developer/Kong/swrv` (local legacy SWRV source, version 1.1.0)
 
 ## Observed Gaps
@@ -192,6 +194,8 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
 - Freeze the published Vue support range at `>=3.2.26 <4`.
 - Freeze the typed-consumer and contributor TypeScript baseline at `>=5.5`.
 - Keep `ttl` as a supported compatibility-oriented extension in the current cut, but do not restore `serverTTL` as part of the rebuilt core API.
+- Before the first stable release, run one more explicit in-repo refinement lane focused on type precision, final simplification, docs information architecture, docs design, and sentence-case copy quality instead of moving directly from prerelease validation to stable publishing.
+- Use sentence case throughout docs, site chrome, and non-code copy unless a proper noun or code literal requires otherwise.
 
 ## Planned Repository Shape
 
