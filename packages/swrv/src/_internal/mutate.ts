@@ -78,6 +78,8 @@ export function createScopedMutator(client: SWRVClient): ScopedMutator {
       return undefined;
     }
 
+    client.invalidateFetch(serializedKey);
+
     if (arguments.length < 2) {
       await client.broadcast(serializedKey, "mutate", {
         revalidate: normalizedOptions.revalidate as

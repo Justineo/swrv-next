@@ -149,6 +149,11 @@ export function createSWRVClient(
     return now - current.startedAt <= dedupingInterval ? current : undefined;
   };
 
+  const invalidateFetch = (key: string) => {
+    state.fetches.delete(key);
+    state.latestFetchTimestamp.delete(key);
+  };
+
   const startFetch = (
     key: string,
     promise: Promise<unknown>,
@@ -240,6 +245,7 @@ export function createSWRVClient(
     getFetch,
     getMutation,
     getState,
+    invalidateFetch,
     isLatestFetch,
     preload,
     setMutation,

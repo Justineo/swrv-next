@@ -259,6 +259,7 @@ export interface SWRVClient {
   getFetch(key: string, now: number, dedupingInterval: number): FetchRecord | undefined;
   getMutation(key: string): [number, number] | undefined;
   getState<Data = unknown, Error = unknown>(key: string): CacheState<Data, Error> | undefined;
+  invalidateFetch(key: string): void;
   isLatestFetch(key: string, startedAt: number): boolean;
   preload<Data = unknown>(key: string, value: Promise<Data> | (() => Promise<Data>)): Promise<Data>;
   setMutation(key: string, value: [number, number]): void;

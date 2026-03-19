@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vite-plus/test";
 
 import { mutate, useSWRV, useSWRVConfig, useSWRVInfinite, useSWRVSubscription } from "../src";
-import { flush, mountWithConfig, runComposable, settle } from "./test-utils";
+import { flush, mountWithConfig, runComposable, settle, stopLastScope } from "./test-utils";
 
 describe("swrv core local mutate behavior", () => {
   it("applies optimistic mutation updates before the remote value resolves", async () => {
@@ -183,6 +183,32 @@ describe("swrv core local mutate behavior", () => {
     expect(state3.data.value).toBe("<page3>");
   });
 
+  it("shares local state across hooks when no fetcher is specified", async () => {
+    const key = `local-state-${Date.now()}`;
+
+    const first = runComposable(() =>
+      useSWRV<string>(key, null, {
+        fallbackData: "initial",
+      }),
+    );
+    const second = runComposable(() =>
+      useSWRV<string>(key, null, {
+        fallbackData: "initial",
+      }),
+    );
+
+    await settle();
+
+    expect(first.data.value).toBe("initial");
+    expect(second.data.value).toBe("initial");
+
+    await first.mutate("updated", false);
+    await settle();
+
+    expect(first.data.value).toBe("updated");
+    expect(second.data.value).toBe("updated");
+  });
+
   it("skips internal infinite and subscription cache keys when mutating with a filter", async () => {
     const key = `filter-skip-internal-${Date.now()}`;
     const seenKeys: unknown[] = [];
@@ -248,6 +274,34 @@ describe("swrv core local mutate behavior", () => {
     expect(callback).toHaveBeenCalledWith("cached data");
   });
 
+  it("clears dedupe state when mutate is called without a mounted hook", async () => {
+    let count = 0;
+    const key = `mutate-unmounted-${Date.now()}`;
+
+    const first = runComposable(() =>
+      useSWRV<string>(key, async () => `data:${count++}`, {
+        dedupingInterval: 1000,
+      }),
+    );
+
+    await settle();
+    expect(first.data.value).toBe("data:0");
+
+    stopLastScope();
+
+    await mutate(key);
+
+    const second = runComposable(() =>
+      useSWRV<string>(key, async () => `data:${count++}`, {
+        dedupingInterval: 1000,
+      }),
+    );
+
+    await settle();
+
+    expect(second.data.value).toBe("data:1");
+  });
+
   it("passes undefined to scoped mutate callbacks when the key is not cached", async () => {
     const state = mountWithConfig(() => useSWRVConfig());
     const key = `mutate-uncached-${Date.now()}`;
@@ -288,6 +342,123 @@ describe("swrv core local mutate behavior", () => {
 
   it("returns undefined when global mutate receives an empty serialized key", async () => {
     await expect(mutate(null, Promise.resolve("data"), false)).resolves.toBeUndefined();
+  });
+
+  it("ignores in-flight requests when a later local mutation commits new data", async () => {
+    const key = `ignore-inflight-request-${Date.now()}`;
+    let resolveFetcher!: (value: number) => void;
+
+    await mutate(key, 1, false);
+
+    const state = runComposable(() =>
+      useSWRV<number>(
+        key,
+        async () =>
+          await new Promise<number>((resolve) => {
+            resolveFetcher = resolve;
+          }),
+        {
+          dedupingInterval: 0,
+        },
+      ),
+    );
+
+    await flush();
+    expect(state.data.value).toBe(1);
+
+    await mutate(key, 3, false);
+    await settle();
+    expect(state.data.value).toBe(3);
+
+    resolveFetcher(2);
+    await settle();
+
+    expect(state.data.value).toBe(3);
+  });
+
+  it("ignores stale async mutations when a newer mutation has already committed", async () => {
+    const key = `ignore-inflight-mutation-${Date.now()}`;
+
+    const state = runComposable(() =>
+      useSWRV<string>(key, async () => "off", {
+        dedupingInterval: 0,
+      }),
+    );
+
+    await settle();
+    expect(state.data.value).toBe("off");
+
+    await mutate(key, "on", false);
+    await settle();
+    expect(state.data.value).toBe("on");
+
+    let resolveOn!: (value: string) => void;
+    const onMutation = mutate(
+      key,
+      async () =>
+        await new Promise<string>((resolve) => {
+          resolveOn = resolve;
+        }),
+      false,
+    );
+
+    await flush();
+
+    await mutate(key, "off", false);
+    await settle();
+    expect(state.data.value).toBe("off");
+
+    let resolveOff!: (value: string) => void;
+    const offMutation = mutate(
+      key,
+      async () =>
+        await new Promise<string>((resolve) => {
+          resolveOff = resolve;
+        }),
+      false,
+    );
+
+    await flush();
+
+    resolveOn("on");
+    await settle();
+    expect(state.data.value).toBe("off");
+
+    resolveOff("off");
+    await settle();
+
+    await expect(onMutation).resolves.toBe("on");
+    await expect(offMutation).resolves.toBe("off");
+    expect(state.data.value).toBe("off");
+  });
+
+  it("does not write an error into cache state when a local mutation callback throws", async () => {
+    const key = `mutate-error-cache-${Date.now()}`;
+    const message = "mutate-error";
+    const state = mountWithConfig(() => {
+      const config = useSWRVConfig();
+      const swrv = useSWRV<number, Error>(key, async () => 0);
+      return { config, swrv };
+    });
+
+    await settle();
+    expect(state().swrv.data.value).toBe(0);
+
+    await expect(
+      state().config.mutate(
+        key,
+        () => {
+          throw new Error(message);
+        },
+        false,
+      ),
+    ).rejects.toThrow(message);
+
+    await settle();
+
+    expect(state().swrv.data.value).toBe(0);
+    expect(state().swrv.error.value).toBeUndefined();
+    expect(state().config.cache.get(key)?.error).toBeUndefined();
   });
 
   it("revalidates on bound mutate without clearing the current data first", async () => {
