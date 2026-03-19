@@ -11,12 +11,14 @@ For the full option list, see [API](/api). This page focuses on how those option
 cache boundaries and app subtrees.
 
 ```vue
+<!-- App.vue -->
 <script setup lang="ts">
 import { SWRVConfig } from "swrv";
 
 const value = {
   refreshInterval: 3000,
-  fetcher: (url: string) => fetch(url).then((response) => response.json()),
+  fetcher: (resource: string, init?: RequestInit) =>
+    fetch(resource, init).then((response) => response.json()),
 };
 </script>
 
@@ -27,7 +29,19 @@ const value = {
 </template>
 ```
 
-Inside `Dashboard`, any `useSWRV("/api/projects")` call can reuse that fetcher and polling policy.
+```vue
+<!-- Dashboard.vue -->
+<script setup lang="ts">
+import useSWRV from "swrv";
+
+const { data: events } = useSWRV("/api/events");
+const { data: projects } = useSWRV("/api/projects");
+const { data: user } = useSWRV("/api/user", { refreshInterval: 0 });
+</script>
+```
+
+Inside `Dashboard`, all three hooks can reuse the same fetcher. The `/api/user` request still
+overrides the shared polling policy locally.
 
 ## Nesting configurations
 
@@ -110,6 +124,9 @@ const { cache, client, config, mutate, preload } = useSWRVConfig();
 
 This is the correct way to reach the active cache boundary. If a custom provider is in use, the
 scoped `mutate` returned here stays aligned with that provider.
+
+Nested configurations are extended automatically. If no `<SWRVConfig>` is used, `useSWRVConfig()`
+returns the default root configuration and helpers.
 
 See [Mutation](/mutation) and [Prefetching](/prefetching) for how those scoped helpers are used in
 practice.

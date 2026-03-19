@@ -113,6 +113,14 @@ await mutate(key, data?, options?);
 `mutate` returns the resolved value of the `data` parameter. If an error is thrown while executing
 the mutation, the error is rethrown unless `throwOnError` is disabled.
 
+```ts
+try {
+  const user = await mutate("/api/user", updateUser(newUser));
+} catch (error) {
+  // handle an error while updating the user here
+}
+```
+
 ## `useSWRVMutation`
 
 SWRV also provides `useSWRVMutation` as a composable for remote mutations. Remote mutations are
@@ -221,18 +229,64 @@ mount time.
 
 ## Optimistic updates
 
-`useSWRVMutation` also supports the same optimistic update and rollback features as `mutate`:
+In many cases, applying local mutations to data is a good way to make changes feel faster. With
+`optimisticData`, you can update your local data manually while waiting for the remote mutation to
+finish. Combined with `rollbackOnError`, you can also control when to roll that data back.
+
+```vue
+<script setup lang="ts">
+import { useSWRVConfig } from "swrv";
+import useSWRV from "swrv";
+
+const { mutate } = useSWRVConfig();
+const { data } = useSWRV("/api/user", fetcher);
+
+async function uppercaseName() {
+  if (!data.value) {
+    return;
+  }
+
+  const newName = data.value.name.toUpperCase();
+  const user = { ...data.value, name: newName };
+
+  await mutate("/api/user", updateUser(user), {
+    optimisticData: user,
+    rollbackOnError(error) {
+      return error instanceof Error ? error.name !== "AbortError" : true;
+    },
+  });
+}
+</script>
+```
+
+The remote updater should be a promise or async function that returns the updated data.
+
+You can also pass a function to `optimisticData` so it derives the optimistic value from the
+current cache:
 
 ```ts
-await mutate("/api/user", updateUserOnServer(newName), {
-  optimisticData: (current) => (current ? { ...current, name: newName } : current),
+await mutate("/api/user", updateUserName(newName), {
+  optimisticData: (user) => (user ? { ...user, name: newName } : user),
+  rollbackOnError: true,
+});
+```
+
+The same pattern works with `useSWRVMutation` and `trigger`:
+
+```ts
+const { trigger } = useSWRVMutation("/api/user", updateUserName);
+
+await trigger(newName, {
+  optimisticData: (user) => (user ? { ...user, name: newName } : user),
   rollbackOnError: true,
 });
 ```
 
 ## Rollback on errors
 
-`rollbackOnError` restores the previous cache value if the remote mutation fails:
+When `optimisticData` is set, it is possible for the optimistic value to appear first and the
+remote mutation to fail later. In that case, `rollbackOnError` restores the previous cache value so
+the UI returns to a correct state:
 
 ```ts
 await mutate("/api/user", failingRequest(), {
@@ -266,6 +320,9 @@ useSWRVMutation("/api/todos", updateTodo, {
 });
 ```
 
+When combined with `optimisticData` and `rollbackOnError`, `populateCache` gives you the full
+optimistic UI flow without an extra fetch.
+
 ## Avoid race conditions
 
 Both `mutate` and `useSWRVMutation` coordinate with `useSWRV` so late request responses do not
@@ -277,9 +334,15 @@ revalidation overlap.
 Mutation callbacks receive the current cached value:
 
 ```ts
-await mutate("/api/todos", (current) => {
-  return current?.map((todo) => (todo.id === "1" ? { ...todo, done: true } : todo));
-});
+await mutate(
+  "/api/todos",
+  async (todos) => {
+    const updatedTodo = await patchTodo("1", { done: true });
+    const filteredTodos = todos?.filter((todo) => todo.id !== "1") ?? [];
+    return [...filteredTodos, updatedTodo];
+  },
+  { revalidate: false },
+);
 ```
 
 ## Mutate multiple items
@@ -304,3 +367,12 @@ await mutate((key) => Array.isArray(key) && key[0] === "item", undefined, {
 
 Use this sparingly. The filter runs against every existing cache key, so the safest filters guard
 the key shape before reading from it.
+
+You can also use the filter form to clear all cached data, which is useful on logout:
+
+```ts
+const clearCache = () =>
+  mutate(() => true, undefined, {
+    revalidate: false,
+  });
+```

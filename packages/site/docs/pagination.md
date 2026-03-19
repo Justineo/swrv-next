@@ -90,9 +90,13 @@ const count = ref(1);
 </template>
 ```
 
+This keeps the `useSWRV` call inside each page component's setup scope. That is the Vue-friendly
+way to scale the number of requests without trying to create a changing number of composable calls
+from a single component.
+
 ### Advanced cases
 
-That stops working well in more advanced cases. For example:
+However, that pattern stops working well in more advanced cases. For example:
 
 - the top-level UI needs data from every page to compute totals
 - the API is cursor based, so each page depends on the previous page
@@ -111,6 +115,9 @@ const { data, error, isLoading, isValidating, mutate, size, setSize } = useSWRVI
 
 Similar to `useSWRV`, this composable accepts a function that returns the request key, a fetcher,
 and options. It returns everything `useSWRV` returns, plus `size` and `setSize`.
+
+In infinite loading, one page is one request, and the goal is to fetch multiple pages and render
+them together.
 
 ### API
 
@@ -246,7 +253,18 @@ await mutate(unstable_serialize(getKey));
 That targets the aggregate infinite key. If you need to revalidate or mutate individual pages,
 prefer the bound `mutate` returned from `useSWRVInfinite`.
 
+> [!WARNING]
+> As the name implies, `unstable_serialize` is not a stable API and may change in a future release.
+
 ### Advanced features
+
+`useSWRVInfinite` is flexible enough to power:
+
+- loading states
+- empty-list states
+- disabling "Load more" when the end is reached
+- changing data sources
+- refreshing the whole list
 
 High-value options include:
 

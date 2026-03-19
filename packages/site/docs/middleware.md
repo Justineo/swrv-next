@@ -44,12 +44,16 @@ A middleware receives the next SWRV hook and returns a wrapped version of it:
 
 ```ts
 const middleware = (useSWRVNext) => (key, fetcher, config) => {
+  // Before hook runs...
   return useSWRVNext(key, fetcher, config);
+  // After hook runs...
 };
 ```
 
 Unlike React, Vue does not have the same Hook lint rule about function names. The important part is
 that middleware stays a plain function and composables are still called inside setup scope.
+
+See [TypeScript](/typescript#middleware-types) for the exported middleware helper types.
 
 The wrapped call still receives the original public key shape. That matters for:
 
@@ -154,6 +158,13 @@ const logger = (useSWRVNext) => (key, fetcher, config) => {
 
   return useSWRVNext(key, loggedFetcher ?? fetcher, config);
 };
+```
+
+Every time the request is fired, it prints the SWRV key to the console:
+
+```text
+SWRV request: /api/user1
+SWRV request: /api/user2
 ```
 
 ### Keep previous result

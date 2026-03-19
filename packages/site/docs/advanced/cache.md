@@ -47,6 +47,9 @@ const value = {
 
 All SWRV hooks under that boundary use the same provider.
 
+When boundaries are nested, hooks use the nearest upper-level provider. If there is no custom
+provider above them, they fall back to the default root cache.
+
 > [!WARNING]
 > When the boundary is remounted, the provider is recreated too. Keep custom providers high enough
 > in the app tree, or create them outside component setup, if the cache should survive remounts.
@@ -94,9 +97,29 @@ function localStorageProvider() {
 }
 ```
 
+Then use it through `SWRVConfig`:
+
+```vue
+<SWRVConfig :value="{ provider: localStorageProvider }">
+  <App />
+</SWRVConfig>
+```
+
+As an improvement, you can also keep an in-memory cache as a buffer and write back to
+`localStorage` periodically. The same layered pattern can be adapted to IndexedDB or other custom
+storages.
+
 ### Reset cache between test cases
 
 In tests, create a fresh provider or client per test instead of sharing one global cache:
+
+```vue
+<SWRVConfig :value="{ provider: () => new Map() }">
+  <App />
+</SWRVConfig>
+```
+
+Or create a request-scoped client explicitly:
 
 ```ts
 import { createSWRVClient } from "swrv";
@@ -126,4 +149,5 @@ await mutate((key) => true, undefined, {
 });
 ```
 
-That updates the cache while preserving SWRV’s normal mutation and listener semantics.
+That updates the cache while preserving SWRV’s normal mutation and listener semantics. See also
+[Mutation](/mutation) and [Arguments](/arguments#multiple-arguments).

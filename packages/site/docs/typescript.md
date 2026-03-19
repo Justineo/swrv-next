@@ -167,6 +167,19 @@ const mutation = useSWRVMutation("/api/user", async (_key, { arg }: { arg: { nam
 void mutation.trigger({ name: "Ada" });
 ```
 
+If you want to type a reusable config object, import `SWRVConfiguration` directly:
+
+```ts
+import type { SWRVConfiguration } from "swrv";
+
+const config: SWRVConfiguration<string[]> = {
+  fallbackData: ["loading"],
+  revalidateOnMount: false,
+};
+
+const { data } = useSWRV("/api/data", fetcher, config);
+```
+
 ## Middleware types
 
 There are also extra type definitions you can import for custom middleware and config boundaries:
@@ -181,3 +194,13 @@ There are also extra type definitions you can import for custom middleware and c
 
 Most application code can rely on inference and only reach for explicit types at shared fetchers,
 composable libraries, or middleware boundaries.
+
+For example:
+
+```ts
+import type { SWRVMiddleware } from "swrv";
+
+const swrvMiddleware: SWRVMiddleware = (useSWRVNext) => (key, fetcher, config) => {
+  return useSWRVNext(key, fetcher, config);
+};
+```
