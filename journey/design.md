@@ -152,6 +152,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
 - Expand the `2.0` SSR scope beyond the first launch-ready cut to include first-party Vue SSR and hydration helpers, server-safe preload and fallback behavior, and dedicated SSR behavior tests. Nuxt-specific adapters or framework modules remain follow-up work, not `2.0` blockers.
 - Do not port SWR's getter-based dependency-collection mechanism into Vue. `swrv-next` already exposes separate refs, so Vue's native dependency tracking is the right model. Performance follow-up should focus on narrower issues such as redundant cache-to-ref sync and unstable watch sources instead.
 - Include a Vue Suspense-compatible parity lane in `2.0`, covering applicable SWR suspense behavior and type semantics, while excluding React-specific rendering mechanics.
+- Vue Suspense feasibility is now narrower than the original goal: mount-time suspension is technically viable through Vue internals, but later key-change re-suspension does not follow the same path. Final `2.0` suspense scope needs an explicit product decision between limited initial-mount support and a riskier deeper-internals approach.
 - Include a lightweight built-in debug or devtools middleware story in `2.0` that provides first-party inspection hooks and middleware-preset parity. A dedicated browser extension or deep Vue Devtools integration is follow-up work.
 - Freeze the rebuilt release line as a breaking `2.x` track, and keep prerelease automation on the `next` dist-tag until the first stable cut is ready.
 - Freeze the published Vue support range at `>=3.2.26 <4`.
@@ -166,5 +167,6 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
 
 ## Follow-up Questions
 
+- Whether `2.0` should ship limited initial-mount `suspense: true` support, or defer fuller SWR suspense parity because later key-change fallback behavior is not cleanly achievable with Vue's current mechanics
 - Whether any remaining advanced edge semantics in `infinite`, `mutation`, and `subscription` are worth tightening further before or after the first stable `2.0` release
 - How much additional type-level precision is worth adding beyond the current public overloads once the API surface is exercised by real consumers
