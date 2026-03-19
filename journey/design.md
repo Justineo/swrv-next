@@ -76,6 +76,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - the package export map now points at the emitted `.d.mts` declaration files and is checked by a package-export smoke test
 - The docs package now builds with VitePress and includes a first guide, API overview, and migration page.
 - The docs package now also includes examples, a current-scope page, and an explicit SSR guide built around provider-scoped clients plus config-level fallback data.
+- The docs package now also documents snapshot-based SSR handoff through `serializeSWRVSnapshot()` and `hydrateSWRVSnapshot()`, so the SSR story is no longer limited to manually wiring config-level `fallback`.
 - The docs package now targets the VitePress 2 prerelease line (`2.0.0-alpha.16`) instead of the VitePress 1 stable line so the docs stack stays on the intended forward-looking baseline.
 - Under the VitePress 2 plus Rolldown path used here, the docs package now also carries `oxc-minify` explicitly because VitePress requires it for production builds on that toolchain.
 - Browser-facing end-to-end coverage now exists through a Playwright fixture app under `packages/swrv/e2e`, covering focus revalidation, reconnect revalidation, optimistic mutation UI, and subscription pushes in a real browser runtime.
@@ -90,6 +91,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
 - A dedicated `core-broadcast-state` domain file now covers shared-key broadcast behavior for refreshed data, propagated errors, and mutate-driven `isValidating` state across multiple consumers.
 - A dedicated `core-devtools` domain file now covers the built-in devtools hook, including global middleware injection and Vue-module exposure for devtools integrations.
 - A dedicated `core-fetcher` domain file now covers falsy per-hook fetchers, so `null`, `undefined`, and `false` all stay idle without starting requests.
+- A dedicated `core-ssr-hydration` domain file now covers snapshot serialization, client hydration from a request-scoped snapshot, and server rendering against hydrated client state through `@vue/server-renderer`.
 - A dedicated `core-cache-provider` domain file now covers provider-scoped cache behavior, including isolated clients, seeded cache reads, scoped cache mutation through `useSWRVConfig`, nested provider boundaries, and parent-cache extension through `provider(parentCache)`.
 - A dedicated `core-middleware` domain file now covers base and cross-API middleware behavior, including original-key forwarding, null fetchers, config-boundary `use` composition order, key rewriting, non-serialized key forwarding, and middleware passthrough for `infinite`, `mutation`, and `subscription`.
 - A dedicated `core-subscription` domain file now covers subscription behavior end to end, including push updates, scope cleanup, fallback and error recovery, original-key forwarding, deduped subscriptions, key updates, singleton switching, stable-key no-resubscribe behavior, SWR/cache isolation, and disposer enforcement.
@@ -115,6 +117,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - `SWRVConfig.provider` now also receives the parent cache, so nested providers can extend rather than only replace the inherited cache view
   - SWR-style `use` middleware composition now works across `useSWRV`, `immutable`, `infinite`, `mutation`, and `subscription`
   - the published package includes explicit typed subpath exports, a package README, and an Apache-2.0 license file
+  - root exports now also include `serializeSWRVSnapshot()` and `hydrateSWRVSnapshot()` for request-scoped SSR snapshot round-trips
   - root contributor and security guidance now exist for repository users and maintainers
   - the current release path has been revalidated after the latest parity hardening through package and publish dry-runs
   - the workspace and published package manifests are now aligned to the intended prerelease line at `2.0.0-next.0`

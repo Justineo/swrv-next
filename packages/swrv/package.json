@@ -47,6 +47,7 @@
   },
   "devDependencies": {
     "@types/node": "catalog:",
+    "@vue/server-renderer": "catalog:",
     "jsdom": "catalog:",
     "typescript": "catalog:",
     "vite-plus": "catalog:",

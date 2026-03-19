@@ -1,6 +1,13 @@
 import { ref } from "vue";
 
-import useSWRV, { mutate, preload, useSWRVImmutable } from "../src";
+import useSWRV, {
+  createSWRVClient,
+  hydrateSWRVSnapshot,
+  mutate,
+  preload,
+  serializeSWRVSnapshot,
+  useSWRVImmutable,
+} from "../src";
 import useSWRVInfinite, { unstable_serialize as unstableSerializeInfinite } from "../src/infinite";
 import useSWRVMutation from "../src/mutation";
 import useSWRVSubscription from "../src/subscription";
@@ -25,6 +32,10 @@ const refResponse = useSWRV(refKey, async (resource, id) => `${resource}:${id}`)
 
 const immutableResponse = useSWRVImmutable(tupleKey, async (resource, id) => `${resource}:${id}`);
 const falseFetcherResponse = useSWRV<string>("false-fetcher", false);
+const snapshotClient = hydrateSWRVSnapshot(createSWRVClient(), {
+  user: { id: "1" },
+});
+const serializedSnapshot = serializeSWRVSnapshot(snapshotClient);
 
 const fallbackConfig = {
   fallback: {
@@ -238,6 +249,8 @@ const typeAssertions = {
   falseFetcherData: true as Expect<
     Equal<typeof falseFetcherResponse.data.value, string | undefined>
   >,
+  snapshotClient: true as Expect<Equal<typeof snapshotClient, ReturnType<typeof createSWRVClient>>>,
+  serializedSnapshot: true as Expect<Equal<typeof serializedSnapshot, Record<string, unknown>>>,
   middlewareData: true as Expect<Equal<typeof middlewareResponse.data.value, string | undefined>>,
   boundMutateResult: true as Expect<
     Equal<Awaited<typeof boundMutateResult>, string[] | string | undefined>

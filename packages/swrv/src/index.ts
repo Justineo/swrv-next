@@ -1,7 +1,12 @@
 import useSWRV, { unstable_serialize } from "./use-swrv";
 
 import { GLOBAL_SWRV_CLIENT, SWRVConfig, createCacheProvider, useSWRVConfig } from "./config";
-import { createScopedMutator, preloadKey } from "./_internal";
+import {
+  createScopedMutator,
+  hydrateSWRVSnapshot,
+  preloadKey,
+  serializeSWRVSnapshot,
+} from "./_internal";
 
 import type { Fetcher, KeySource, RawKey } from "./_internal";
 
@@ -17,6 +22,7 @@ export const preload = <Data = unknown, Key extends RawKey = RawKey>(
   key: KeySource<Key>,
   fetcher: Fetcher<Data, Key>,
 ) => preloadKey(GLOBAL_SWRV_CLIENT, key, fetcher);
+export { hydrateSWRVSnapshot, serializeSWRVSnapshot };
 
 export default useSWRV;
 
@@ -38,6 +44,7 @@ export type {
   SWRVClient,
   SWRVConfiguration,
   SWRVConfigurationValue,
+  SWRVFallbackSnapshot,
   SWRVHook,
   SWRVMiddleware,
   SWRVResponse,

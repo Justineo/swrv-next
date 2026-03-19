@@ -12,6 +12,9 @@ catalogs:
     '@types/node':
       specifier: ^24
       version: 24.12.0
+    '@vue/server-renderer':
+      specifier: ^3.5.30
+      version: 3.5.30
     bumpp:
       specifier: ^11.0.1
       version: 11.0.1
@@ -81,6 +84,9 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 24.12.0
+      '@vue/server-renderer':
+        specifier: 'catalog:'
+        version: 3.5.30(vue@3.5.30(typescript@5.9.3))
       jsdom:
         specifier: 'catalog:'
         version: 29.0.0

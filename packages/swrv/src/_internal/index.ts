@@ -1,5 +1,6 @@
 export { createCache } from "./cache";
 export { createSWRVClient } from "./client";
+export { hydrateSWRVSnapshot, serializeSWRVSnapshot } from "./ssr";
 export { stableHash } from "./hash";
 export { createScopedMutator } from "./mutate";
 export { preloadKey } from "./preload";
@@ -28,6 +29,7 @@ export type {
   SWRVConfigAccessor,
   SWRVConfiguration,
   SWRVConfigurationValue,
+  SWRVFallbackSnapshot,
   SWRVHook,
   SWRVMiddleware,
   SWRVResponse,

@@ -11,6 +11,8 @@
 - `preload`
 - `createSWRVClient`
 - `createCache`
+- `serializeSWRVSnapshot`
+- `hydrateSWRVSnapshot`
 - `unstable_serialize`
 
 ## `useSWRV`
@@ -48,6 +50,24 @@ Key notes:
 - dedupes repeated preload calls until a hook consumes the request
 - failed preload requests are cleared so a later preload or hook fetch can retry
 - preloaded page keys are also consumed by `useSWRVInfinite`
+
+## `serializeSWRVSnapshot(client)`
+
+```ts
+const snapshot = serializeSWRVSnapshot(client);
+```
+
+Returns a JSON-serializable serialized-key map of cached data values. This is
+meant for SSR handoff, not for exposing internal loading metadata.
+
+## `hydrateSWRVSnapshot(client, snapshot)`
+
+```ts
+const client = hydrateSWRVSnapshot(createSWRVClient(), snapshot);
+```
+
+Seeds a client from a serialized snapshot and returns that client. Hydrated data
+is visible immediately, and normal revalidation can still refresh it on mount.
 
 ## `SWRVConfig`
 

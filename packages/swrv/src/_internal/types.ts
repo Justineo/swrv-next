@@ -28,6 +28,8 @@ export interface CacheAdapter<Value = unknown> {
   keys(): IterableIterator<string>;
 }
 
+export type SWRVFallbackSnapshot = Record<string, unknown>;
+
 export interface CacheState<Data = unknown, Error = unknown> {
   data?: Data;
   error?: Error;

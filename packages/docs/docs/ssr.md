@@ -6,7 +6,7 @@ SWRV's supported SSR path is intentionally explicit:
 
 - create a fresh SWRV client per request
 - provide that client with `SWRVConfig`
-- pass request-specific initial data through config-level `fallback`
+- pass request-specific initial data through config-level `fallback` or a serialized snapshot
 - let client-side revalidation refresh the fallback after hydration
 
 This keeps request boundaries clear and avoids leaking cache state across users.
@@ -63,12 +63,38 @@ Fallback does not write into the cache by itself. That makes it a clean fit for
 server-provided render data without turning the render payload into permanent
 client cache state.
 
+## Snapshot Helpers
+
+If you want to serialize a request-scoped SWRV client into HTML and hydrate it
+back into a fresh browser client, use `serializeSWRVSnapshot()` and
+`hydrateSWRVSnapshot()`.
+
+```ts
+import { createSWRVClient, hydrateSWRVSnapshot, serializeSWRVSnapshot } from "swrv";
+
+const serverClient = createSWRVClient();
+
+// ...populate the server client through your data-fetch flow...
+
+const snapshot = serializeSWRVSnapshot(serverClient);
+```
+
+Then on the client:
+
+```ts
+import { createSWRVClient, hydrateSWRVSnapshot } from "swrv";
+
+const client = hydrateSWRVSnapshot(createSWRVClient(), window.__SWRV__);
+```
+
+The snapshot format is intentionally aligned with config-level `fallback`: it is
+a serialized-key map of data values, not a dump of internal loading metadata.
+
 ## Current Limits
 
 The current public surface does not yet include:
 
 - dedicated Nuxt integration
-- specialized cache snapshot serialization helpers
 - a larger hydration API beyond explicit `client` plus `fallback`
 
 Those areas can be added later without changing the current request-boundary
