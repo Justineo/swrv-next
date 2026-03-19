@@ -11,20 +11,20 @@
   --theme-font-family: var(--font-family-roboto);
 
   --theme-bg: #ffffff;
-  --theme-title: #16251d;
-  --theme-text: #476355;
+  --theme-title: #101915;
+  --theme-text: #5b675f;
   --theme-primary: #42b883;
-  --theme-primary-text: #eef2ed;
-  --theme-primary-hover: #369f6b;
-  --theme-secondary: #eef2ed;
-  --theme-secondary-text: #16251d;
+  --theme-primary-text: #08120d;
+  --theme-primary-hover: #329d6d;
+  --theme-secondary: #f4f7f4;
+  --theme-secondary-text: #101915;
   --theme-card-bg: transparent;
-  --theme-card-border: rgba(66, 99, 85, 0.22);
-  --theme-form-label-inline: #476355;
-  --theme-form-label-inline-focus: #16251d;
-  --theme-input-border: #c9ddd1;
-  --theme-border: rgba(66, 99, 85, 0.22);
-  --theme-error: #da5f69;
+  --theme-card-border: rgba(30, 54, 42, 0.16);
+  --theme-form-label-inline: #5b675f;
+  --theme-form-label-inline-focus: #101915;
+  --theme-input-border: #d6e0d9;
+  --theme-border: rgba(30, 54, 42, 0.16);
+  --theme-error: #c45e69;
 
   --vp-font-family-base: var(--theme-font-family), sans-serif;
   --vp-font-family-mono: var(--font-family-roboto-mono), monospace;
