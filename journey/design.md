@@ -76,6 +76,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - it no longer conflicts with normal `useSWRV` state for the same logical key
 - Public typing and package-shape coverage are now materially stronger:
   - `useSWRV` and `useSWRVImmutable` now infer array-key fetcher arguments more precisely
+  - `useSWRV` and `useSWRVImmutable` now also preserve non-null fetcher argument types for nullable string and object keys, and accept readonly tuple keys in positional fetcher signatures
   - public compile-time coverage exists for root and subpath APIs
   - bound and scoped mutators now expose the mutation-result type instead of collapsing everything to cached-data type, and mutator callbacks can now model different output payloads from their input snapshot
   - `useSWRVInfinite` bound mutators now also accept mutation payload types distinct from the aggregate page-array shape, which keeps `populateCache` and optimistic transform flows type-safe for both single-page and multi-page cases
@@ -83,6 +84,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - mutation type coverage now also explicitly checks no-arg trigger typing and ensures mutation responses do not leak base-hook fields like `mutate`
   - `useSWRVSubscription` handler keys now narrow to the resolved non-nullish key type even when the key source itself is conditional
   - root and scoped `preload()` now use overload-based typing instead of a single conditional generic, which improves string-key and config-driven preload inference while leaving tuple function-key inference as a smaller remaining follow-up
+  - compile-time coverage now also exercises `useSWRVConfig()` accessors, filtered mutate callback typing, readonly tuple keys, nullable-key fetcher narrowing, config-bound provider hook typing, and bound-mutate composition with mutation triggers
   - the package export map now points at the emitted `.d.mts` declaration files and is checked by a package-export smoke test
 - The docs package now builds with VitePress and includes a first guide, API overview, and migration page.
 - The docs package now also includes examples, a current-scope page, and an explicit SSR guide built around provider-scoped clients plus config-level fallback data.

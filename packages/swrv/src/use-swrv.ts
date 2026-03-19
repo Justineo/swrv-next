@@ -30,6 +30,7 @@ type CurrentKeyState = {
 };
 
 type NonArrayKey = Exclude<RawKey, readonly unknown[] | null | undefined | false>;
+type NullableKey<Key extends RawKey> = Key | null | undefined | false;
 const serverPrefetchWarnings = new WeakMap<object, Set<string>>();
 
 function hasDefinedValue<Data>(value: Data | undefined): value is Data {
@@ -106,12 +107,12 @@ function useSWRVHandler<
   Error = unknown,
   Key extends readonly unknown[] = readonly unknown[],
 >(
-  key: KeySource<Key>,
-  fetcher: ((...args: Key) => FetcherResponse<Data>) | null | undefined | false,
+  key: KeySource<NullableKey<Key>>,
+  fetcher: ((...args: [...Key]) => FetcherResponse<Data>) | null | undefined | false,
   config?: SWRVConfiguration<Data, Error>,
 ): SWRVResponse<Data, Error>;
 function useSWRVHandler<Data = unknown, Error = unknown, Key extends NonArrayKey = NonArrayKey>(
-  key: KeySource<Key>,
+  key: KeySource<NullableKey<Key>>,
   fetcher: ((arg: Key) => FetcherResponse<Data>) | null | undefined | false,
   config?: SWRVConfiguration<Data, Error>,
 ): SWRVResponse<Data, Error>;
@@ -717,8 +718,8 @@ export default function useSWRV<
   Error = unknown,
   Key extends readonly unknown[] = readonly unknown[],
 >(
-  key: KeySource<Key>,
-  fetcher: ((...args: Key) => FetcherResponse<Data>) | null | undefined | false,
+  key: KeySource<NullableKey<Key>>,
+  fetcher: ((...args: [...Key]) => FetcherResponse<Data>) | null | undefined | false,
   config?: SWRVConfiguration<Data, Error>,
 ): SWRVResponse<Data, Error>;
 export default function useSWRV<
@@ -726,7 +727,7 @@ export default function useSWRV<
   Error = unknown,
   Key extends NonArrayKey = NonArrayKey,
 >(
-  key: KeySource<Key>,
+  key: KeySource<NullableKey<Key>>,
   fetcher: ((arg: Key) => FetcherResponse<Data>) | null | undefined | false,
   config?: SWRVConfiguration<Data, Error>,
 ): SWRVResponse<Data, Error>;
@@ -740,11 +741,11 @@ export default function useSWRV<
   Error = unknown,
   Key extends readonly unknown[] = readonly unknown[],
 >(
-  key: KeySource<Key>,
-  config: SWRVConfiguration<Data, Error, (...args: Key) => FetcherResponse<Data>>,
+  key: KeySource<NullableKey<Key>>,
+  config: SWRVConfiguration<Data, Error, (...args: [...Key]) => FetcherResponse<Data>>,
 ): SWRVResponse<Data, Error>;
 export default function useSWRV<Data = unknown, Error = unknown, Key extends string = string>(
-  key: KeySource<Key>,
+  key: KeySource<NullableKey<Key>>,
   config: SWRVConfiguration<Data, Error, (arg: Key) => FetcherResponse<Data>>,
 ): SWRVResponse<Data, Error>;
 export default function useSWRV<
@@ -752,7 +753,7 @@ export default function useSWRV<
   Error = unknown,
   Key extends Record<string, unknown> = Record<string, unknown>,
 >(
-  key: KeySource<Key>,
+  key: KeySource<NullableKey<Key>>,
   config: SWRVConfiguration<Data, Error, (arg: Key) => FetcherResponse<Data>>,
 ): SWRVResponse<Data, Error>;
 export default function useSWRV<Data = unknown, Error = unknown>(

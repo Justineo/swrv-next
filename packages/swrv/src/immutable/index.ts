@@ -13,6 +13,7 @@ import type {
 } from "../_internal/types";
 
 type NonArrayKey = Exclude<RawKey, readonly unknown[] | null | undefined | false>;
+type NullableKey<Key extends RawKey> = Key | null | undefined | false;
 
 export const immutable: SWRVMiddleware =
   (useSWRVNext) =>
@@ -37,8 +38,8 @@ export default function useSWRVImmutable<
   Error = unknown,
   Key extends readonly unknown[] = readonly unknown[],
 >(
-  key: KeySource<Key>,
-  fetcher: ((...args: Key) => FetcherResponse<Data>) | null | undefined,
+  key: KeySource<NullableKey<Key>>,
+  fetcher: ((...args: [...Key]) => FetcherResponse<Data>) | null | undefined,
   config?: SWRVConfiguration<Data, Error>,
 ): SWRVResponse<Data, Error>;
 export default function useSWRVImmutable<
@@ -46,7 +47,7 @@ export default function useSWRVImmutable<
   Error = unknown,
   Key extends NonArrayKey = NonArrayKey,
 >(
-  key: KeySource<Key>,
+  key: KeySource<NullableKey<Key>>,
   fetcher: ((arg: Key) => FetcherResponse<Data>) | null | undefined,
   config?: SWRVConfiguration<Data, Error>,
 ): SWRVResponse<Data, Error>;
@@ -55,15 +56,15 @@ export default function useSWRVImmutable<
   Error = unknown,
   Key extends readonly unknown[] = readonly unknown[],
 >(
-  key: KeySource<Key>,
-  config: SWRVConfiguration<Data, Error, (...args: Key) => FetcherResponse<Data>>,
+  key: KeySource<NullableKey<Key>>,
+  config: SWRVConfiguration<Data, Error, (...args: [...Key]) => FetcherResponse<Data>>,
 ): SWRVResponse<Data, Error>;
 export default function useSWRVImmutable<
   Data = unknown,
   Error = unknown,
   Key extends string = string,
 >(
-  key: KeySource<Key>,
+  key: KeySource<NullableKey<Key>>,
   config: SWRVConfiguration<Data, Error, (arg: Key) => FetcherResponse<Data>>,
 ): SWRVResponse<Data, Error>;
 export default function useSWRVImmutable<
@@ -71,7 +72,7 @@ export default function useSWRVImmutable<
   Error = unknown,
   Key extends Record<string, unknown> = Record<string, unknown>,
 >(
-  key: KeySource<Key>,
+  key: KeySource<NullableKey<Key>>,
   config: SWRVConfiguration<Data, Error, (arg: Key) => FetcherResponse<Data>>,
 ): SWRVResponse<Data, Error>;
 export default function useSWRVImmutable<Data = unknown, Error = unknown>(

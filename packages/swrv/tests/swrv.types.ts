@@ -7,12 +7,13 @@ import useSWRV, {
   mutate,
   preload,
   serializeSWRVSnapshot,
+  useSWRVConfig,
   useSWRVImmutable,
 } from "../src";
 import useSWRVInfinite, { unstable_serialize as unstableSerializeInfinite } from "../src/infinite";
 import useSWRVMutation from "../src/mutation";
 import useSWRVSubscription from "../src/subscription";
-import type { SWRVConfiguration, SWRVMiddleware, TriggerWithoutArgs } from "../src";
+import type { RawKey, SWRVConfiguration, SWRVMiddleware, TriggerWithoutArgs } from "../src";
 
 type Equal<Left, Right> =
   (<Value>() => Value extends Left ? 1 : 2) extends <Value>() => Value extends Right ? 1 : 2
@@ -29,9 +30,83 @@ const tupleResponse = useSWRV(tupleKey, async (resource, id) => ({
   resource,
   id,
 }));
+const readonlyTupleKey = [{ a: "1", b: { c: "3" } }, [1231, "888"]] as const;
+const readonlyTupleResponse = useSWRV(readonlyTupleKey, async (resource, nested) => ({
+  resource,
+  nested,
+}));
 
 const refKey = ref<[string, number]>(["team", 7]);
 const refResponse = useSWRV(refKey, async (resource, id) => `${resource}:${id}`);
+const configAccessor = useSWRVConfig();
+const maybeStringKey = Math.random() > 0.5 ? ("/api/user" as const) : null;
+const maybeFalseStringKey = Math.random() > 0.5 ? ("/api/user" as const) : false;
+const recordKey = { a: "1", b: { c: "3", d: 2 } };
+const maybeRecordKey = Math.random() > 0.5 ? recordKey : null;
+const maybeFalseRecordKey = Math.random() > 0.5 ? recordKey : false;
+
+useSWRV("/api/user" as const, (key) => {
+  type StringKey = Expect<Equal<typeof key, "/api/user">>;
+  void (true as StringKey);
+  return key;
+});
+
+useSWRV(maybeStringKey, (key) => {
+  type MaybeStringKey = Expect<Equal<typeof key, "/api/user">>;
+  void (true as MaybeStringKey);
+  return key;
+});
+
+useSWRV(maybeFalseStringKey, (key) => {
+  type MaybeFalseStringKey = Expect<Equal<typeof key, "/api/user">>;
+  void (true as MaybeFalseStringKey);
+  return key;
+});
+
+useSWRV(recordKey, (key) => {
+  type RecordKey = Expect<Equal<typeof key, { a: string; b: { c: string; d: number } }>>;
+  void (true as RecordKey);
+  return key;
+});
+
+useSWRV(maybeRecordKey, (key) => {
+  type MaybeRecordKey = Expect<Equal<typeof key, { a: string; b: { c: string; d: number } }>>;
+  void (true as MaybeRecordKey);
+  return key;
+});
+
+useSWRV(maybeFalseRecordKey, (key) => {
+  type MaybeFalseRecordKey = Expect<Equal<typeof key, { a: string; b: { c: string; d: number } }>>;
+  void (true as MaybeFalseRecordKey);
+  return key;
+});
+
+useSWRV(
+  () => "/api/user",
+  (key) => {
+    type ReturnStringKey = Expect<Equal<typeof key, string>>;
+    void (true as ReturnStringKey);
+    return key;
+  },
+);
+
+useSWRV(
+  () => (Math.random() > 0.5 ? ("/api/user" as const) : null),
+  (key) => {
+    type ReturnNullableStringKey = Expect<Equal<typeof key, "/api/user">>;
+    void (true as ReturnNullableStringKey);
+    return key;
+  },
+);
+
+useSWRV(
+  () => (Math.random() > 0.5 ? ("/api/user" as const) : false),
+  (key) => {
+    type ReturnFalseStringKey = Expect<Equal<typeof key, "/api/user">>;
+    void (true as ReturnFalseStringKey);
+    return key;
+  },
+);
 
 const immutableResponse = useSWRVImmutable(tupleKey, async (resource, id) => `${resource}:${id}`);
 const configFetcherResponse = useSWRV("/api/config" as const, {
@@ -69,7 +144,15 @@ const serializedSnapshot = serializeSWRVSnapshot(snapshotClient);
 const fallbackConfig = {
   fallback: {
     user: "seed",
+    userPromise: Promise.resolve("seed"),
   },
+} satisfies SWRVConfiguration<string>;
+const providerConfig = {
+  provider: () => new Map(),
+  isOnline: () => true,
+  isVisible: () => true,
+  initFocus: (_callback: () => void) => undefined,
+  initReconnect: (_callback: () => void) => undefined,
 } satisfies SWRVConfiguration<string>;
 const validUndefinedConfigProps: SWRVConfigProps = {
   value: undefined,
@@ -111,9 +194,31 @@ const middlewareResponse = useSWRV<string, never, string>(
 );
 
 const boundMutateResponse = useSWRV<string[]>("bound-mutate");
+const boundMutateCallbackResult = boundMutateResponse.mutate(async () => "1");
+const boundMutateNoPopulateResult = boundMutateResponse.mutate(async () => "1", {
+  populateCache: false,
+});
 const boundMutateResult = boundMutateResponse.mutate<string>(Promise.resolve("Cherry"), {
   populateCache: (result, currentData) => [...(currentData ?? []), result],
   revalidate: false,
+});
+
+const filteredNumberMutateResult = mutate<number>(
+  (key) => {
+    type FilteredKey = Expect<Equal<typeof key, RawKey | undefined>>;
+    void (true as FilteredKey);
+    return typeof key === "string" && key.startsWith("swr");
+  },
+  (data) => {
+    type FilteredData = Expect<Equal<typeof data, number | undefined>>;
+    void (true as FilteredData);
+    return 0;
+  },
+);
+const scopedStringMutateResult = mutate<string>("string", (data) => {
+  type ScopedStringData = Expect<Equal<typeof data, string | undefined>>;
+  void (true as ScopedStringData);
+  return "0";
 });
 
 const scopedMutateResult = mutate<string[], string>("scoped-mutate", Promise.resolve("Cherry"), {
@@ -142,6 +247,23 @@ const preloadedTuple = preload(tupleKey, async (resource, id) => `${resource}:${
 const preloadedFunctionKey = preload(
   () => tupleKey,
   async (resource, id) => `${resource}:${id}`,
+);
+const optionRecordResponse = useSWRV(recordKey, {
+  fetcher: async (key) => {
+    type OptionRecordKey = Expect<Equal<typeof key, { a: string; b: { c: string; d: number } }>>;
+    void (true as OptionRecordKey);
+    return key;
+  },
+});
+const optionStringResponse = useSWRV(
+  () => (Math.random() > 0.5 ? ("/api/option-user" as const) : null),
+  {
+    fetcher: async (key) => {
+      type OptionStringKey = Expect<Equal<typeof key, "/api/option-user">>;
+      void (true as OptionStringKey);
+      return key;
+    },
+  },
 );
 
 const infiniteResponse = useSWRVInfinite<string>(
@@ -212,6 +334,7 @@ const extraParamMutation = useSWRVMutation("extra-param" as const, (key, opts) =
 });
 const extraParamTrigger: TriggerWithoutArgs<"extra-param", unknown, never, "extra-param"> =
   extraParamMutation.trigger;
+const extraParamTriggerResult = extraParamMutation.trigger();
 
 const mutationWithOptions = mutation.trigger(
   { name: "alice" },
@@ -271,6 +394,18 @@ const mutationThrowOffByDefault = useSWRVMutation<string, Error, "foo", string>(
 );
 
 const mutationThrowOffResult = mutationThrowOffByDefault.trigger("foo");
+const boundMutateWithTrigger = useSWRV("/some/key", async () => ({
+  foo: "bar",
+})).mutate(
+  useSWRVMutation("/some/key", async () => ({
+    foo: "foo",
+  })).trigger(),
+  {
+    optimisticData: {
+      foo: "baz",
+    },
+  },
+);
 
 // @ts-expect-error required mutation args should stay required
 void numericMutation.trigger();
@@ -328,12 +463,36 @@ const typeAssertions = {
   tupleData: true as Expect<
     Equal<typeof tupleResponse.data.value, { resource: string; id: number } | undefined>
   >,
+  readonlyTupleData: true as Expect<
+    Equal<
+      typeof readonlyTupleResponse.data.value,
+      | {
+          resource: { readonly a: "1"; readonly b: { readonly c: "3" } };
+          nested: readonly [1231, "888"];
+        }
+      | undefined
+    >
+  >,
   refData: true as Expect<Equal<typeof refResponse.data.value, string | undefined>>,
+  configAccessorCache: true as Expect<
+    Equal<typeof configAccessor.cache, ReturnType<typeof createSWRVClient>["cache"]>
+  >,
+  configAccessorMutate: true as Expect<Equal<typeof configAccessor.mutate, typeof mutate>>,
+  configAccessorPreload: true as Expect<Equal<typeof configAccessor.preload, typeof preload>>,
   immutableData: true as Expect<Equal<typeof immutableResponse.data.value, string | undefined>>,
   configFetcherData: true as Expect<
     Equal<typeof configFetcherResponse.data.value, "/api/config" | undefined>
   >,
   configTupleData: true as Expect<Equal<typeof configTupleResponse.data.value, string | undefined>>,
+  optionRecordData: true as Expect<
+    Equal<
+      typeof optionRecordResponse.data.value,
+      { a: string; b: { c: string; d: number } } | undefined
+    >
+  >,
+  optionStringData: true as Expect<
+    Equal<typeof optionStringResponse.data.value, "/api/option-user" | undefined>
+  >,
   immutableConfigData: true as Expect<
     Equal<typeof immutableConfigFetcherResponse.data.value, "immutable-config" | undefined>
   >,
@@ -352,8 +511,23 @@ const typeAssertions = {
   eventConfigInitFocus: true as Expect<
     Equal<typeof typedInitFocus, NonNullable<SWRVConfiguration<string>["initFocus"]>>
   >,
+  providerConfigProvider: true as Expect<
+    Equal<typeof providerConfig.provider, () => Map<any, any>>
+  >,
+  boundMutateCallbackResult: true as Expect<
+    Equal<Awaited<typeof boundMutateCallbackResult>, string[] | string | undefined>
+  >,
+  boundMutateNoPopulateResult: true as Expect<
+    Equal<Awaited<typeof boundMutateNoPopulateResult>, string[] | string | undefined>
+  >,
   boundMutateResult: true as Expect<
     Equal<Awaited<typeof boundMutateResult>, string[] | string | undefined>
+  >,
+  filteredNumberMutateResult: true as Expect<
+    Equal<Awaited<typeof filteredNumberMutateResult>, Array<number | undefined>>
+  >,
+  scopedStringMutateResult: true as Expect<
+    Equal<Awaited<typeof scopedStringMutateResult>, string | undefined>
   >,
   scopedMutateResult: true as Expect<Equal<Awaited<typeof scopedMutateResult>, string | undefined>>,
   filteredMutateResult: true as Expect<
@@ -389,6 +563,9 @@ const typeAssertions = {
       TriggerWithoutArgs<"extra-param", unknown, never, "extra-param">
     >
   >,
+  extraParamTriggerResult: true as Expect<
+    Equal<Awaited<typeof extraParamTriggerResult>, "extra-param">
+  >,
   mutationResult: true as Expect<Equal<Awaited<typeof mutationResult>, string>>,
   mutationWithOptions: true as Expect<Equal<Awaited<typeof mutationWithOptions>, string>>,
   numericMutationArg: true as Expect<Equal<Parameters<typeof numericMutation.trigger>[0], number>>,
@@ -413,6 +590,9 @@ const typeAssertions = {
   mutationThrowOffResult: true as Expect<
     Equal<Awaited<typeof mutationThrowOffResult>, string | undefined>
   >,
+  boundMutateWithTrigger: true as Expect<
+    Equal<Awaited<typeof boundMutateWithTrigger>, { foo: string } | undefined>
+  >,
   subscriptionData: true as Expect<Equal<typeof subscription.data.value, string | undefined>>,
   subscriptionKey: true as Expect<
     Equal<Parameters<typeof typedSubscriptionHandler>[0], [string, number]>
@@ -420,11 +600,18 @@ const typeAssertions = {
 };
 
 void tupleResponse;
+void readonlyTupleResponse;
 void fallbackConfig;
+void providerConfig;
 void middlewareConfig;
 void middlewareResponse;
+void configAccessor;
 void boundMutateResponse;
+void boundMutateCallbackResult;
+void boundMutateNoPopulateResult;
 void boundMutateResult;
+void filteredNumberMutateResult;
+void scopedStringMutateResult;
 void scopedMutateResult;
 void filteredMutateResult;
 void literalPreload;
@@ -436,6 +623,8 @@ void refResponse;
 void immutableResponse;
 void configFetcherResponse;
 void configTupleResponse;
+void optionRecordResponse;
+void optionStringResponse;
 void immutableConfigFetcherResponse;
 void fallbackOnlyResponse;
 void infiniteResponse;
@@ -447,6 +636,7 @@ void infiniteConfigFetcherResponse;
 void mutation;
 void extraParamMutation;
 void extraParamTrigger;
+void extraParamTriggerResult;
 void mutationResult;
 void mutationWithOptions;
 void numericMutation;
@@ -462,6 +652,7 @@ void cachedDataMutation;
 void cachedDataMutationResult;
 void mutationThrowOffByDefault;
 void mutationThrowOffResult;
+void boundMutateWithTrigger;
 void subscription;
 void typeAssertions;
 void validUndefinedConfigProps;

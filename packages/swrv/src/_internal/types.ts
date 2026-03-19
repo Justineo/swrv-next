@@ -17,7 +17,7 @@ export type BareFetcher<Data = unknown> = (...args: readonly unknown[]) => Fetch
 export type HookFetcher<Data = unknown> = BareFetcher<Data> | null | undefined | false;
 
 export type Fetcher<Data = unknown, Key extends RawKey = RawKey> = Key extends readonly unknown[]
-  ? (...args: Key) => FetcherResponse<Data>
+  ? (...args: [...Key]) => FetcherResponse<Data>
   : Key extends null | undefined | false
     ? never
     : (arg: Key) => FetcherResponse<Data>;
@@ -27,7 +27,7 @@ type PreloadNonArrayKey = Exclude<RawKey, readonly unknown[] | null | undefined 
 export interface PreloadFunction {
   <Result = unknown, Key extends readonly unknown[] = readonly unknown[]>(
     key: KeySource<Key>,
-    fetcher: (...args: Key) => Promise<Result>,
+    fetcher: (...args: [...Key]) => Promise<Result>,
   ): Promise<Result> | undefined;
   <Result = unknown, Key extends PreloadNonArrayKey = PreloadNonArrayKey>(
     key: KeySource<Key>,
@@ -35,7 +35,7 @@ export interface PreloadFunction {
   ): Promise<Result> | undefined;
   <Result = unknown, Key extends readonly unknown[] = readonly unknown[]>(
     key: KeySource<Key>,
-    fetcher: (...args: Key) => Result,
+    fetcher: (...args: [...Key]) => Result,
   ): Result | undefined;
   <Result = unknown, Key extends PreloadNonArrayKey = PreloadNonArrayKey>(
     key: KeySource<Key>,
