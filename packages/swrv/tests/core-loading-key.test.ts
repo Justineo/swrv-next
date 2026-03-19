@@ -64,6 +64,34 @@ describe("swrv core loading and key behavior", () => {
     expect(second.isValidating.value).toBe(false);
   });
 
+  it("resets validating state across hooks when a shared request errors", async () => {
+    const key = `shared-validating-error-${Date.now()}`;
+    let rejectValue!: (reason?: unknown) => void;
+    const fetcher = vi.fn(
+      () =>
+        new Promise<string>((_resolve, reject) => {
+          rejectValue = reject;
+        }),
+    );
+
+    const first = runComposable(() => useSWRV<string, Error>(key, fetcher));
+    const second = runComposable(() => useSWRV<string, Error>(key, fetcher));
+
+    await flush();
+
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(first.isValidating.value).toBe(true);
+    expect(second.isValidating.value).toBe(true);
+
+    rejectValue(new Error("boom"));
+    await settle();
+
+    expect(first.error.value?.message).toBe("boom");
+    expect(second.error.value?.message).toBe("boom");
+    expect(first.isValidating.value).toBe(false);
+    expect(second.isValidating.value).toBe(false);
+  });
+
   it("keeps the latest key result when an older request resolves later", async () => {
     vi.useFakeTimers();
 

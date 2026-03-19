@@ -209,6 +209,16 @@ describe("swrv core local mutate behavior", () => {
     expect(second.data.value).toBe("updated");
   });
 
+  it("keeps isValidating false when no fetcher is provided", async () => {
+    const key = `no-fetcher-${Date.now()}`;
+    const state = runComposable(() => useSWRV<string>(key));
+
+    await settle();
+
+    expect(state.isValidating.value).toBe(false);
+    expect(state.isLoading.value).toBe(false);
+  });
+
   it("skips internal infinite and subscription cache keys when mutating with a filter", async () => {
     const key = `filter-skip-internal-${Date.now()}`;
     const seenKeys: unknown[] = [];
@@ -480,5 +490,29 @@ describe("swrv core local mutate behavior", () => {
     await settle();
 
     expect(state.data.value).toBe("value:1");
+  });
+
+  it("keeps loading and validating false when a local mutation disables revalidation", async () => {
+    const key = `mutate-no-revalidate-${Date.now()}`;
+    const state = runComposable(() =>
+      useSWRV<string>(key, async () => "data", {
+        fallbackData: "fallback",
+        revalidateOnMount: false,
+        revalidateOnFocus: false,
+      }),
+    );
+
+    await settle();
+
+    expect(state.data.value).toBe("fallback");
+    expect(state.isLoading.value).toBe(false);
+    expect(state.isValidating.value).toBe(false);
+
+    await state.mutate("fallback1", { revalidate: false });
+    await settle();
+
+    expect(state.data.value).toBe("fallback1");
+    expect(state.isLoading.value).toBe(false);
+    expect(state.isValidating.value).toBe(false);
   });
 });
