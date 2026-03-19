@@ -1,9 +1,20 @@
-const objectTable = new WeakMap<object, number>();
+const objectTable = new WeakMap<object, string>();
 
 let objectCounter = 0;
 
 const hasOwn = (value: Record<string, unknown>, key: string) =>
   Object.prototype.hasOwnProperty.call(value, key);
+
+function getObjectId(value: object) {
+  const current = objectTable.get(value);
+  if (current) {
+    return current;
+  }
+
+  const next = `ref:${++objectCounter}`;
+  objectTable.set(value, next);
+  return next;
+}
 
 export function stableHash(value: unknown): string {
   if (value === null) {
@@ -30,15 +41,19 @@ export function stableHash(value: unknown): string {
 
   if (valueType === "function") {
     const callable = value as object;
-    if (!objectTable.has(callable)) {
-      objectTable.set(callable, ++objectCounter);
-    }
-
-    return `fn:${objectTable.get(callable)}`;
+    return `fn:${getObjectId(callable)}`;
   }
 
   if (Array.isArray(value)) {
-    return `[${value.map((item) => stableHash(item)).join(",")}]`;
+    const current = objectTable.get(value);
+    if (current) {
+      return current;
+    }
+
+    getObjectId(value);
+    const result = `[${value.map((item) => stableHash(item)).join(",")}]`;
+    objectTable.set(value, result);
+    return result;
   }
 
   if (value instanceof Date) {
@@ -54,21 +69,32 @@ export function stableHash(value: unknown): string {
     const record = value as Record<string, unknown>;
 
     if (prototype === Object.prototype || prototype === null) {
+      const current = objectTable.get(value);
+      if (current) {
+        return current;
+      }
+
+      getObjectId(value);
       const entries = Object.keys(record)
         .sort()
         .filter((key) => hasOwn(record, key))
         .map((key) => `${JSON.stringify(key)}:${stableHash(record[key])}`);
 
-      return `{${entries.join(",")}}`;
-    }
-
-    if (!objectTable.has(value)) {
-      objectTable.set(value, ++objectCounter);
+      const result = `{${entries.join(",")}}`;
+      objectTable.set(value, result);
+      return result;
     }
 
     const constructorName = prototype?.constructor?.name ?? "object";
 
-    return `${constructorName}:${objectTable.get(value)}`;
+    const current = objectTable.get(value);
+    if (current) {
+      return current;
+    }
+
+    const result = `${constructorName}:${getObjectId(value)}`;
+    objectTable.set(value, result);
+    return result;
   }
 
   return JSON.stringify(value) ?? "undefined";

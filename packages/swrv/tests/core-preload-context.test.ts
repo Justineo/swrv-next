@@ -1,7 +1,9 @@
-import { createApp, defineComponent, h } from "vue";
+import { createApp, defineComponent, h, ref } from "vue";
 import { describe, expect, it, vi } from "vite-plus/test";
 
 import { SWRVConfig, preload, useSWRV, useSWRVConfig } from "../src";
+import { GLOBAL_SWRV_CLIENT } from "../src/config";
+import type { SWRVMiddleware } from "../src";
 import {
   flush,
   mountWithConfig,
@@ -12,6 +14,16 @@ import {
 } from "./test-utils";
 
 describe("swrv preload and context behavior", () => {
+  it("exposes the default config and cache through useSWRVConfig", () => {
+    const config = runComposable(() => useSWRVConfig());
+
+    expect(config.client).toBe(GLOBAL_SWRV_CLIENT);
+    expect(config.cache).toBe(GLOBAL_SWRV_CLIENT.cache);
+    expect(config.config).toStrictEqual(SWRVConfig.defaultValue);
+    expect(config.config.initFocus).toBe(SWRVConfig.defaultValue.initFocus);
+    expect(config.config.initReconnect).toBe(SWRVConfig.defaultValue.initReconnect);
+  });
+
   it("dedupes preload requests and reuses them for the first hook fetch", async () => {
     const key = `preload-dedupe-${Date.now()}`;
     let resolveValue!: (value: string) => void;
@@ -152,6 +164,75 @@ describe("swrv preload and context behavior", () => {
     });
   });
 
+  it("exposes the correctly extended config from useSWRVConfig", async () => {
+    let config!: ReturnType<typeof useSWRVConfig>["config"];
+    const middlewareA: SWRVMiddleware = (useSWRVNext) => (key, fetcher, current) =>
+      useSWRVNext(key, fetcher, current);
+    const middlewareB: SWRVMiddleware = (useSWRVNext) => (key, fetcher, current) =>
+      useSWRVNext(key, fetcher, current);
+
+    const Child = defineComponent({
+      setup() {
+        config = useSWRVConfig().config;
+        return () => h("div");
+      },
+    });
+
+    const container = registerContainer(document.createElement("div"));
+    document.body.appendChild(container);
+
+    const app = registerApp(
+      createApp({
+        render: () =>
+          h(
+            SWRVConfig,
+            {
+              value: {
+                dedupingInterval: 1,
+                fallback: {
+                  a: 1,
+                  b: 1,
+                },
+                refreshInterval: 1,
+                use: [middlewareA],
+              },
+            },
+            {
+              default: () =>
+                h(
+                  SWRVConfig,
+                  {
+                    value: {
+                      dedupingInterval: 2,
+                      fallback: {
+                        a: 2,
+                        c: 2,
+                      },
+                      use: [middlewareB],
+                    },
+                  },
+                  {
+                    default: () => h(Child),
+                  },
+                ),
+            },
+          ),
+      }),
+    );
+
+    app.mount(container);
+    await flush();
+
+    expect(config.dedupingInterval).toBe(2);
+    expect(config.refreshInterval).toBe(1);
+    expect(config.fallback).toEqual({
+      a: 2,
+      b: 1,
+      c: 2,
+    });
+    expect(config.use).toEqual([middlewareA, middlewareB]);
+  });
+
   it("supports functional SWRVConfig values without inheriting parent overrides", async () => {
     let config!: ReturnType<typeof useSWRVConfig>["config"];
     let parentDedupingInterval = 0;
@@ -218,5 +299,72 @@ describe("swrv preload and context behavior", () => {
       a: 2,
       c: 2,
     });
+  });
+
+  it("keeps the useSWRVConfig reference stable across rerenders", async () => {
+    let referenceChanges = 0;
+    let currentReference: ReturnType<typeof useSWRVConfig> | undefined;
+
+    const Child = defineComponent({
+      setup() {
+        const swrvConfig = useSWRVConfig();
+        const counter = ref(0);
+
+        return () =>
+          h(
+            "button",
+            {
+              onClick() {
+                counter.value += 1;
+              },
+            },
+            (() => {
+              if (currentReference && currentReference !== swrvConfig) {
+                referenceChanges += 1;
+              } else {
+                currentReference = swrvConfig;
+              }
+
+              return String(counter.value);
+            })(),
+          );
+      },
+    });
+
+    const container = registerContainer(document.createElement("div"));
+    document.body.appendChild(container);
+
+    const app = registerApp(
+      createApp({
+        render: () =>
+          h(
+            SWRVConfig,
+            {
+              value: {
+                revalidateIfStale: false,
+                revalidateOnFocus: false,
+                revalidateOnReconnect: false,
+                revalidateOnMount: true,
+              },
+            },
+            {
+              default: () => h(Child),
+            },
+          ),
+      }),
+    );
+
+    app.mount(container);
+    await flush();
+
+    const button = container.querySelector("button");
+    button?.click();
+    await flush();
+    button?.click();
+    await flush();
+    button?.click();
+    await flush();
+
+    expect(referenceChanges).toBe(0);
   });
 });
