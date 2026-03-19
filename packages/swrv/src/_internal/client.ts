@@ -18,6 +18,7 @@ import {
 } from "./provider-state";
 
 import type {
+  AnyCacheState,
   CacheAdapter,
   CacheListener,
   CacheState,
@@ -31,7 +32,7 @@ import type {
 } from "./types";
 
 export function createSWRVClient(
-  cache: CacheAdapter<CacheState<any, any>> = createCache<CacheState<any, any>>(),
+  cache: CacheAdapter<AnyCacheState> = createCache<AnyCacheState>(),
   options: SWRVClientOptions = {},
 ): SWRVClient {
   const state = createProviderState();

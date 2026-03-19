@@ -1,18 +1,20 @@
 import { watch } from "vue";
 
 import { useSWRVConfig } from "../config";
-import { withMiddleware } from "../_internal";
-import useSWRV from "../use-swrv";
+import { applyFeatureMiddleware } from "../_internal";
 import { createSubscriptionCacheKey } from "../_internal/key-prefix";
+import { resolveMiddlewareStack } from "../_internal/middleware-stack";
 import { resolveKeyValue, serialize } from "../_internal/serialize";
 import { getSubscriptionStorage } from "../_internal/subscription-state";
+import { useSWRVHandler } from "../use-swrv-handler";
+import { useSWRVContext } from "../config";
 
 import type {
   KeySource,
   RawKey,
   SWRVConfiguration,
   SWRVHook,
-  SWRVMiddleware,
+  SWRVResponse,
 } from "../_internal/types";
 
 export interface SWRVSubscriptionOptions<Data = unknown, Error = unknown> {
@@ -25,18 +27,26 @@ export type SWRVSubscription<Data = unknown, Error = unknown, Key extends RawKey
 ) => () => void;
 
 export interface SWRVSubscriptionResponse<Data = unknown, Error = unknown> {
-  data: ReturnType<typeof useSWRV<Data, Error>>["data"];
-  error: ReturnType<typeof useSWRV<Data, Error>>["error"];
+  data: SWRVResponse<Data, Error>["data"];
+  error: SWRVResponse<Data, Error>["error"];
 }
 
-const subscription = (<Data = unknown, Error = unknown, Key extends RawKey = RawKey>(
-  useSWRVNext: SWRVHook,
-) =>
-  (
+type SWRVSubscriptionHook = <Data = unknown, Error = unknown, Key extends RawKey = RawKey>(
+  key: KeySource<Key>,
+  subscribe: SWRVSubscription<Data, Error, Key>,
+  config?: SWRVConfiguration<Data, Error>,
+) => SWRVSubscriptionResponse<Data, Error>;
+
+function createSubscriptionHook(useSWRVNext: SWRVHook): SWRVSubscriptionHook {
+  return function useSWRVSubscriptionHook<
+    Data = unknown,
+    Error = unknown,
+    Key extends RawKey = RawKey,
+  >(
     key: KeySource<Key>,
     subscribe: SWRVSubscription<Data, Error, Key>,
     config: SWRVConfiguration<Data, Error> = {},
-  ): SWRVSubscriptionResponse<Data, Error> => {
+  ): SWRVSubscriptionResponse<Data, Error> {
     const { client } = useSWRVConfig();
     const storageKey = client.cache as object;
     const [subscriptions, disposers] = getSubscriptionStorage(storageKey);
@@ -115,9 +125,8 @@ const subscription = (<Data = unknown, Error = unknown, Key extends RawKey = Raw
       data: swrv.data,
       error: swrv.error,
     };
-  }) as unknown as SWRVMiddleware;
-
-const useSWRVSubscriptionWithMiddleware = withMiddleware(useSWRV, subscription);
+  };
+}
 
 export default function useSWRVSubscription<
   Data = unknown,
@@ -128,9 +137,12 @@ export default function useSWRVSubscription<
   subscribe: SWRVSubscription<Data, Error, Key>,
   config: SWRVConfiguration<Data, Error> = {},
 ): SWRVSubscriptionResponse<Data, Error> {
-  return useSWRVSubscriptionWithMiddleware(
-    key as never,
-    subscribe as never,
-    config as never,
-  ) as unknown as SWRVSubscriptionResponse<Data, Error>;
+  const context = useSWRVContext();
+  const middlewares = resolveMiddlewareStack(context.config.value, config);
+  const runSubscription = applyFeatureMiddleware(
+    createSubscriptionHook(useSWRVHandler),
+    middlewares,
+  );
+
+  return runSubscription(key, subscribe, config);
 }

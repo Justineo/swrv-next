@@ -67,6 +67,8 @@ export interface CacheState<Data = unknown, Error = unknown> {
   _k?: RawKey;
 }
 
+export type AnyCacheState = CacheState<unknown, unknown>;
+
 export type Compare<Data> = (left: Data | undefined, right: Data | undefined) => boolean;
 export type SWRVEventInitializer = (callback: () => void) => void | (() => void);
 
@@ -79,7 +81,7 @@ export type BlockingData<Options = unknown> = [ResolvedFallbackData<Options>] ex
   : true;
 
 export interface SWRVConfiguration<Data = unknown, Error = unknown, Fn = BareFetcher<Data>> {
-  cache?: CacheAdapter<CacheState<any, any>>;
+  cache?: CacheAdapter<AnyCacheState>;
   client?: SWRVClient;
   compare?: Compare<Data>;
   dedupingInterval?: number;
@@ -118,9 +120,7 @@ export interface SWRVConfiguration<Data = unknown, Error = unknown, Fn = BareFet
     key: string,
     config: Readonly<ResolvedSWRVConfiguration<Data, Error, Fn>>,
   ) => void;
-  provider?: (
-    parentCache: CacheAdapter<CacheState<any, any>>,
-  ) => CacheAdapter<CacheState<any, any>>;
+  provider?: (parentCache: CacheAdapter<AnyCacheState>) => CacheAdapter<AnyCacheState>;
   refreshInterval?: number | ((latestData: Data | undefined) => number);
   refreshWhenHidden?: boolean;
   refreshWhenOffline?: boolean;
@@ -137,6 +137,8 @@ export interface SWRVConfiguration<Data = unknown, Error = unknown, Fn = BareFet
 export type SWRVConfigurationValue<Data = unknown, Error = unknown, Fn = BareFetcher<Data>> =
   | SWRVConfiguration<Data, Error, Fn>
   | ((parent: ResolvedSWRVConfiguration<Data, Error, Fn>) => SWRVConfiguration<Data, Error, Fn>);
+
+export type AnyConfiguration = SWRVConfiguration<unknown, unknown>;
 
 export interface ResolvedSWRVConfiguration<
   Data = unknown,
@@ -189,6 +191,8 @@ export interface ResolvedSWRVConfiguration<
   ttl: number;
   use: SWRVMiddleware[];
 }
+
+export type AnyResolvedConfiguration = ResolvedSWRVConfiguration<unknown, unknown>;
 
 export interface RevalidateOptions {
   dedupe?: boolean;
@@ -262,8 +266,8 @@ export type Revalidator = (
 ) => Promise<unknown> | void;
 
 export type CacheListener = (
-  current: CacheState<any, any> | undefined,
-  previous: CacheState<any, any> | undefined,
+  current: AnyCacheState | undefined,
+  previous: AnyCacheState | undefined,
 ) => void;
 
 export interface FetchRecord {
@@ -290,7 +294,7 @@ export interface SWRVClientOptions {
 }
 
 export interface SWRVClient {
-  cache: CacheAdapter<CacheState<any, any>>;
+  cache: CacheAdapter<AnyCacheState>;
   state: SWRVClientState;
   addRevalidator(key: string, callback: Revalidator): () => void;
   broadcast(
@@ -325,13 +329,13 @@ export interface SWRVClient {
 
 export interface SWRVContextValue {
   client: SWRVClient;
-  config: Readonly<Ref<ResolvedSWRVConfiguration<any, any>>>;
+  config: Readonly<Ref<AnyResolvedConfiguration>>;
 }
 
 export interface SWRVConfigAccessor {
-  cache: CacheAdapter<CacheState<any, any>>;
+  cache: CacheAdapter<AnyCacheState>;
   client: SWRVClient;
-  config: ResolvedSWRVConfiguration<any, any>;
+  config: AnyResolvedConfiguration;
   mutate: ScopedMutator;
   preload: PreloadFunction;
 }

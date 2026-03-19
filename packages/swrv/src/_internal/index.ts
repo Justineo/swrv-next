@@ -2,11 +2,11 @@ export { createCache } from "./cache";
 export { createSWRVClient } from "./client";
 export { hydrateSWRVSnapshot, serializeSWRVSnapshot } from "./ssr";
 export { stableHash } from "./hash";
+export { applyFeatureMiddleware, applyMiddleware } from "./middleware-stack";
 export { createScopedMutator, getScopedMutator } from "./mutate";
 export { getScopedPreload, preloadKey } from "./preload";
 export { callFetcher, resolveKeyValue, serialize } from "./serialize";
 export { getTimestamp } from "./timestamp";
-export { withMiddleware } from "./with-middleware";
 
 export type {
   BareFetcher,

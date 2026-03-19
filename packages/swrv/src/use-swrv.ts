@@ -1,5 +1,5 @@
 import { useSWRVContext } from "./config";
-import { resolveMiddlewareStack } from "./_internal/middleware-stack";
+import { applyMiddleware, resolveMiddlewareStack } from "./_internal/middleware-stack";
 import { normalizeHookArgs } from "./_internal/normalize";
 import { useSWRVHandler, unstable_serialize } from "./use-swrv-handler";
 
@@ -130,10 +130,6 @@ export default function useSWRV<Data = unknown, Error = unknown>(
     return useSWRVHandler(key, fetcher, normalizedConfig);
   }
 
-  let next = useSWRVHandler as SWRVHook;
-  for (let index = middlewares.length - 1; index >= 0; index -= 1) {
-    next = middlewares[index](next);
-  }
-
+  const next = applyMiddleware(useSWRVHandler as SWRVHook, middlewares);
   return next(key, fetcher, normalizedConfig);
 }

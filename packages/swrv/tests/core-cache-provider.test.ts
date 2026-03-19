@@ -513,7 +513,10 @@ describe("swrv core cache provider behavior", () => {
     const Content = defineComponent({
       setup() {
         const config = useSWRVConfig();
-        return () => h("div", String(config.cache.get("key")?.data ?? ""));
+        return () => {
+          const cachedData = config.cache.get("key")?.data;
+          return h("div", typeof cachedData === "string" ? cachedData : "");
+        };
       },
     });
 

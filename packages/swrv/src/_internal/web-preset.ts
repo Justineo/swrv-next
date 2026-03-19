@@ -1,4 +1,9 @@
-import type { Compare, ResolvedSWRVConfiguration, SWRVEventInitializer } from "./types";
+import type {
+  AnyResolvedConfiguration,
+  Compare,
+  ResolvedSWRVConfiguration,
+  SWRVEventInitializer,
+} from "./types";
 
 const noop = () => {};
 
@@ -73,7 +78,7 @@ export const defaultOnErrorRetry = <Data = unknown, Error = unknown>(
   }, config.errorRetryInterval);
 };
 
-export const INTERNAL_DEFAULT_CONFIGURATION: ResolvedSWRVConfiguration<any, any> = {
+export const INTERNAL_DEFAULT_CONFIGURATION: AnyResolvedConfiguration = {
   compare: defaultCompare,
   dedupingInterval: 2000,
   errorRetryCount: 5,

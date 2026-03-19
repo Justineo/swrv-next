@@ -10,6 +10,7 @@ import {
 } from "./_internal/web-preset";
 
 import type {
+  AnyConfiguration,
   ResolvedSWRVConfiguration,
   SWRVClient,
   SWRVConfiguration,
@@ -26,7 +27,7 @@ export function resolveConfigurationValue<Data = unknown, Error = unknown>(
 }
 
 export function createClientFromConfiguration(
-  value: SWRVConfiguration<any, any> | undefined,
+  value: AnyConfiguration | undefined,
   fallback: SWRVClient,
 ): {
   client: SWRVClient;

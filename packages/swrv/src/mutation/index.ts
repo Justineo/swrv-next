@@ -1,9 +1,11 @@
 import { ref } from "vue";
 
 import { useSWRVConfig } from "../config";
-import { withMiddleware } from "../_internal";
-import useSWRV from "../use-swrv";
+import { useSWRVContext } from "../config";
+import { applyFeatureMiddleware } from "../_internal";
+import { resolveMiddlewareStack } from "../_internal/middleware-stack";
 import { resolveKeyValue, serialize } from "../_internal/serialize";
+import { useSWRVHandler } from "../use-swrv-handler";
 
 import type {
   KeySource,
@@ -11,7 +13,6 @@ import type {
   RawKey,
   SWRVConfiguration,
   SWRVHook,
-  SWRVMiddleware,
   SWRVResponse,
 } from "../_internal/types";
 
@@ -138,27 +139,37 @@ export interface SWRVMutationResponse<
       : TriggerWithArgs<Data, Error, ExtraArg, Key, SWRData>;
 }
 
-const mutation = (<
+type SWRVMutationHook = <
   Data = unknown,
   Error = unknown,
   ExtraArg = unknown,
   Key extends RawKey = RawKey,
   SWRData = Data,
 >(
-  _useSWRVNext: SWRVHook,
-) =>
-  (
+  key: KeySource<Key>,
+  fetcher: MutationFetcher<Data, ExtraArg, Key> | null,
+  config?: SWRVMutationConfiguration<Data, Error, ExtraArg, Key, SWRData>,
+) => SWRVMutationResponse<Data, Error, ExtraArg, Key, SWRData>;
+
+function createMutationHook(_useSWRVNext: SWRVHook): SWRVMutationHook {
+  return function useSWRVMutationHook<
+    Data = unknown,
+    Error = unknown,
+    ExtraArg = unknown,
+    Key extends RawKey = RawKey,
+    SWRData = Data,
+  >(
     key: KeySource<Key>,
     fetcher: MutationFetcher<Data, ExtraArg, Key> | null,
     config: SWRVMutationConfiguration<Data, Error, ExtraArg, Key, SWRData> = {},
-  ): SWRVMutationResponse<Data, Error, ExtraArg, Key, SWRData> => {
+  ): SWRVMutationResponse<Data, Error, ExtraArg, Key, SWRData> {
     const { mutate } = useSWRVConfig();
 
     const data = ref<Data>();
     const error = ref<Error>();
     const isMutating = ref(false);
-    let ditchMutationsUntil = 0;
-    let mutationTimestamp = 0;
+    let ignoreResultsBefore = 0;
+    let mutationVersion = 0;
 
     const trigger = (async (
       arg?: ExtraArg,
@@ -173,8 +184,8 @@ const mutation = (<
         throw new Error("Can’t trigger the mutation: missing key.");
       }
 
-      const mutationStartedAt = ++mutationTimestamp;
-      ditchMutationsUntil = mutationStartedAt;
+      const mutationStartedAt = ++mutationVersion;
+      ignoreResultsBefore = mutationStartedAt;
       isMutating.value = true;
 
       const mergedOptions = {
@@ -194,7 +205,7 @@ const mutation = (<
           },
         )) as Data | undefined;
 
-        if (ditchMutationsUntil <= mutationStartedAt) {
+        if (ignoreResultsBefore <= mutationStartedAt) {
           data.value = result;
           error.value = undefined;
           isMutating.value = false;
@@ -204,7 +215,7 @@ const mutation = (<
         return result;
       } catch (caught) {
         const resolvedError = caught as Error;
-        if (ditchMutationsUntil <= mutationStartedAt) {
+        if (ignoreResultsBefore <= mutationStartedAt) {
           error.value = resolvedError;
           isMutating.value = false;
           mergedOptions.onError?.(resolvedError, resolvedKey, mergedOptions);
@@ -222,16 +233,15 @@ const mutation = (<
       error,
       isMutating,
       reset: () => {
-        ditchMutationsUntil = ++mutationTimestamp;
+        ignoreResultsBefore = ++mutationVersion;
         data.value = undefined;
         error.value = undefined;
         isMutating.value = false;
       },
       trigger,
     };
-  }) as unknown as SWRVMiddleware;
-
-const useSWRVMutationWithMiddleware = withMiddleware(useSWRV, mutation);
+  };
+}
 
 export default function useSWRVMutation<
   Data = unknown,
@@ -283,9 +293,9 @@ export default function useSWRVMutation<
   fetcher: MutationFetcher<Data, ExtraArg, Key> | null,
   config: SWRVMutationConfiguration<Data, Error, ExtraArg, Key, SWRData> = {},
 ): SWRVMutationResponse<Data, Error, ExtraArg, Key, SWRData> {
-  return useSWRVMutationWithMiddleware(
-    key as never,
-    fetcher as never,
-    config as never,
-  ) as unknown as SWRVMutationResponse<Data, Error, ExtraArg, Key, SWRData>;
+  const context = useSWRVContext();
+  const middlewares = resolveMiddlewareStack(context.config.value, config);
+  const runMutation = applyFeatureMiddleware(createMutationHook(useSWRVHandler), middlewares);
+
+  return runMutation(key, fetcher, config);
 }

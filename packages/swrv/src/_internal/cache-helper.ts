@@ -1,4 +1,4 @@
-import type { CacheAdapter, CacheState, RawKey } from "./types";
+import type { AnyCacheState, CacheAdapter, CacheState, RawKey } from "./types";
 
 function cloneState<Data, Error>(
   state?: CacheState<Data, Error>,
@@ -17,11 +17,11 @@ export interface SWRVCacheHelper {
 }
 
 export function createCacheHelper(
-  cache: CacheAdapter<CacheState<any, any>>,
+  cache: CacheAdapter<AnyCacheState>,
   notify: (
     key: string,
-    current: CacheState<any, any> | undefined,
-    previous: CacheState<any, any> | undefined,
+    current: AnyCacheState | undefined,
+    previous: AnyCacheState | undefined,
   ) => void,
 ): SWRVCacheHelper {
   return {

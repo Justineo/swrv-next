@@ -1,5 +1,4 @@
 import useSWRV from "../use-swrv";
-import { withMiddleware } from "../_internal";
 import { normalizeHookArgs } from "../_internal/normalize";
 
 import type {
@@ -15,18 +14,17 @@ import type {
 type NonArrayKey = Exclude<RawKey, readonly unknown[] | null | undefined | false>;
 type NullableKey<Key extends RawKey> = Key | null | undefined | false;
 
-export const immutable: SWRVMiddleware =
-  (useSWRVNext) =>
-  (key, fetcher, config = {}) =>
-    useSWRVNext(key, fetcher, {
-      ...config,
-      refreshInterval: 0,
-      revalidateIfStale: false,
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-    });
+export const immutable: SWRVMiddleware = (useSWRVNext) => (key, fetcher, config) => {
+  const normalizedConfig = config && typeof config === "object" ? config : {};
 
-const useSWRVImmutableWithMiddleware = withMiddleware(useSWRV, immutable);
+  return useSWRVNext(key, fetcher, {
+    ...normalizedConfig,
+    refreshInterval: 0,
+    revalidateIfStale: false,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+  });
+};
 
 export default function useSWRVImmutable<
   Data = unknown,
@@ -137,9 +135,10 @@ export default function useSWRVImmutable<Data = unknown, Error = unknown>(
   config?: SWRVConfiguration<Data, Error>,
 ): SWRVResponse<Data, Error> {
   const [fetcher, normalizedConfig] = normalizeHookArgs(fetcherOrConfig, config);
-  return useSWRVImmutableWithMiddleware(
-    key,
-    fetcher as BareFetcher<Data> | null | undefined,
-    normalizedConfig,
-  ) as SWRVResponse<Data, Error>;
+  const use = [...(normalizedConfig?.use ?? []), immutable];
+
+  return useSWRV(key, fetcher as BareFetcher<Data> | null | undefined, {
+    ...normalizedConfig,
+    use,
+  }) as SWRVResponse<Data, Error>;
 }
