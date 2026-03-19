@@ -175,19 +175,27 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - web-preset defaults and event initializers now live in a dedicated `_internal/web-preset.ts` module instead of being mixed into `config.ts` and `client.ts`
   - provider-scoped runtime maps now live behind `_internal/provider-state.ts`, and cache read/write concerns now live behind `_internal/cache-helper.ts`
   - config responsibilities are now split across a thin public `config.ts` facade plus `config-context.ts` and `config-utils.ts`
-  - shared internal key prefixes for `infinite` and `subscription` now live in `_internal/key-prefix.ts`
   - repeated WeakMap store initialization for the base hook, `infinite`, and `subscription` now lives behind a shared `_internal/scoped-storage.ts` helper
-  - `infinite` and `subscription` side stores now live behind `_internal/infinite-state.ts` and `_internal/subscription-state.ts`
   - stable scoped helper identities for `mutate` and `preload` now live in provider state instead of separate module-level helper caches
   - `createSWRVClient()` is now a much thinner facade over provider-state, cache-helper, and event binding helpers
-  - the public `useSWRV` entrypoint is now a thin overload plus middleware wrapper, and the heavy runtime logic now lives in `use-swrv-handler.ts`
-  - middleware resolution and SSR missing-prefetch warnings are now isolated into `_internal/middleware-stack.ts` and `_internal/server-prefetch-warning.ts` instead of being owned directly by the public hook modules
+  - the public base-hook family now lives under `src/index/`, with `index/use-swrv.ts`, `index/use-swrv-handler.ts`, `index/serialize.ts`, and `index/index.ts` plus thin top-level forwarding files
+  - base-hook argument normalization and middleware composition now flow through `_internal/normalize-args.ts`, `_internal/with-args.ts`, and `_internal/with-middleware.ts`, replacing the older `normalizeHookArgs` and `middleware-stack` split
+  - `immutable`, `infinite`, `mutation`, and `subscription` now follow the same SWR-shaped `withMiddleware(useSWRV, feature)` wrapper pattern instead of each hand-assembling context, config, and middleware resolution
+  - feature-local type ownership now lives in `infinite/types.ts`, `mutation/types.ts`, and `subscription/types.ts` instead of being mixed into larger entry modules
+  - feature-local side stores now live beside their owning features in `infinite/state.ts` and `subscription/state.ts` instead of generic `_internal` modules
+  - infinite key serialization now lives beside the feature in `infinite/serialize.ts`, while `_internal/key-prefix.ts` is reduced to the internal-key filter used by generic mutate paths
   - three explicit post-refactor review rounds did not reveal further safe simplification work beyond the current shape; the remaining complexity is now mostly the unavoidable base-hook runtime itself
+- a fresh SWR runtime-structure comparison shows the remaining implementation drift is now mostly boundary-level rather than feature-level:
+  - SWRV is already aligned on provider-scoped runtime, thin public hook entry plus handler, shared runtime primitives, and base-hook-centered advanced APIs
+  - the main remaining alignable drift is now mostly the heavier `SWRVClient` facade; the repeated per-feature middleware resolution, entry normalization, and feature-only generic `_internal` state have been removed
+  - the main divergences that should remain are Vue-native refs and watchers, provide/inject context, effect-scope enforcement, and explicit Vue SSR handoff primitives instead of React server-component paths
 - The main reference materials for the rebuild remain:
   - `journey/research/swr-vs-swrv.md`
   - `journey/research/2026-03-18-swrv-next-vs-swr-and-swrv-current-state.md`
   - `journey/research/2026-03-19-fallback-data-typing-gap.md`
+  - `journey/research/2026-03-19-swr-implementation-alignment-evaluation.md`
   - `journey/research/2026-03-19-swrv-next-complexity-and-simplification.md`
+  - `journey/research/2026-03-19-swr-runtime-structure-alignment.md`
   - `/Users/yiling.gu@konghq.com/Developer/Justineo/swr` (local SWR source, version 2.4.1)
   - `/Users/yiling.gu@konghq.com/Developer/Justineo/swr-site/content/docs` (local SWR docs source tree for docs IA and content structure)
   - `/Users/yiling.gu@konghq.com/Developer/Kong/swrv` (local legacy SWRV source, version 1.1.0)
@@ -203,6 +211,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
 - Use SWR behavior, tests, and source organization as the default compatibility target. Treat the old SWRV codebase mainly as migration context and a source of Vue-specific lessons, not as the authoritative design.
 - Rebuild the runtime around cache/provider-scoped state instead of module singletons so cache isolation, deduplication, listeners, and SSR request boundaries are explicit.
 - Keep the public API as close to SWR as practical, but preserve a Vue-native reactive contract for returned state and composition.
+- Align implementation structure with SWR where it reduces complexity: shared entry wrappers, feature-local types and state, and SWR-like naming are preferred; React-specific runtime machinery is not.
 - Treat types, automated tests, docs, CI/CD, release automation, and dependency maintenance as first-class project scope, not cleanup work after the runtime is complete.
 - Keep project memory current in `journey/design.md`, use `journey/plans/` for milestone or phase plans, and use `journey/logs/` for implementation notes and dead ends.
 - Use plain VitePress scripts for docs builds inside `packages/site`, but continue to drive workspace orchestration through `vp run ...`.

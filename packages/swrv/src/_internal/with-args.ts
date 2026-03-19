@@ -1,0 +1,35 @@
+import { useSWRVContext } from "../config";
+import { getDevtoolsUse } from "./devtools";
+import { normalizeArgs } from "./normalize-args";
+import { applyMiddleware } from "./with-middleware";
+
+import type {
+  HookFetcher,
+  KeySource,
+  RawKey,
+  SWRVConfiguration,
+  SWRVHook,
+  SWRVHookWithArgs,
+} from "./types";
+
+export function withArgs(hook: SWRVHook): SWRVHookWithArgs {
+  return function useSWRVWithArgs<Data = unknown, Error = unknown>(
+    key: KeySource<RawKey>,
+    fetcherOrConfig?: HookFetcher<Data> | SWRVConfiguration<Data, Error> | null | false,
+    config?: SWRVConfiguration<Data, Error>,
+  ) {
+    const context = useSWRVContext();
+    const [resolvedKey, fetcher, localConfig] = normalizeArgs<
+      typeof key,
+      Data,
+      SWRVConfiguration<Data, Error>
+    >([key, fetcherOrConfig, config]);
+    const middlewares = getDevtoolsUse().concat(context.config.value.use, localConfig?.use ?? []);
+
+    if (middlewares.length === 0) {
+      return hook<Data, Error>(resolvedKey, fetcher, localConfig);
+    }
+
+    return applyMiddleware(hook, middlewares)<Data, Error>(resolvedKey, fetcher, localConfig);
+  };
+}

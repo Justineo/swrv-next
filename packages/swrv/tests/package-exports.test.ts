@@ -11,6 +11,7 @@ type ExportTarget = {
 
 const currentDir = dirname(fileURLToPath(import.meta.url));
 const packageJsonPath = resolve(currentDir, "../package.json");
+const packageRoot = dirname(packageJsonPath);
 const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8")) as {
   exports: Record<string, string | ExportTarget>;
   files: string[];
@@ -19,7 +20,7 @@ const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8")) as {
 
 describe("package exports", () => {
   it("points the root types field at an emitted declaration file", () => {
-    const target = resolve(currentDir, "..", packageJson.types.slice(2));
+    const target = resolve(packageRoot, packageJson.types.slice(2));
     expect(existsSync(target)).toBe(true);
   });
 
@@ -32,8 +33,8 @@ describe("package exports", () => {
       expect(target.import, `${subpath} import target`).toBeTruthy();
       expect(target.types, `${subpath} types target`).toBeTruthy();
 
-      const importTarget = resolve(currentDir, "..", target.import!.slice(2));
-      const typesTarget = resolve(currentDir, "..", target.types!.slice(2));
+      const importTarget = resolve(packageRoot, target.import!.slice(2));
+      const typesTarget = resolve(packageRoot, target.types!.slice(2));
 
       expect(existsSync(importTarget), `${subpath} import file`).toBe(true);
       expect(existsSync(typesTarget), `${subpath} type file`).toBe(true);

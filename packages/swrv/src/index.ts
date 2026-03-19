@@ -1,4 +1,4 @@
-import useSWRV, { unstable_serialize } from "./use-swrv";
+import useSWRV, { unstable_serialize } from "./index/index";
 
 import { GLOBAL_SWRV_CLIENT, SWRVConfig, createCacheProvider, useSWRVConfig } from "./config";
 import {
@@ -50,6 +50,7 @@ export type {
 export type {
   MutationFetcher,
   SWRVMutationConfiguration,
+  SWRVMutationHook,
   SWRVMutationResponse,
   TriggerWithArgs,
   TriggerWithOptionsArgs,
@@ -58,6 +59,7 @@ export type {
 export type {
   SWRVInfiniteCompareFn,
   SWRVInfiniteConfiguration,
+  SWRVInfiniteHook,
   SWRVInfiniteKeyedMutator,
   SWRVInfiniteKeyLoader,
   SWRVInfiniteMutatorOptions,
@@ -66,6 +68,7 @@ export type {
 } from "./infinite";
 export type {
   SWRVSubscription,
+  SWRVSubscriptionHook,
   SWRVSubscriptionOptions,
   SWRVSubscriptionResponse,
 } from "./subscription";

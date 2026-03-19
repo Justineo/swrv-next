@@ -753,7 +753,6 @@ describe("swrv core infinite behavior", () => {
         isLoading: false,
         isValidating: false,
       },
-      0,
       key,
     );
 
@@ -882,7 +881,6 @@ describe("swrv core infinite behavior", () => {
         isLoading: false,
         isValidating: false,
       },
-      0,
       `${key}-1`,
     );
 

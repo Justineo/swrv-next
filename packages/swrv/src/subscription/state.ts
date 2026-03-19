@@ -1,4 +1,4 @@
-import { getOrCreateScopedValue } from "./scoped-storage";
+import { getOrCreateScopedValue } from "../_internal/scoped-storage";
 
 type SubscriptionStorage = [Map<string, number>, Map<string, () => void>];
 
