@@ -13,6 +13,7 @@ export type KeySource<Key = RawKey> = Key | Ref<Key> | ComputedRef<Key> | (() =>
 export type FetcherResponse<Data = unknown> = Data | Promise<Data>;
 
 export type BareFetcher<Data = unknown> = (...args: readonly unknown[]) => FetcherResponse<Data>;
+export type HookFetcher<Data = unknown> = BareFetcher<Data> | null | undefined | false;
 
 export type Fetcher<Data = unknown, Key extends RawKey = RawKey> = Key extends readonly unknown[]
   ? (...args: Key) => FetcherResponse<Data>
@@ -53,7 +54,7 @@ export interface SWRVConfiguration<
   errorRetryInterval?: number;
   fallback?: Record<string, unknown>;
   fallbackData?: Data;
-  fetcher?: Fn | null;
+  fetcher?: Fn | null | false;
   focusThrottleInterval?: number;
   isOnline?: () => boolean;
   isPaused?: () => boolean;
@@ -205,7 +206,7 @@ export interface SWRVResponse<Data = unknown, Error = unknown> {
 
 export type SWRVHook = <Data = unknown, Error = unknown, Key extends RawKey = RawKey>(
   key: KeySource<Key>,
-  fetcher?: BareFetcher<Data> | null,
+  fetcher?: HookFetcher<Data>,
   config?: SWRVConfiguration<Data, Error>,
 ) => SWRVResponse<Data, Error>;
 

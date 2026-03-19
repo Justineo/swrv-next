@@ -93,22 +93,22 @@ function useSWRVHandler<
   Key extends readonly unknown[] = readonly unknown[],
 >(
   key: KeySource<Key>,
-  fetcher: ((...args: Key) => FetcherResponse<Data>) | null | undefined,
+  fetcher: ((...args: Key) => FetcherResponse<Data>) | null | undefined | false,
   config?: SWRVConfiguration<Data, Error>,
 ): SWRVResponse<Data, Error>;
 function useSWRVHandler<Data = unknown, Error = unknown, Key extends NonArrayKey = NonArrayKey>(
   key: KeySource<Key>,
-  fetcher: ((arg: Key) => FetcherResponse<Data>) | null | undefined,
+  fetcher: ((arg: Key) => FetcherResponse<Data>) | null | undefined | false,
   config?: SWRVConfiguration<Data, Error>,
 ): SWRVResponse<Data, Error>;
 function useSWRVHandler<Data = unknown, Error = unknown>(
   key: KeySource<RawKey>,
-  fetcher: BareFetcher<Data> | null | undefined,
+  fetcher: BareFetcher<Data> | null | undefined | false,
   config?: SWRVConfiguration<Data, Error>,
 ): SWRVResponse<Data, Error>;
 function useSWRVHandler<Data = unknown, Error = unknown>(
   key: KeySource<RawKey>,
-  fetcher?: BareFetcher<Data> | null,
+  fetcher?: BareFetcher<Data> | null | false,
   config?: SWRVConfiguration<Data, Error>,
 ): SWRVResponse<Data, Error> {
   if (!getCurrentScope()) {
@@ -259,7 +259,11 @@ function useSWRVHandler<Data = unknown, Error = unknown>(
 
   const revalidate = async (options: RevalidateOptions = {}) => {
     const configValue = mergedConfig();
-    const activeFetcher = (fetcher ?? configValue.fetcher) as BareFetcher<Data> | null | undefined;
+    const activeFetcher = (fetcher ?? configValue.fetcher) as
+      | BareFetcher<Data>
+      | null
+      | undefined
+      | false;
 
     const [serializedKey, rawKey] = serialize(key as RawKey | (() => RawKey));
     currentKey.value = { rawKey, serializedKey };
@@ -679,7 +683,7 @@ export default function useSWRV<
   Key extends readonly unknown[] = readonly unknown[],
 >(
   key: KeySource<Key>,
-  fetcher: ((...args: Key) => FetcherResponse<Data>) | null | undefined,
+  fetcher: ((...args: Key) => FetcherResponse<Data>) | null | undefined | false,
   config?: SWRVConfiguration<Data, Error>,
 ): SWRVResponse<Data, Error>;
 export default function useSWRV<
@@ -688,17 +692,17 @@ export default function useSWRV<
   Key extends NonArrayKey = NonArrayKey,
 >(
   key: KeySource<Key>,
-  fetcher: ((arg: Key) => FetcherResponse<Data>) | null | undefined,
+  fetcher: ((arg: Key) => FetcherResponse<Data>) | null | undefined | false,
   config?: SWRVConfiguration<Data, Error>,
 ): SWRVResponse<Data, Error>;
 export default function useSWRV<Data = unknown, Error = unknown>(
   key: KeySource<RawKey>,
-  fetcher: BareFetcher<Data> | null | undefined,
+  fetcher: BareFetcher<Data> | null | undefined | false,
   config?: SWRVConfiguration<Data, Error>,
 ): SWRVResponse<Data, Error>;
 export default function useSWRV<Data = unknown, Error = unknown>(
   key: KeySource<RawKey>,
-  fetcher?: BareFetcher<Data> | null,
+  fetcher?: BareFetcher<Data> | null | false,
   config?: SWRVConfiguration<Data, Error>,
 ): SWRVResponse<Data, Error> {
   const context = useSWRVContext();

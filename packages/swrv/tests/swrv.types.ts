@@ -24,6 +24,7 @@ const refKey = ref<[string, number]>(["team", 7]);
 const refResponse = useSWRV(refKey, async (resource, id) => `${resource}:${id}`);
 
 const immutableResponse = useSWRVImmutable(tupleKey, async (resource, id) => `${resource}:${id}`);
+const falseFetcherResponse = useSWRV<string>("false-fetcher", false);
 
 const fallbackConfig = {
   fallback: {
@@ -234,6 +235,9 @@ const typeAssertions = {
   >,
   refData: true as Expect<Equal<typeof refResponse.data.value, string | undefined>>,
   immutableData: true as Expect<Equal<typeof immutableResponse.data.value, string | undefined>>,
+  falseFetcherData: true as Expect<
+    Equal<typeof falseFetcherResponse.data.value, string | undefined>
+  >,
   middlewareData: true as Expect<Equal<typeof middlewareResponse.data.value, string | undefined>>,
   boundMutateResult: true as Expect<
     Equal<Awaited<typeof boundMutateResult>, string[] | string | undefined>
