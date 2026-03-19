@@ -1,15 +1,15 @@
 import { defineConfig } from "vitepress";
 
 export default defineConfig({
-  appearance: false,
+  appearance: true,
   title: "SWRV",
   description: "Stale-while-revalidate data fetching for Vue",
   lang: "en-US",
   cleanUrls: true,
   lastUpdated: true,
   head: [
-    ["meta", { content: "#000000", name: "theme-color" }],
-    ["meta", { content: "dark", name: "color-scheme" }],
+    ["meta", { content: "#f7f8f3", media: "(prefers-color-scheme: light)", name: "theme-color" }],
+    ["meta", { content: "#000000", media: "(prefers-color-scheme: dark)", name: "theme-color" }],
     ["link", { href: "/mark.svg", rel: "icon", type: "image/svg+xml" }],
   ],
   themeConfig: {
@@ -35,6 +35,9 @@ export default defineConfig({
     outlineTitle: "On this page",
     returnToTopLabel: "Back to top",
     sidebarMenuLabel: "Menu",
+    darkModeSwitchLabel: "Theme",
+    lightModeSwitchTitle: "Switch to light mode",
+    darkModeSwitchTitle: "Switch to dark mode",
     docFooter: {
       prev: "Previous page",
       next: "Next page",

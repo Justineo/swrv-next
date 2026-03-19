@@ -149,7 +149,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - the repo now contains a concrete stable-release checklist under `journey/logs/2026-03-19-stable-release-checklist.md`
   - the remaining non-suspense release work is now mostly outside the repo: Trusted Publisher production verification, stable release-note preparation, and the actual stable tag decision
   - the pre-stable refinement lane is now complete for the current scope: the runtime types and middleware boundaries have been simplified, the remaining code-level naming rough edges have been cleaned up, and the docs site has been rewritten and redesigned around the SWR docs source structure
-  - the docs site now uses a custom VitePress theme layer, a SWR-shaped information architecture, sentence case across the site chrome and rewritten prose, and a restrained Kong-flavored visual system built around a black canvas, lime accents, compact code blocks, and the ribbon-style SWRV mark
+  - the docs site now uses a custom VitePress theme layer, a SWR-shaped information architecture, sentence case across the site chrome and rewritten prose, and a restrained Kong-flavored visual system that supports both light and dark mode, keeps code blocks compact, uses a simplified SWR-style home page, and centers the ribbon-style SWRV mark instead of heavier decorative chrome
   - the remaining non-suspense work has returned to stable-release execution rather than more in-repo feature or docs churn
 - Internal simplification work has now started after parity closure:
   - web-preset defaults and event initializers now live in a dedicated `_internal/web-preset.ts` module instead of being mixed into `config.ts` and `client.ts`

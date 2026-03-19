@@ -21,6 +21,13 @@ AI-connectivity theme without drifting into generic gradient-heavy UI.
 - updated the navbar and sidebar so the information architecture stays close to the upstream SWR
   docs model while surfacing migration as the explicit legacy entry point
 
+## Follow-up refinement
+
+- restored light mode support instead of keeping the site dark-only
+- improved brand-button contrast in dark mode
+- simplified the home page to only the core hero copy, installation command, and minimal usage
+  example
+
 ## Validation
 
 - `vp check`
