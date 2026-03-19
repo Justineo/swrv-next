@@ -47,6 +47,10 @@ const value = {
 
 All SWRV hooks under that boundary use the same provider.
 
+> [!WARNING]
+> When the boundary is remounted, the provider is recreated too. Keep custom providers high enough
+> in the app tree, or create them outside component setup, if the cache should survive remounts.
+
 ## Access current cache provider
 
 Inside setup, use `useSWRVConfig()` to access the active scoped helpers:
@@ -56,6 +60,11 @@ const { cache, mutate } = useSWRVConfig();
 ```
 
 If a custom provider is in use, this keeps you aligned with the current boundary.
+
+> [!WARNING]
+> If you use a custom cache boundary, the root global `mutate` helper is no longer the right tool
+> for hooks inside that boundary. Use `useSWRVConfig().mutate` so the mutation targets the current
+> provider.
 
 ## Experimental: extend cache provider
 
@@ -87,7 +96,7 @@ function localStorageProvider() {
 
 ### Reset cache between test cases
 
-In tests, create a fresh client per test instead of sharing one global cache:
+In tests, create a fresh provider or client per test instead of sharing one global cache:
 
 ```ts
 import { createSWRVClient } from "swrv";

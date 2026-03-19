@@ -5,68 +5,47 @@ description: Conditionally fetch data based on reactive dependencies or user sta
 
 # Conditional fetching
 
-Use `null`, `false`, or a function key to tell SWRV when a request should start.
+Use `null` or pass a function as `key` to conditionally fetch data. If the function throws or
+returns a falsy value, SWRV will not start the request.
+
+> [!TIP]
+> The examples below assume they run inside `setup()` or `<script setup>`.
 
 ## Conditional
 
 Use a falsy key when the request should not run yet:
 
-```vue
-<script setup lang="ts">
-import { computed, ref } from "vue";
-import useSWRV from "swrv";
+```ts
+import { computed } from "vue";
 
-const shouldFetch = ref(false);
-const key = computed(() => (shouldFetch.value ? "/api/user" : null));
-
+const key = computed(() => (shouldFetch.value ? "/api/data" : null));
 const { data } = useSWRV(key, fetcher);
-</script>
 ```
 
-You can also pass the function directly:
-
-```vue
-<script setup lang="ts">
-import { ref } from "vue";
-import useSWRV from "swrv";
-
-const shouldFetch = ref(false);
-const { data } = useSWRV(() => (shouldFetch.value ? "/api/user" : null), fetcher);
-</script>
+```ts
+// ...or return a falsy value from a function key
+const { data } = useSWRV(() => (shouldFetch.value ? "/api/data" : null), fetcher);
 ```
 
-If the key resolves to `null`, `undefined`, `false`, or an empty array, SWRV does not start the
-request.
+```ts
+// ...or throw when user.value is not defined yet
+const { data } = useSWRV(() => `/api/data?uid=${user.value!.id}`, fetcher);
+```
 
 ## Dependent
 
-Function keys are especially useful when one request depends on another:
+SWRV also allows you to fetch data that depends on other data. It keeps the maximum possible
+parallelism, while still allowing serial loading when one dynamic value is required for the next
+request.
 
-```vue
-<script setup lang="ts">
-import useSWRV from "swrv";
+```ts
+const { data: user } = useSWRV("/api/user", fetcher);
+const { data: projects } = useSWRV(() => `/api/projects?uid=${user.value!.id}`, fetcher);
 
-const user = useSWRV("/api/user", fetcher);
-const projects = useSWRV(
-  () => (user.data.value ? `/api/projects?uid=${user.data.value.id}` : null),
-  fetcher,
-);
-</script>
+// When passing a function, SWRV uses the return value as the key.
+// If the function throws or returns a falsy value, SWRV knows that
+// the dependency is not ready yet.
 ```
 
-This lets SWRV fetch with the maximum possible parallelism. If the second key cannot be resolved
-yet, SWRV waits without starting a broken request or caching under the wrong key.
-
-If a function key throws, SWRV also treats it as “not ready yet”:
-
-```vue
-<script setup lang="ts">
-import useSWRV from "swrv";
-
-const user = useSWRV("/api/user", fetcher);
-const projects = useSWRV(() => `/api/projects?uid=${user.data.value!.id}`, fetcher);
-</script>
-```
-
-In practice, a direct conditional expression is usually easier to read than relying on a throw, but
-both patterns work.
+If the second key cannot be resolved yet, SWRV waits without starting a broken request or caching
+under the wrong key.

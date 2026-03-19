@@ -5,7 +5,8 @@ description: Extend SWRV hooks with reusable middleware.
 
 # Middleware
 
-Middleware lets you wrap SWRV hooks the same way SWR does.
+Middleware lets you execute logic before and after SWRV hooks. If there are multiple middleware,
+each one wraps the next middleware, and the last middleware wraps the original SWRV hook.
 
 ## Usage
 
@@ -27,12 +28,11 @@ const logger = (useSWRVNext) => (key, fetcher, config) => {
   return useSWRVNext(key, fetcher, config);
 };
 
-const value = { use: [logger] };
-const user = useSWRV("/api/user", fetcher, { use: [logger] });
+useSWRV("/api/user", fetcher, { use: [logger] });
 </script>
 
 <template>
-  <SWRVConfig :value="value">
+  <SWRVConfig :value="{ use: [logger] }">
     <App />
   </SWRVConfig>
 </template>
@@ -47,6 +47,9 @@ const middleware = (useSWRVNext) => (key, fetcher, config) => {
   return useSWRVNext(key, fetcher, config);
 };
 ```
+
+Unlike React, Vue does not have the same Hook lint rule about function names. The important part is
+that middleware stays a plain function and composables are still called inside setup scope.
 
 The wrapped call still receives the original public key shape. That matters for:
 
@@ -64,7 +67,32 @@ Middleware can inspect or replace the fetcher, inject options, or wrap the retur
 
 ## Extend
 
-Middleware is composable, so one middleware can extend another:
+Middleware extends exactly like regular config options. For example:
+
+```vue
+<script setup lang="ts">
+import { SWRVConfig } from "swrv";
+
+const a = (useSWRVNext) => (key, fetcher, config) => useSWRVNext(key, fetcher, config);
+const b = (useSWRVNext) => (key, fetcher, config) => useSWRVNext(key, fetcher, config);
+const c = (useSWRVNext) => (key, fetcher, config) => useSWRVNext(key, fetcher, config);
+</script>
+
+<template>
+  <SWRVConfig :value="{ use: [a] }">
+    <SWRVConfig :value="{ use: [b] }">
+      <Child />
+    </SWRVConfig>
+  </SWRVConfig>
+</template>
+```
+
+```ts
+useSWRV(key, fetcher, { use: [c] });
+// equivalent composition order: [a, b, c]
+```
+
+Middleware can also replace the fetcher or inject config:
 
 ```ts
 const withTiming = (useSWRVNext) => (key, fetcher, config) => {
@@ -85,7 +113,25 @@ const withTiming = (useSWRVNext) => (key, fetcher, config) => {
 
 ## Multiple middleware
 
-Middleware order matches SWR’s composition order:
+Each middleware wraps the next middleware. For example:
+
+```ts
+useSWRV(key, fetcher, { use: [a, b, c] });
+```
+
+Execution order is:
+
+```text
+enter a
+  enter b
+    enter c
+      useSWRV()
+    exit  c
+  exit  b
+exit  a
+```
+
+That matches SWR's composition model. Middleware order also follows config boundaries:
 
 1. parent `SWRVConfig` middleware
 2. nested `SWRVConfig` middleware
@@ -99,10 +145,35 @@ This makes it easy to keep broad behavior at the app boundary and local behavior
 
 ```ts
 const logger = (useSWRVNext) => (key, fetcher, config) => {
-  console.log("request", key);
-  return useSWRVNext(key, fetcher, config);
+  const loggedFetcher =
+    fetcher &&
+    (async (...args: Parameters<typeof fetcher>) => {
+      console.log("SWRV request:", key);
+      return fetcher(...args);
+    });
+
+  return useSWRVNext(key, loggedFetcher ?? fetcher, config);
 };
 ```
+
+### Keep previous result
+
+SWR’s middleware docs show a custom "laggy" middleware that keeps previous data during key changes.
+In SWRV, the preferred solution is the built-in [`keepPreviousData`](/advanced/understanding#return-previous-data-for-better-ux)
+option:
+
+```ts
+useSWRV(key, fetcher, {
+  keepPreviousData: true,
+});
+```
+
+### Serialize object keys
+
+SWR’s middleware docs also show a custom key-serialization middleware. In SWRV, object and tuple
+keys are already serialized internally, so you usually do not need custom middleware for that.
+
+See [Arguments](/arguments#passing-objects) for the built-in key behavior.
 
 ### Set shared defaults
 
@@ -114,8 +185,6 @@ const noFocusRevalidate = (useSWRVNext) => (key, fetcher, config) => {
   });
 };
 ```
-
-### Prefer built-in features where they exist
 
 SWR’s middleware examples sometimes demonstrate features that SWRV already supports directly:
 

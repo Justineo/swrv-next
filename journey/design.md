@@ -164,6 +164,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
 - the docs site now renders install snippets through `vitepress-plugin-npm-commands`, with a local markdown extension that adds a `vp` tab beside the standard package-manager commands
 - the rebuilt docs now use Vue-correct composable examples and treat `useSWRV` usage as `setup()` or `<script setup>`-only across the narrative docs
 - the docs now also use SWR-style inline cross-links across reference and guide pages, so API parameters and option descriptions point directly to the deeper guide sections that explain them
+- the docs content now intentionally tracks the upstream SWR docs more closely at the copy and example level too: section ordering, guide flow, and example intent should follow SWR whenever the concept applies to SWRV, while code samples switch to Vue-correct `setup()` or `<script setup>` usage only where React component examples cannot map directly
 - the remaining non-suspense work has returned to stable-release execution rather than more in-repo feature or docs churn
 - Internal simplification work has now started after parity closure:
   - web-preset defaults and event initializers now live in a dedicated `_internal/web-preset.ts` module instead of being mixed into `config.ts` and `client.ts`
@@ -212,6 +213,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
 - Keep `ttl` as a supported compatibility-oriented extension in the current cut, but do not restore `serverTTL` as part of the rebuilt core API.
 - Use sentence case throughout docs, site chrome, and non-code copy unless a proper noun or code literal requires otherwise.
 - Treat the docs tree, navigation, and page depth from the upstream SWR docs source as the active baseline for future documentation work. New docs changes should preserve that structure instead of drifting back toward one-off page naming or ad hoc navigation.
+- When SWR already has an applicable guide or example, prefer matching its section flow, narrative, and example intent instead of inventing new docs copy. Diverge only for Vue composable semantics, SWRV-specific SSR differences, or APIs that intentionally differ.
 
 ## Planned Repository Shape
 

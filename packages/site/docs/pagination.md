@@ -5,11 +5,12 @@ description: Paginate data with useSWRV or useSWRVInfinite.
 
 # Pagination
 
-SWRV supports both simple paginated views and full infinite loading.
+SWRV supports common UI patterns such as pagination and infinite loading.
 
 ## When to use `useSWRV`
 
-If the UI only needs one page at a time, a normal key is enough.
+First of all, you might not need `useSWRVInfinite`. If you are building a typical paginated UI that
+shows one page at a time, plain `useSWRV` is usually enough.
 
 ### Pagination
 
@@ -32,14 +33,71 @@ const { data, isLoading } = useSWRV(
 
 This is the simplest path when the screen renders exactly one page at a time.
 
+You can also extract a reusable page component:
+
+```vue
+<!-- Page.vue -->
+<script setup lang="ts">
+import useSWRV from "swrv";
+
+const props = defineProps<{ index: number }>();
+
+const { data } = useSWRV(`/api/data?page=${props.index}`, fetcher);
+</script>
+```
+
+```vue
+<!-- App.vue -->
+<script setup lang="ts">
+import { ref } from "vue";
+
+const pageIndex = ref(0);
+</script>
+
+<template>
+  <Page :index="pageIndex" />
+  <button @click="pageIndex -= 1">Previous</button>
+  <button @click="pageIndex += 1">Next</button>
+</template>
+```
+
+Because of SWRV's cache, you can even preload the next page by rendering it in a hidden container:
+
+```vue
+<template>
+  <Page :index="pageIndex" />
+  <div style="display: none">
+    <Page :index="pageIndex + 1" />
+  </div>
+</template>
+```
+
 ### Infinite loading
 
-You can also use plain `useSWRV` for a hidden “next page” request, but that pattern gets awkward as
-soon as you need shared page state, page-specific revalidation, or cursor-based loading.
+For a basic "load more" UI, you can still use the `Page` abstraction and render a dynamic number of
+page components:
+
+```vue
+<script setup lang="ts">
+import { ref } from "vue";
+
+const count = ref(1);
+</script>
+
+<template>
+  <Page v-for="index in count" :key="index" :index="index - 1" />
+  <button @click="count += 1">Load more</button>
+</template>
+```
 
 ### Advanced cases
 
-Once the page count itself becomes part of the state, `useSWRVInfinite` is the better fit.
+That stops working well in more advanced cases. For example:
+
+- the top-level UI needs data from every page to compute totals
+- the API is cursor based, so each page depends on the previous page
+
+That is where `useSWRVInfinite` helps.
 
 ## `useSWRVInfinite`
 
@@ -51,60 +109,88 @@ const { data, error, isLoading, isValidating, mutate, size, setSize } = useSWRVI
 );
 ```
 
+Similar to `useSWRV`, this composable accepts a function that returns the request key, a fetcher,
+and options. It returns everything `useSWRV` returns, plus `size` and `setSize`.
+
 ### API
 
 - `getKey(index, previousPageData)`: returns the key for a page, or `null` to stop loading
-- `fetcher`: receives the resolved page key and returns the page data
-- `size`: the current number of requested pages
-- `setSize(next)`: grow or shrink the page count
-- `mutate(data?, options?)`: mutate the aggregate page array
+- `fetcher`: same as `useSWRV`'s fetcher
+- `options`: accepts all `useSWRV` options, plus:
+  - `initialSize = 1`
+  - `revalidateAll = false`
+  - `revalidateFirstPage = true`
+  - `persistSize = false`
+  - `parallel = false`
+- `data`: an array of page responses
+- `size`: the number of pages that should be fetched
+- `setSize`: updates the number of pages that should be fetched
 
 ### Example 1: index-based paginated API
 
-```vue
-<script setup lang="ts">
+```ts
 import { computed } from "vue";
 import useSWRVInfinite from "swrv/infinite";
 
-type Page = { items: { id: string; name: string }[] };
+type User = { id: string; name: string };
 
-const response = useSWRVInfinite<Page>(
-  (index) => ["/api/projects", index + 1] as const,
-  async (url, page) => {
-    const result = await fetch(`${url}?page=${page}`);
-    return result.json();
-  },
-);
+const getKey = (pageIndex: number, previousPageData?: User[]) => {
+  if (previousPageData && !previousPageData.length) {
+    return null;
+  }
 
-const items = computed(() => response.data.value?.flatMap((page) => page.items) ?? []);
-</script>
+  return `/users?page=${pageIndex}&limit=10`;
+};
+
+const response = useSWRVInfinite(getKey, fetcher);
+const { data, size, setSize } = response;
+```
+
+`data` is an array of page responses:
+
+```ts
+// `data.value` will look like:
+[
+  [
+    { id: "1", name: "Alice" },
+    { id: "2", name: "Bob" },
+  ],
+  [
+    { id: "3", name: "Cathy" },
+    { id: "4", name: "David" },
+  ],
+];
+```
+
+That means the top-level component can now compute totals across every loaded page:
+
+```ts
+const totalUsers = computed(() => data.value?.reduce((count, page) => count + page.length, 0) ?? 0);
 ```
 
 ### Example 2: cursor or offset based paginated API
 
-```vue
-<script setup lang="ts">
+```ts
 import useSWRVInfinite from "swrv/infinite";
 
 type Page = {
-  items: { id: string; name: string }[];
+  data: { id: string; name: string }[];
   nextCursor: string | null;
 };
 
-const response = useSWRVInfinite<Page>(
-  (index, previousPage) => {
-    if (index > 0 && !previousPage?.nextCursor) {
-      return null;
-    }
+const getKey = (pageIndex: number, previousPageData?: Page) => {
+  if (previousPageData && !previousPageData.data.length) {
+    return null;
+  }
 
-    return ["/api/projects", previousPage?.nextCursor ?? ""] as const;
-  },
-  async (url, cursor) => {
-    const result = await fetch(`${url}?cursor=${cursor}`);
-    return result.json();
-  },
-);
-</script>
+  if (pageIndex === 0) {
+    return "/users?limit=10";
+  }
+
+  return `/users?cursor=${previousPageData?.nextCursor}&limit=10`;
+};
+
+const { data, size, setSize } = useSWRVInfinite(getKey, fetcher);
 ```
 
 ### Parallel fetching mode
@@ -148,6 +234,10 @@ High-value options include:
 - `revalidateAll`
 - `revalidateFirstPage`
 - `compare`
+
+`initialSize` controls how many pages are fetched initially, `persistSize` keeps the current page
+count when the first page key changes, `revalidateAll` forces every page to revalidate, and
+`revalidateFirstPage` controls whether page 1 should revalidate when loading more pages.
 
 See [Prefetching](/prefetching) for preloading page requests and [Mutation](/mutation) for
 optimistic updates against infinite data.

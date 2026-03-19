@@ -7,6 +7,9 @@ description: Control automatic revalidation in SWRV.
 
 SWRV revalidates data automatically on focus, reconnect, and interval updates by default.
 
+> [!TIP]
+> If you want to revalidate manually, see [Mutation](/mutation).
+
 ## Revalidate on focus
 
 When the window regains focus, SWRV revalidates active keys:
@@ -78,7 +81,16 @@ const { data } = useSWRVImmutable("/api/build-metadata", fetcher);
 </script>
 ```
 
-This disables stale revalidation, focus revalidation, reconnect revalidation, and polling.
+It has the same API as `useSWRV`. It is equivalent to:
+
+```ts
+useSWRV(key, fetcher, {
+  revalidateIfStale: false,
+  revalidateOnFocus: false,
+  revalidateOnReconnect: false,
+  refreshInterval: 0,
+});
+```
 
 See [API](/api#swrvimmutable) for the immutable entry point shape.
 
@@ -99,8 +111,14 @@ useSWRV("/api/user", fetcher, {
 </script>
 ```
 
-If it is undefined, SWRV falls back to the normal stale-data rule: fetch when there is no data yet,
-or when stale data should be revalidated.
+When `revalidateOnMount` is undefined, SWRV falls back to `revalidateIfStale`.
+
+That means mount behavior works like this:
+
+- if `revalidateOnMount` is `true`, always revalidate on activation
+- if `revalidateOnMount` is `false`, never revalidate on activation
+- otherwise, revalidate if there is no data yet or if stale data should be revalidated through
+  `revalidateIfStale`
 
 ## Activity gates
 

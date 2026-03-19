@@ -5,32 +5,84 @@ description: Mutate cached data and perform remote writes with SWRV.
 
 # Mutation
 
-SWRV supports both SWR-style cache mutation and dedicated remote mutation hooks.
+SWRV provides the [`mutate`](/mutation#mutate) and [`useSWRVMutation`](/mutation#useswrvmutation)
+APIs for mutating remote data and the related cache.
 
 > [!TIP]
 > Hook snippets on this page assume they are called inside `setup()` or `<script setup>`.
 
 ## `mutate`
 
-You can mutate through the bound `mutate` returned by `useSWRV`, or through the scoped or global
-`mutate` helper.
+There are 2 ways to use `mutate`: the global mutate API which can mutate any key, and the bound
+mutate API which only mutates the data for the current key.
+
+### Global mutate
+
+The recommended way to get the scoped or global mutator is to use `useSWRVConfig()`:
+
+```ts
+import { useSWRVConfig } from "swrv";
+
+const { mutate } = useSWRVConfig();
+
+await mutate(key, data, options);
+```
+
+You can also import it globally:
+
+```ts
+import { mutate } from "swrv";
+
+await mutate(key, data, options);
+```
+
+> [!WARNING]
+> Using global `mutate(key)` with only the key parameter will not update the cache unless there is
+> a mounted SWRV hook using the same key. It is a revalidation signal, not a write by itself.
+
+### Bound mutate
+
+Bound mutate is the short path for mutating the current key with data. It behaves like the global
+mutate function, but the key is already bound to the `useSWRV` call.
 
 ```vue
 <script setup lang="ts">
 import useSWRV from "swrv";
 
-const user = useSWRV("/api/user", fetcher);
+const { data, mutate } = useSWRV("/api/user", fetcher);
 
-async function rename() {
-  await user.mutate((current) => (current ? { ...current, name: "Grace" } : current), {
-    optimisticData: (current) => (current ? { ...current, name: "Grace" } : current),
-    rollbackOnError: true,
-  });
+async function uppercaseName() {
+  if (!data.value) {
+    return;
+  }
+
+  const newName = data.value.name.toUpperCase();
+  await requestUpdateUsername(newName);
+  await mutate({ ...data.value, name: newName });
 }
 </script>
 ```
 
-Calling `mutate()` with no arguments revalidates the current key.
+### Revalidation
+
+When you call `mutate(key)` or bound `mutate()` without any data, it triggers a revalidation for the
+resource:
+
+```vue
+<script setup lang="ts">
+import { useSWRVConfig } from "swrv";
+
+const { mutate } = useSWRVConfig();
+
+function logout() {
+  document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+  void mutate("/api/user");
+}
+</script>
+```
+
+This is useful after auth changes, remote invalidations, or any action where the cache should be
+refetched rather than directly replaced.
 
 ### API
 
@@ -38,23 +90,59 @@ Calling `mutate()` with no arguments revalidates the current key.
 await mutate(key, data?, options?);
 ```
 
-Important options:
+#### Parameters
 
-- `optimisticData`
-- `populateCache`
-- `rollbackOnError`
-- `throwOnError`
-- `revalidate`
+- `key`: same as `useSWRV`'s `key`, but a function behaves as a filter function
+- `data`: data to update the client cache, or an async function for the remote mutation
+- `options`: accepts the following options:
+  - `optimisticData`
+  - `revalidate = true`
+  - `populateCache = true`
+  - `rollbackOnError = true`
+  - `throwOnError = true`
+
+#### Return values
+
+`mutate` returns the resolved value of the `data` parameter. If an error is thrown while executing
+the mutation, the error is rethrown unless `throwOnError` is disabled.
 
 ## `useSWRVMutation`
 
-Use `swrv/mutation` for imperative writes with dedicated mutation state.
+SWRV also provides `useSWRVMutation` as a composable for remote mutations. Remote mutations are
+triggered manually instead of automatically like `useSWRV`.
+
+This composable does not share local state with other `useSWRVMutation` calls, but it does share
+the same cache store as `useSWRV`.
 
 ### API
 
 ```ts
 const { data, error, isMutating, reset, trigger } = useSWRVMutation(key, fetcher, options);
 ```
+
+#### Parameters
+
+- `key`: same as `mutate`'s `key`
+- `fetcher(key, { arg })`: an async function for remote mutation
+- `options`: an optional object with properties such as:
+  - `optimisticData`
+  - `revalidate = true`
+  - `populateCache = false`
+  - `rollbackOnError = true`
+  - `throwOnError = true`
+  - `onSuccess(data, key, config)`
+  - `onError(error, key, config)`
+
+#### Return values
+
+- `data`: data for the given key returned from the fetcher
+- `error`: error thrown by the fetcher
+- `trigger(arg, options)`: a function to trigger a remote mutation
+- `reset`: resets `data`, `error`, and `isMutating`
+- `isMutating`: whether there is an ongoing remote mutation
+
+`trigger` also accepts per-call options so you can override optimistic updates or rollback behavior
+for one mutation without changing the base hook configuration.
 
 ### Basic usage
 
@@ -75,27 +163,52 @@ const { trigger, isMutating, error } = useSWRVMutation(
 );
 
 async function submit(name: string) {
-  await trigger({ name });
+  try {
+    await trigger({ name });
+  } catch {
+    // handle the error here
+  }
 }
 </script>
 ```
 
-### Defer loading data until needed
-
-`useSWRVMutation` is also useful when the remote action should not run at mount time:
+You can also override options at trigger time:
 
 ```ts
-const exportReport = useSWRVMutation("/api/report/export", async (key) => {
-  const response = await fetch(key, { method: "POST" });
-  return response.json() as Promise<{ downloadUrl: string }>;
-});
+await trigger(
+  { name: "Ada" },
+  {
+    optimisticData: (current) => (current ? { ...current, name: "Ada" } : current),
+    rollbackOnError: true,
+  },
+);
+```
 
-void exportReport.trigger();
+### Defer loading data until needed
+
+You can also use `useSWRVMutation` for loading data. It does not start requesting until `trigger`
+is called:
+
+```vue
+<script setup lang="ts">
+import { ref } from "vue";
+import useSWRVMutation from "swrv/mutation";
+
+const show = ref(false);
+const { data: user, trigger } = useSWRVMutation("/api/user", (url) =>
+  fetch(url).then((response) => response.json()),
+);
+
+async function showUser() {
+  await trigger();
+  show.value = true;
+}
+</script>
 ```
 
 ## Optimistic updates
 
-Use `optimisticData` when the UI should update immediately:
+`useSWRVMutation` also supports the same optimistic update and rollback features as `mutate`:
 
 ```ts
 await mutate("/api/user", updateUserOnServer(newName), {
@@ -106,7 +219,7 @@ await mutate("/api/user", updateUserOnServer(newName), {
 
 ## Rollback on errors
 
-`rollbackOnError` restores the previous cache value if the mutation fails:
+`rollbackOnError` restores the previous cache value if the remote mutation fails:
 
 ```ts
 await mutate("/api/user", failingRequest(), {
@@ -130,8 +243,9 @@ Set `populateCache: false` when the mutation response should not replace the cac
 
 ## Avoid race conditions
 
-SWRV tracks fetch and mutation ordering so late request responses do not overwrite newer mutation
-results. This is especially important when a mutation and a background revalidation overlap.
+Both `mutate` and `useSWRVMutation` coordinate with `useSWRV` so late request responses do not
+overwrite newer mutation results. This is especially important when a mutation and a background
+revalidation overlap.
 
 ## Mutate based on current data
 

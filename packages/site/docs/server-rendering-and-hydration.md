@@ -5,8 +5,70 @@ description: Use SWRV with Vue SSR and explicit hydration handoff.
 
 # Server rendering and hydration
 
-SWRV’s SSR model is explicit: hooks can read prefetched data on the server, but they do not start
-network requests automatically during server rendering.
+SWRV’s SSR model is explicit. Hooks can read prefetched data during server rendering, but they do
+not start network requests automatically on the server.
+
+## Client-side data fetching
+
+If a page contains frequently updating data and does not need to be pre-rendered, no special SSR
+setup is needed:
+
+- render the page without data first
+- fetch on the client
+- keep the data fresh through SWRV's normal revalidation rules
+
+This is a good fit for dashboards or other private pages where SEO is not the priority.
+
+## Pre-rendering with default data
+
+If the page must be pre-rendered, pass the prefetched data through `fallback` on `SWRVConfig`:
+
+```vue
+<!-- ServerPage.vue -->
+<script setup lang="ts">
+import { SWRVConfig } from "swrv";
+
+const props = defineProps<{
+  fallback: Record<string, unknown>;
+}>();
+</script>
+
+<template>
+  <SWRVConfig :value="{ fallback: props.fallback }">
+    <Article />
+  </SWRVConfig>
+</template>
+```
+
+```vue
+<!-- Article.vue -->
+<script setup lang="ts">
+import useSWRV from "swrv";
+
+const { data } = useSWRV("/api/article", fetcher);
+</script>
+
+<template>
+  <h1>{{ data?.title }}</h1>
+</template>
+```
+
+The page is still pre-rendered, but after hydration SWRV takes over again and can revalidate on the
+client to keep the data fresh.
+
+### Complex keys
+
+If the key is not a simple string, serialize it for the `fallback` map:
+
+```ts
+import { unstable_serialize } from "swrv";
+
+const key = ["/api/projects", { page: 1, status: "open" }] as const;
+
+const fallback = {
+  [unstable_serialize(key)]: await fetchProjects(),
+};
+```
 
 ## Hooks do not fetch on the server
 
@@ -18,6 +80,10 @@ During server rendering:
 - hooks do not start new fetches
 
 This keeps request ownership explicit and avoids accidental server-side waterfalls.
+
+Unlike SWR’s React Server Component examples, there is no promise handoff mechanism for hook calls.
+Server rendering in SWRV is based on prefilling data, then hydrating and revalidating on the
+client.
 
 ## Request-scoped clients
 
@@ -34,49 +100,6 @@ export function createRequestContext() {
 ```
 
 Then provide that client through `SWRVConfig` when you render the app.
-
-## Pre-rendering with default data
-
-If you already have the data on the server, pass it through `fallback`:
-
-```vue
-<script setup lang="ts">
-import { SWRVConfig } from "swrv";
-
-const user = { id: "1", name: "Ada" };
-
-const value = {
-  fallback: {
-    "/api/user": user,
-  },
-};
-</script>
-
-<template>
-  <SWRVConfig :value="value">
-    <App />
-  </SWRVConfig>
-</template>
-```
-
-The hook reads that data during SSR and then resumes normal client-side revalidation after
-hydration.
-
-### Complex keys
-
-When the key is not a simple string, use `unstable_serialize`:
-
-```ts
-import { unstable_serialize } from "swrv";
-
-const key = ["/api/projects", { page: 1, status: "open" }] as const;
-
-const value = {
-  fallback: {
-    [unstable_serialize(key)]: await fetchProjects(),
-  },
-};
-```
 
 ## Snapshot hydration
 

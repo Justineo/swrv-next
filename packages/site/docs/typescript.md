@@ -5,8 +5,7 @@ description: Use SWRV with TypeScript inference and explicit generics.
 
 # TypeScript
 
-SWRV is designed to infer key, fetcher, and mutation types while still exposing explicit types when
-you need them.
+SWRV is friendly for apps written in TypeScript, with type safety out of the box.
 
 > [!TIP]
 > The snippets on this page focus on types. Assume they live inside `<script setup lang="ts">`
@@ -16,62 +15,112 @@ you need them.
 
 ### `useSWRV`
 
-Tuple keys infer positional fetcher arguments:
+By default, SWRV also infers the argument types of `fetcher` from `key`:
 
 ```ts
-const response = useSWRV(["user", 8] as const, async (resource, id) => {
-  resource satisfies "user";
-  id satisfies 8;
-  return { id, resource };
-});
+// `key` is inferred as `string`
+useSWRV("/api/user", async (key) => key);
+useSWRV(
+  () => "/api/user",
+  async (key) => key,
+);
 ```
 
-Object keys infer object structure as well:
-
 ```ts
-const response = useSWRV({ path: "/api/user", locale: "en" }, async (key) => {
-  key.path satisfies string;
-  key.locale satisfies string;
-  return { locale: key.locale };
-});
+// `key` is inferred as the object shape
+useSWRV({ a: "1", b: { c: "3", d: 2 } }, async (key) => key);
+useSWRV(
+  () => ({ a: "1", b: { c: "3", d: 2 } }),
+  async (key) => key,
+);
 ```
 
-Remember that the return values are refs:
+```ts
+// tuple keys are spread into fetcher arguments in SWRV
+useSWRV(["user", 8] as const, async (arg0, arg1) => ({ arg0, arg1 }));
+useSWRV(
+  () => ["user", 8] as const,
+  async (arg0, arg1) => ({ arg0, arg1 }),
+);
+```
+
+You can also explicitly specify the types for `key` and the fetcher:
 
 ```ts
-response.data.value;
-response.error.value;
+import useSWRV, { type Fetcher } from "swrv";
+
+const uid = "<user_id>";
+const fetcher: Fetcher<User, string> = (id) => getUserById(id);
+
+const { data } = useSWRV(uid, fetcher);
+// `data` is `Ref<User | undefined>`.
+```
+
+By default, the error thrown inside `fetcher` is `unknown`. You can also specify it explicitly:
+
+```ts
+const { data, error } = useSWRV<User, Error>(uid, fetcher);
+// `data` is `Ref<User | undefined>`.
+// `error` is `Ref<Error | undefined>`.
 ```
 
 ### `useSWRVInfinite`
 
-`useSWRVInfinite` infers the page data and the `getKey` relationship:
+The same applies to `swrv/infinite`:
 
 ```ts
-type Page = { items: string[]; nextCursor: string | null };
+import useSWRVInfinite from "swrv/infinite";
+import type { SWRVInfiniteKeyLoader } from "swrv";
 
-const response = useSWRVInfinite<Page>(
-  (index, previousPage) => ["/api/projects", previousPage?.nextCursor ?? index] as const,
-  async (url, cursor) => ({ items: [`${url}:${cursor}`], nextCursor: null }),
-);
+type Page = { data: string[]; nextCursor: string | null };
+
+const getKey: SWRVInfiniteKeyLoader<Page> = (index, previousPageData) => {
+  if (previousPageData && !previousPageData.data.length) {
+    return null;
+  }
+
+  return `/api/projects?page=${index}`;
+};
+
+const { data } = useSWRVInfinite(getKey, fetcher);
 ```
 
 ### `useSWRVSubscription`
 
-The subscribe callback keeps the original key type:
+Inline subscribe functions can infer the key type too:
 
 ```ts
-const response = useSWRVSubscription(["room", 1] as const, (key, { next }) => {
-  key[0] satisfies "room";
-  key[1] satisfies number;
-  next(undefined, { connected: true });
+import useSWRVSubscription from "swrv/subscription";
+import type { SWRVSubscriptionOptions } from "swrv";
+
+const { data, error } = useSWRVSubscription(
+  "key",
+  (key, { next }: SWRVSubscriptionOptions<number, Error>) => {
+    key satisfies string;
+    next(undefined, 1);
+    return () => {};
+  },
+);
+```
+
+You can also type the subscribe function itself:
+
+```ts
+import useSWRVSubscription from "swrv/subscription";
+import type { SWRVSubscription } from "swrv";
+
+const subscribe: SWRVSubscription<string, number, Error> = (key, { next }) => {
+  key satisfies string;
+  next(undefined, 1);
   return () => {};
-});
+};
+
+const { data, error } = useSWRVSubscription("key", subscribe);
 ```
 
 ## Generics
 
-In many cases, the fetcher type is enough and you do not need explicit generics:
+Specifying the data type is easy. In many cases, the fetcher type is enough:
 
 ```ts
 const getUser = async (url: string) => {
@@ -88,7 +137,7 @@ If the fetcher is less specific, pass the data type explicitly:
 const response = useSWRV<{ id: string; name: string }>("/api/user", fetcher);
 ```
 
-`fallbackData` narrows `data.value` for that hook call:
+`fallbackData` also narrows `data.value` for that hook call:
 
 ```ts
 const response = useSWRV("/api/user", fetcher, {
@@ -98,7 +147,7 @@ const response = useSWRV("/api/user", fetcher, {
 response.data.value.id;
 ```
 
-`useSWRV(key, config)` also works when the fetcher comes from `SWRVConfig`:
+If the fetcher comes from `SWRVConfig`, `useSWRV(key, config)` also works:
 
 ```ts
 const response = useSWRV<{ id: string }>("/api/user", {
@@ -120,7 +169,7 @@ void mutation.trigger({ name: "Ada" });
 
 ## Middleware types
 
-The package exports the main public types you are likely to use:
+There are also extra type definitions you can import for custom middleware and config boundaries:
 
 - `Fetcher`
 - `BareFetcher`
@@ -130,5 +179,5 @@ The package exports the main public types you are likely to use:
 - `SWRVMiddleware`
 - `MutatorOptions`
 
-Most application code can rely on inference and only reach for explicit types at boundaries such as
-shared fetchers, composable libraries, or middleware packages.
+Most application code can rely on inference and only reach for explicit types at shared fetchers,
+composable libraries, or middleware boundaries.

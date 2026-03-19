@@ -5,12 +5,12 @@ description: Install SWRV and start fetching data in Vue.
 
 # Getting started
 
-SWRV is stale-while-revalidate data fetching for Vue. It follows SWR closely, but it returns
-Vue refs, respects Vue effect scopes, and keeps cache ownership explicit through `SWRVConfig`.
+SWRV is a Vue library for data fetching. It follows SWR closely, but it returns Vue refs and is
+meant to be used inside `setup()` or `<script setup>`.
 
 ## Installation
 
-Inside your Vue project directory, run:
+Inside your Vue project directory, run the following:
 
 ```bash
 npm i swrv // [!=npm auto]
@@ -18,120 +18,133 @@ npm i swrv // [!=npm auto]
 
 ## Quick start
 
-For normal JSON APIs, start with a small `fetcher` function:
+For normal RESTful APIs with JSON data, first create a `fetcher` function. It is usually just a
+wrapper around the native `fetch`:
 
 ```ts
-const fetcher = async (url: string) => {
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error("An error occurred while fetching the data.");
-  }
-  return response.json() as Promise<{ id: string; name: string }>;
-};
+const fetcher = (url: string) => fetch(url).then((response) => response.json());
 ```
 
-Then call `useSWRV` inside `setup()` or `<script setup>`:
+> [!TIP]
+> If you want to use GraphQL APIs or libraries such as Axios, you can create your own fetcher
+> function. See [Data fetching](/data-fetching) for more examples.
+
+Then import `useSWRV` and start using it inside `setup()` or `<script setup>`:
 
 ```vue
 <script setup lang="ts">
 import useSWRV from "swrv";
 
-const { data, error, isLoading } = useSWRV("/api/user", fetcher);
+const props = defineProps<{ userId: string }>();
+
+const { data, error, isLoading } = useSWRV(`/api/user/${props.userId}`, fetcher);
 </script>
 
 <template>
   <p v-if="error">Failed to load.</p>
-  <p v-else-if="isLoading">Loading…</p>
-  <p v-else>Hello {{ data?.name }}.</p>
+  <p v-else-if="isLoading">Loading...</p>
+  <p v-else>Hello {{ data?.name }}!</p>
 </template>
 ```
 
-> [!TIP]
-> `data`, `error`, `isLoading`, and `isValidating` are Vue refs. In templates you can read them
-> directly. In script code, read them through `.value`.
-
-There are usually 3 visible states for a request:
-
-- loading, when the first request is in flight
-- ready, when `data` has resolved
-- error, when the fetcher throws
-
-SWRV also tracks background revalidation separately through `isValidating`.
+Normally, there are 3 possible states of a request: "loading", "ready", or "error". You can use
+the values of `data`, `error`, and `isLoading` to determine the current state of the request and
+return the corresponding UI.
 
 ## Make it reusable
 
-When the same data appears in multiple parts of the UI, build a composable on top of `useSWRV`:
+When building an app, you often need to reuse the same data in many places of the UI. It is very
+easy to create reusable data composables on top of `useSWRV`:
 
 ```ts
 import useSWRV from "swrv";
 
 export function useUser(id: string) {
-  const response = useSWRV(`/api/users/${id}`, fetcher);
+  const { data, error, isLoading } = useSWRV(`/api/user/${id}`, fetcher);
 
   return {
-    user: response.data,
-    error: response.error,
-    isLoading: response.isLoading,
+    user: data,
+    isLoading,
+    isError: error,
   };
 }
 ```
 
-Then consume it from any component setup function:
+And use it in your components:
 
 ```vue
 <script setup lang="ts">
 import { useUser } from "../composables/use-user";
 
 const props = defineProps<{ userId: string }>();
-const { user, error, isLoading } = useUser(props.userId);
+const { user, isLoading, isError } = useUser(props.userId);
 </script>
 
 <template>
-  <p v-if="error">Could not load the profile.</p>
-  <p v-else-if="isLoading">Loading profile…</p>
-  <img v-else :alt="user?.name" :src="user?.avatarUrl" />
+  <p v-if="isLoading">Loading...</p>
+  <p v-else-if="isError">Failed to load profile.</p>
+  <img v-else :alt="user?.name" :src="user?.avatar" />
 </template>
 ```
 
-This keeps your components declarative. Instead of manually starting requests, tracking pending
-state, and pushing results down through props, you describe the data each component needs.
+By adopting this pattern, you can forget about fetching data in the imperative way: start the
+request, update loading state, and pass the final result down through props. Instead, your code is
+more declarative: each component just describes what data it needs.
 
 ## Example
 
-In a real application, a navbar and a page body often need the same user record. With SWRV, they
-can ask for the same key independently:
+In a real app, a navbar and the page content often both depend on the same `user` record.
 
 ```vue
+<!-- Page.vue -->
 <script setup lang="ts">
-import { SWRVConfig } from "swrv";
-
-const value = {
-  fetcher: (url: string) => fetch(url).then((response) => response.json()),
-};
+const props = defineProps<{ userId: string }>();
 </script>
 
 <template>
-  <SWRVConfig :value="value">
-    <Navbar />
-    <AccountPage />
-  </SWRVConfig>
+  <Navbar :user-id="props.userId" />
+  <Content :user-id="props.userId" />
 </template>
 ```
 
 ```vue
+<!-- Content.vue -->
 <script setup lang="ts">
-import useSWRV from "swrv";
+import { useUser } from "../composables/use-user";
 
-const { data: user } = useSWRV("/api/user");
+const props = defineProps<{ userId: string }>();
+const { user, isLoading } = useUser(props.userId);
 </script>
 
 <template>
-  <p>{{ user?.name }}</p>
+  <p v-if="isLoading">Loading...</p>
+  <h1 v-else>Welcome back, {{ user?.name }}</h1>
 </template>
 ```
 
-All consumers of `"/api/user"` inside the same cache boundary share the same cache entry,
-deduplicated request, and revalidation behavior.
+```vue
+<!-- Navbar.vue -->
+<script setup lang="ts">
+import { useUser } from "../composables/use-user";
+
+const props = defineProps<{ userId: string }>();
+const { user, isLoading } = useUser(props.userId);
+</script>
+
+<template>
+  <p v-if="isLoading">Loading...</p>
+  <img v-else :alt="user?.name" :src="user?.avatar" />
+</template>
+```
+
+Data is now bound to the components that need it, and the parent components do not need to know
+anything about fetching or passing data around. The code is simpler and easier to maintain.
+
+The best part is that there will still be only one request sent to the API, because the components
+use the same SWRV key. The request is deduped, cached, and shared automatically.
+
+The app also gains automatic [revalidation](/revalidation) on focus or reconnect, so the user
+record can refresh when the browser tab becomes active again or the network comes back.
 
 ## Where to go next
 
