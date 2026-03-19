@@ -10,21 +10,21 @@
   --font-family-space-grotesk: "Space Grotesk", "spaceGrotesk Fallback";
   --theme-font-family: var(--font-family-roboto);
 
-  --theme-bg: #ffffff;
-  --theme-title: #101915;
-  --theme-text: #5b675f;
-  --theme-primary: #42b883;
-  --theme-primary-text: #08120d;
-  --theme-primary-hover: #329d6d;
-  --theme-secondary: #f4f7f4;
-  --theme-secondary-text: #101915;
+  --theme-bg: #f7f3eb;
+  --theme-title: #132019;
+  --theme-text: #5e675f;
+  --theme-primary: #2d8a78;
+  --theme-primary-text: #f7f3eb;
+  --theme-primary-hover: #236f61;
+  --theme-secondary: #ece9df;
+  --theme-secondary-text: #132019;
   --theme-card-bg: transparent;
-  --theme-card-border: rgba(30, 54, 42, 0.16);
-  --theme-form-label-inline: #5b675f;
-  --theme-form-label-inline-focus: #101915;
-  --theme-input-border: #d6e0d9;
-  --theme-border: rgba(30, 54, 42, 0.16);
-  --theme-error: #c45e69;
+  --theme-card-border: rgba(33, 52, 42, 0.16);
+  --theme-form-label-inline: #5e675f;
+  --theme-form-label-inline-focus: #132019;
+  --theme-input-border: #d7d4c8;
+  --theme-border: rgba(33, 52, 42, 0.16);
+  --theme-error: #b45d55;
 
   --vp-font-family-base: var(--theme-font-family), sans-serif;
   --vp-font-family-mono: var(--font-family-roboto-mono), monospace;
