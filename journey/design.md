@@ -36,6 +36,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - config-level `onErrorRetry`, `onLoadingSlow`, and `onDiscarded` now exist for retry scheduling, slow-request signaling, and stale-response races
   - the request path now holds onto the exact in-flight promise instead of re-reading it through the dedupe window, which fixes `dedupingInterval: 0` flakiness
   - request and mutation ordering now use high-resolution timestamps, which avoids false stale-response discards when revalidation starts immediately after a mutation
+  - fetches that start in the same tick as a finished mutation now nudge their ordering timestamp just past the mutation end marker, which preserves post-mutation revalidation without breaking concurrent dedupe at `dedupingInterval: 0`
   - local and global `mutate()` now explicitly invalidate the per-key fetch dedupe lane before broadcasting, so `mutate(key)` also clears stale dedupe state for future mounts even when no hook is currently mounted
   - mutate-triggered revalidation now also dedupes across hooks sharing the same key, so manual revalidation broadcasts no longer fan out into one fetch per mounted consumer
   - base and global mutate coverage now explicitly includes `rollbackOnError: false`, committed-snapshot `populateCache` transforms, function-style `revalidate`, and filter-based function revalidation
@@ -83,6 +84,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
 - A dedicated `core-loading-key` domain file now covers upstream-inspired loading and key behavior as well, including shared validating state, key-switch race suppression, clearing stale data on key change without `keepPreviousData`, function-key failure handling, and deep-equal object-key deduplication.
 - The same `core-loading-key` domain file now also covers validating-state reset when a shared request errors, so shared-key hooks are exercised on both success and failure paths.
 - The same `core-loading-key` domain file now also covers manual revalidation preserving `isLoading: false` once data exists, plus `null` keys staying idle.
+- A dedicated `core-keep-previous` domain file now covers SWR-style `keepPreviousData` behavior, including key changes, mixed shared-cache consumers, fallback interaction, same-key revalidation after `mutate(undefined)`, and reactive provider-config changes.
 - A dedicated `core-broadcast-state` domain file now covers shared-key broadcast behavior for refreshed data, propagated errors, and mutate-driven `isValidating` state across multiple consumers.
 - A dedicated `core-cache-provider` domain file now covers provider-scoped cache behavior, including isolated clients, seeded cache reads, scoped cache mutation through `useSWRVConfig`, nested provider boundaries, and parent-cache extension through `provider(parentCache)`.
 - A dedicated `core-middleware` domain file now covers base and cross-API middleware behavior, including original-key forwarding, null fetchers, config-boundary `use` composition order, key rewriting, non-serialized key forwarding, and middleware passthrough for `infinite`, `mutation`, and `subscription`.

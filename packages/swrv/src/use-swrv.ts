@@ -123,6 +123,7 @@ function useSWRVHandler<Data = unknown, Error = unknown>(
   const error = ref<Error | undefined>();
   const isLoading = ref(false);
   const isValidating = ref(false);
+  const laggyData = ref<Data | undefined>(config?.fallbackData);
 
   const currentKey = ref<CurrentKeyState>({
     rawKey: resolveKeyValue(key as RawKey | (() => RawKey)),
@@ -174,16 +175,34 @@ function useSWRVHandler<Data = unknown, Error = unknown>(
     const fallbackData = resolveFallbackData(serializedKey, configValue);
     const resolvedEntry =
       entry ?? (serializedKey ? client.getState<Data, Error>(serializedKey) : undefined);
+    const resolvedData = resolvedEntry
+      ? resolveResolvedData(resolvedEntry.data, fallbackData)
+      : fallbackData;
 
     if (!resolvedEntry) {
-      data.value = fallbackData;
+      data.value =
+        configValue.keepPreviousData && hasDefinedValue(laggyData.value)
+          ? laggyData.value
+          : fallbackData;
+      if (hasDefinedValue(data.value)) {
+        laggyData.value = data.value;
+      }
       return;
     }
 
-    data.value = resolveResolvedData(resolvedEntry.data, fallbackData);
+    data.value =
+      configValue.keepPreviousData &&
+      !hasDefinedValue(resolvedEntry.data) &&
+      hasDefinedValue(laggyData.value)
+        ? laggyData.value
+        : resolvedData;
     error.value = resolvedEntry.error;
     isLoading.value = resolvedEntry.isLoading;
     isValidating.value = resolvedEntry.isValidating;
+
+    if (hasDefinedValue(data.value)) {
+      laggyData.value = data.value;
+    }
   };
 
   const syncAfterStateWrite = (serializedKey: string, entry?: CacheState<Data, Error>) => {
@@ -280,12 +299,15 @@ function useSWRVHandler<Data = unknown, Error = unknown>(
     }
 
     const now = getTimestamp();
+    const latestMutation = client.getMutation(serializedKey);
+    const fetchTimestamp =
+      latestMutation && now <= latestMutation[1] ? latestMutation[1] + 0.001 : now;
     const currentFetch =
       options.dedupe === false
         ? undefined
-        : client.getFetch(serializedKey, now, configValue.dedupingInterval);
+        : client.getFetch(serializedKey, fetchTimestamp, configValue.dedupingInterval);
 
-    const startedAt = currentFetch?.startedAt ?? now;
+    const startedAt = currentFetch?.startedAt ?? fetchTimestamp;
     let fetchPromise = currentFetch?.promise as Promise<Data> | undefined;
 
     if (!currentFetch) {
@@ -558,6 +580,9 @@ function useSWRVHandler<Data = unknown, Error = unknown>(
         nextFocusRevalidatedAt = 0;
         if (!configValue.keepPreviousData) {
           data.value = fallbackData;
+          if (hasDefinedValue(data.value)) {
+            laggyData.value = data.value;
+          }
           error.value = undefined;
         }
         isLoading.value = false;
@@ -578,6 +603,9 @@ function useSWRVHandler<Data = unknown, Error = unknown>(
         applyState(cached, serializedKey);
       } else if (!configValue.keepPreviousData) {
         data.value = fallbackData;
+        if (hasDefinedValue(data.value)) {
+          laggyData.value = data.value;
+        }
         error.value = undefined;
         isLoading.value = false;
         isValidating.value = false;
