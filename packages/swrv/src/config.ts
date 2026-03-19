@@ -77,6 +77,7 @@ const DEFAULT_CONFIGURATION: ResolvedSWRVConfiguration<any, any> = {
   revalidateOnFocus: true,
   revalidateOnReconnect: true,
   shouldRetryOnError: true,
+  strictServerPrefetchWarning: false,
   ttl: 0,
   use: [],
 };

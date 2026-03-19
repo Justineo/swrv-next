@@ -1,12 +1,17 @@
 import { callFetcher, serialize } from "./serialize";
+import { isServerEnvironment } from "./env";
 
-import type { BareFetcher, Fetcher, KeySource, RawKey, SWRVClient } from "./types";
+import type { BareFetcher, Fetcher, KeySource, PreloadResponse, RawKey, SWRVClient } from "./types";
 
 export function preloadKey<Data = unknown, Key extends RawKey = RawKey>(
   client: SWRVClient,
   key: KeySource<Key>,
   fetcher: Fetcher<Data, Key>,
-): Promise<Data> {
+): PreloadResponse<Data> {
+  if (isServerEnvironment()) {
+    return undefined;
+  }
+
   const [serializedKey, rawKey] = serialize(key);
   const typedFetcher = fetcher as BareFetcher<Data>;
 

@@ -259,8 +259,10 @@ const typeAssertions = {
   filteredMutateResult: true as Expect<
     Equal<Awaited<typeof filteredMutateResult>, Array<string | undefined>>
   >,
-  preloadedTuple: true as Expect<Equal<Awaited<typeof preloadedTuple>, string>>,
-  preloadedFunctionKey: true as Expect<Equal<Awaited<typeof preloadedFunctionKey>, string>>,
+  preloadedTuple: true as Expect<Equal<Awaited<typeof preloadedTuple>, string | undefined>>,
+  preloadedFunctionKey: true as Expect<
+    Equal<Awaited<typeof preloadedFunctionKey>, string | undefined>
+  >,
   infiniteData: true as Expect<Equal<typeof infiniteResponse.data.value, string[] | undefined>>,
   infiniteSize: true as Expect<Equal<typeof infiniteResponse.size.value, number | undefined>>,
   infiniteMutate: true as Expect<Equal<Awaited<typeof infiniteMutate>, string[] | undefined>>,

@@ -48,6 +48,7 @@ Key notes:
 - accepts string, tuple, object, ref, and function keys
 - resolves tuple keys into positional fetcher arguments
 - dedupes repeated preload calls until a hook consumes the request
+- is a no-op on the server so request-scoped SSR flows stay explicit
 - failed preload requests are cleared so a later preload or hook fetch can retry
 - preloaded page keys are also consumed by `useSWRVInfinite`
 
@@ -91,6 +92,7 @@ Current supported high-value options include:
 - lifecycle callbacks through `onSuccess` and `onError`
 - retry and race callbacks through `onErrorRetry` and `onDiscarded`
 - slow-request handling through `loadingTimeout` and `onLoadingSlow`
+- `strictServerPrefetchWarning` for warning on missing SSR handoff data
 - `refreshInterval`, `dedupingInterval`, and `ttl`
 
 ## `swrv/mutation`

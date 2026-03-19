@@ -90,6 +90,16 @@ const client = hydrateSWRVSnapshot(createSWRVClient(), window.__SWRV__);
 The snapshot format is intentionally aligned with config-level `fallback`: it is
 a serialized-key map of data values, not a dump of internal loading metadata.
 
+## Server Safety
+
+Root-level `preload()` is a no-op during server rendering. That avoids
+accidentally fetching through the shared global client on the server. Use
+request-scoped fetching plus `fallback` or snapshot hydration instead.
+
+If you want explicit validation that SSR handoff data exists, enable
+`strictServerPrefetchWarning` on `SWRVConfig`. SWRV will warn when a server
+render reaches a key with no fallback or hydrated snapshot data.
+
 ## Current Limits
 
 The current public surface does not yet include:

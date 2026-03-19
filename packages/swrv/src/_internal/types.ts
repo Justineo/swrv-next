@@ -11,6 +11,7 @@ export type RawKey =
 export type KeySource<Key = RawKey> = Key | Ref<Key> | ComputedRef<Key> | (() => Key);
 
 export type FetcherResponse<Data = unknown> = Data | Promise<Data>;
+export type PreloadResponse<Data = unknown> = Promise<Data> | undefined;
 
 export type BareFetcher<Data = unknown> = (...args: readonly unknown[]) => FetcherResponse<Data>;
 export type HookFetcher<Data = unknown> = BareFetcher<Data> | null | undefined | false;
@@ -96,6 +97,7 @@ export interface SWRVConfiguration<
   revalidateOnMount?: boolean;
   revalidateOnReconnect?: boolean;
   shouldRetryOnError?: boolean | ((error: Error) => boolean);
+  strictServerPrefetchWarning?: boolean;
   ttl?: number;
   use?: SWRVMiddleware[];
 }
@@ -153,6 +155,7 @@ export interface ResolvedSWRVConfiguration<
   revalidateOnFocus: boolean;
   revalidateOnReconnect: boolean;
   shouldRetryOnError: boolean | ((error: Error) => boolean);
+  strictServerPrefetchWarning?: boolean;
   ttl: number;
   use: SWRVMiddleware[];
 }
@@ -294,7 +297,7 @@ export interface SWRVConfigAccessor {
   preload: <Data = unknown, Key extends RawKey = RawKey>(
     key: KeySource<Key>,
     fetcher: Fetcher<Data, Key>,
-  ) => Promise<Data>;
+  ) => PreloadResponse<Data>;
 }
 
 export type SWRVConfigComponent = DefineComponent<{
