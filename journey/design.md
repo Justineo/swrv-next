@@ -149,6 +149,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - web-preset defaults and event initializers now live in a dedicated `_internal/web-preset.ts` module instead of being mixed into `config.ts` and `client.ts`
   - provider-scoped runtime maps now live behind `_internal/provider-state.ts`, and cache read/write concerns now live behind `_internal/cache-helper.ts`
   - shared internal key prefixes for `infinite` and `subscription` now live in `_internal/key-prefix.ts`
+  - repeated WeakMap store initialization for the base hook, `infinite`, and `subscription` now lives behind a shared `_internal/scoped-storage.ts` helper
   - `createSWRVClient()` is now a much thinner facade over provider-state, cache-helper, and event binding helpers
   - the public `useSWRV` entrypoint is now a thin overload plus middleware wrapper, and the heavy runtime logic now lives in `use-swrv-handler.ts`
 - The main reference materials for the rebuild remain:

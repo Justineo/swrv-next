@@ -4,6 +4,7 @@ import { useSWRVConfig } from "../config";
 import { withMiddleware } from "../_internal";
 import useSWRV from "../use-swrv";
 import { createSubscriptionCacheKey } from "../_internal/key-prefix";
+import { getOrCreateScopedValue } from "../_internal/scoped-storage";
 import { resolveKeyValue, serialize } from "../_internal/serialize";
 
 import type {
@@ -42,12 +43,11 @@ const subscription = (<Data = unknown, Error = unknown, Key extends RawKey = Raw
   ): SWRVSubscriptionResponse<Data, Error> => {
     const { client } = useSWRVConfig();
     const storageKey = client.cache as object;
-
-    if (!subscriptionStorage.has(storageKey)) {
-      subscriptionStorage.set(storageKey, [new Map(), new Map()]);
-    }
-
-    const [subscriptions, disposers] = subscriptionStorage.get(storageKey)!;
+    const [subscriptions, disposers] = getOrCreateScopedValue(
+      subscriptionStorage,
+      storageKey,
+      () => [new Map(), new Map()],
+    );
 
     const swrv = useSWRVNext(
       (() => {

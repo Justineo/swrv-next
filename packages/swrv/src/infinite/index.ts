@@ -4,6 +4,7 @@ import { useSWRVConfig } from "../config";
 import { withMiddleware } from "../_internal";
 import { createInfiniteCacheKey } from "../_internal/key-prefix";
 import { normalizeHookArgs } from "../_internal/normalize";
+import { getOrCreateScopedValue } from "../_internal/scoped-storage";
 import useSWRV from "../use-swrv";
 import { callFetcher, serialize } from "../_internal/serialize";
 
@@ -78,25 +79,13 @@ interface InfiniteRevalidationState<Data = unknown> {
 }
 
 function getSizeStore(storageKey: object) {
-  const current = sizeStorage.get(storageKey);
-  if (current) {
-    return current;
-  }
-
-  const next = new Map<string, number>();
-  sizeStorage.set(storageKey, next);
-  return next;
+  return getOrCreateScopedValue(sizeStorage, storageKey, () => new Map<string, number>());
 }
 
 function getRevalidationStore(storageKey: object) {
-  const current = revalidationStorage.get(storageKey);
-  if (current) {
-    return current;
-  }
-
-  const next = new Map<string, InfiniteRevalidationState<any>>();
-  revalidationStorage.set(storageKey, next);
-  return next;
+  return getOrCreateScopedValue(revalidationStorage, storageKey, () => {
+    return new Map<string, InfiniteRevalidationState<any>>();
+  });
 }
 
 function serializePage<Data = unknown, Key extends RawKey = RawKey>(

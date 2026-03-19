@@ -15,6 +15,7 @@
   - a thin public `use-swrv.ts` entry module for overloads, arg normalization, and middleware composition
   - a dedicated `use-swrv-handler.ts` runtime module for activation, revalidation, cache sync, and lifecycle behavior
 - Reused the new key-prefix helpers in `infinite` and `subscription`.
+- Added a shared `_internal/scoped-storage.ts` helper so base-hook warnings and advanced API side stores no longer repeat their own WeakMap initialization logic.
 - Revalidated the workspace with `vp test` and `vp check`.
 - Phase 1, Phase 2, and Phase 3 of the simplification plan are now complete.
 - Remaining simplification work is concentrated in:

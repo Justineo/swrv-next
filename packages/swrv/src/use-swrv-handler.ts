@@ -3,6 +3,7 @@ import { getCurrentScope, onScopeDispose, ref, watch } from "vue";
 import { mergeConfiguration, useSWRVContext } from "./config";
 import { isServerEnvironment } from "./_internal/env";
 import { getScopedMutator } from "./_internal/mutate";
+import { getOrCreateScopedValue } from "./_internal/scoped-storage";
 import { callFetcher, resolveKeyValue, serialize } from "./_internal/serialize";
 import { getTimestamp } from "./_internal/timestamp";
 
@@ -82,14 +83,7 @@ function shouldRevalidateOnActivation<Data>(
 }
 
 function getServerPrefetchWarningStore(storageKey: object): Set<string> {
-  const current = serverPrefetchWarnings.get(storageKey);
-  if (current) {
-    return current;
-  }
-
-  const next = new Set<string>();
-  serverPrefetchWarnings.set(storageKey, next);
-  return next;
+  return getOrCreateScopedValue(serverPrefetchWarnings, storageKey, () => new Set<string>());
 }
 
 export function unstable_serialize(key: RawKey | (() => RawKey)): string {
