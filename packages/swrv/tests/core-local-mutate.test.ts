@@ -1,3 +1,4 @@
+import { ref } from "vue";
 import { describe, expect, it, vi } from "vite-plus/test";
 
 import { mutate, useSWRV, useSWRVConfig, useSWRVInfinite, useSWRVSubscription } from "../src";
@@ -354,6 +355,23 @@ describe("swrv core local mutate behavior", () => {
     await expect(mutate(null, Promise.resolve("data"), false)).resolves.toBeUndefined();
   });
 
+  it("supports global mutate for array keys containing null", async () => {
+    let value = 0;
+    const state = runComposable(() =>
+      useSWRV<number>([null] as const, async () => value++, {
+        dedupingInterval: 0,
+      }),
+    );
+
+    await settle();
+    expect(state.data.value).toBe(0);
+
+    await mutate([null]);
+    await settle();
+
+    expect(state.data.value).toBe(1);
+  });
+
   it("ignores in-flight requests when a later local mutation commits new data", async () => {
     const key = `ignore-inflight-request-${Date.now()}`;
     let resolveFetcher!: (value: number) => void;
@@ -469,6 +487,87 @@ describe("swrv core local mutate behavior", () => {
     expect(state().swrv.data.value).toBe(0);
     expect(state().swrv.error.value).toBeUndefined();
     expect(state().config.cache.get(key)?.error).toBeUndefined();
+  });
+
+  it("clears cache error state after a successful local mutate", async () => {
+    const key = `mutate-success-clears-error-${Date.now()}`;
+    const state = runComposable(() =>
+      useSWRV<string, Error>(
+        key,
+        async () => {
+          throw new Error("error");
+        },
+        {
+          shouldRetryOnError: false,
+        },
+      ),
+    );
+
+    await settle();
+    expect(state.error.value?.message).toBe("error");
+
+    await state.mutate((current) => current, { revalidate: false });
+    await settle();
+
+    expect(state.data.value).toBeUndefined();
+    expect(state.error.value).toBeUndefined();
+  });
+
+  it("bound mutate always uses the latest resolved key", async () => {
+    const key = `bound-latest-key-${Date.now()}`;
+    const ready = ref(false);
+    const fetcher = vi.fn(async () => "data");
+
+    const state = runComposable(() =>
+      useSWRV<string>(() => (ready.value ? key : null), fetcher, {
+        dedupingInterval: 0,
+      }),
+    );
+
+    await settle();
+    expect(fetcher).toHaveBeenCalledTimes(0);
+
+    ready.value = true;
+    await settle();
+    expect(fetcher).toHaveBeenCalledTimes(1);
+
+    await state.mutate();
+    await settle();
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+
+  it("can mutate local data to undefined explicitly", async () => {
+    const key = `mutate-undefined-${Date.now()}`;
+    const state = runComposable(() =>
+      useSWRV<string>(key, async () => "foo", {
+        dedupingInterval: 0,
+      }),
+    );
+
+    await settle();
+    expect(state.data.value).toBe("foo");
+
+    await state.mutate(undefined, false);
+    await settle();
+
+    expect(state.data.value).toBeUndefined();
+  });
+
+  it("can mutate local data to undefined asynchronously", async () => {
+    const key = `mutate-undefined-async-${Date.now()}`;
+    const state = runComposable(() =>
+      useSWRV<string>(key, async () => "foo", {
+        dedupingInterval: 0,
+      }),
+    );
+
+    await settle();
+    expect(state.data.value).toBe("foo");
+
+    await state.mutate(async () => undefined, false);
+    await settle();
+
+    expect(state.data.value).toBeUndefined();
   });
 
   it("revalidates on bound mutate without clearing the current data first", async () => {

@@ -474,7 +474,7 @@ function useSWRVHandler<Data = unknown, Error = unknown>(
       }
 
       const now = Date.now();
-      if (!isActive(configValue) || now <= nextFocusRevalidatedAt) {
+      if (!isActive(configValue) || now < nextFocusRevalidatedAt) {
         return undefined;
       }
 
