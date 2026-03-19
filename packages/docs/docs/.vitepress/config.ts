@@ -1,4 +1,8 @@
 import { defineConfig } from "vitepress";
+import { npmCommandsMarkdownPlugin } from "vitepress-plugin-npm-commands";
+import { tabsMarkdownPlugin } from "vitepress-plugin-tabs";
+
+import { vpInstallCommandsMarkdownPlugin } from "./plugins/vp-install-tabs";
 
 export default defineConfig({
   appearance: true,
@@ -7,13 +11,23 @@ export default defineConfig({
   lang: "en-US",
   cleanUrls: true,
   lastUpdated: true,
+  markdown: {
+    config(md) {
+      md.use(tabsMarkdownPlugin);
+      md.use(npmCommandsMarkdownPlugin);
+      md.use(vpInstallCommandsMarkdownPlugin);
+    },
+  },
   head: [
     ["meta", { content: "#ffffff", media: "(prefers-color-scheme: light)", name: "theme-color" }],
     ["meta", { content: "#000000", media: "(prefers-color-scheme: dark)", name: "theme-color" }],
     ["link", { href: "/mark.svg", rel: "icon", type: "image/svg+xml" }],
   ],
   themeConfig: {
-    logo: "/mark.svg",
+    logo: {
+      alt: "SWRV logo",
+      src: "/mark.svg",
+    },
     search: {
       provider: "local",
     },

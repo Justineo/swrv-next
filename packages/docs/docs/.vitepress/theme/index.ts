@@ -1,12 +1,12 @@
 import DefaultTheme from "vitepress/theme";
 import type { Theme } from "vitepress";
+import { enhanceAppWithTabs } from "vitepress-plugin-tabs/client";
 
-import HomePage from "./components/HomePage.vue";
 import "./index.css";
 
 export default {
   extends: DefaultTheme,
   enhanceApp({ app }) {
-    app.component("HomePage", HomePage);
+    enhanceAppWithTabs(app);
   },
 } satisfies Theme;

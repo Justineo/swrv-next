@@ -36,6 +36,12 @@ catalogs:
     vitepress:
       specifier: 2.0.0-alpha.16
       version: 2.0.0-alpha.16
+    vitepress-plugin-npm-commands:
+      specifier: ^0.9.0
+      version: 0.9.0
+    vitepress-plugin-tabs:
+      specifier: ^0.8.0
+      version: 0.8.0
     vue:
       specifier: ^3.5.30
       version: 3.5.30
@@ -78,6 +84,12 @@ importers:
       vitepress:
         specifier: 'catalog:'
         version: 2.0.0-alpha.16(@types/node@24.12.0)(esbuild@0.27.4)(jiti@2.6.1)(oxc-minify@0.120.0)(postcss@8.5.8)(typescript@5.9.3)(yaml@2.8.2)
+      vitepress-plugin-npm-commands:
+        specifier: 'catalog:'
+        version: 0.9.0(vitepress-plugin-tabs@0.8.0(vitepress@2.0.0-alpha.16(@types/node@24.12.0)(esbuild@0.27.4)(jiti@2.6.1)(oxc-minify@0.120.0)(postcss@8.5.8)(typescript@5.9.3)(yaml@2.8.2))(vue@3.5.30(typescript@5.9.3)))(vitepress@2.0.0-alpha.16(@types/node@24.12.0)(esbuild@0.27.4)(jiti@2.6.1)(oxc-minify@0.120.0)(postcss@8.5.8)(typescript@5.9.3)(yaml@2.8.2))
+      vitepress-plugin-tabs:
+        specifier: 'catalog:'
+        version: 0.8.0(vitepress@2.0.0-alpha.16(@types/node@24.12.0)(esbuild@0.27.4)(jiti@2.6.1)(oxc-minify@0.120.0)(postcss@8.5.8)(typescript@5.9.3)(yaml@2.8.2))(vue@3.5.30(typescript@5.9.3))
 
   packages/swrv:
     devDependencies:
@@ -1323,6 +1335,10 @@ packages:
   jsonc-parser@3.3.1:
     resolution: {integrity: sha512-HUgH65KyejrUFPvHFPbqOY0rsFip3Bo5wb4ngvdi1EpCYWUQDC5V+Y7mZws+DLkr4M//zQJoanu1SP+87Dv1oQ==}
 
+  klona@2.0.6:
+    resolution: {integrity: sha512-dhG34DXATL5hSxJbIexCft8FChFXtmskoZYnoPWjXQuebWYCNkVeV3KkGegCK9CP1oswI/vQibS2GY7Em/sJJA==}
+    engines: {node: '>= 8'}
+
   lightningcss-android-arm64@1.32.0:
     resolution: {integrity: sha512-YK7/ClTt4kAK0vo6w3X+Pnm0D2cf2vPHbhOXdoNti1Ga0al1P4TBZhwjATvjNwLEBCnKvjJc2jQgHXH0NEwlAg==}
     engines: {node: '>= 12.0.0'}
@@ -1439,6 +1455,10 @@ packages:
     resolution: {integrity: sha512-N8SpfPUnUp1bK+PMYW8qSWdl9U+wwNWI4QKxOYDy9JAro3WMX7p2OeVRF9v+347pnakNevPmiHhNmZ2HbFA76w==}
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
     hasBin: true
+
+  npm-to-yarn@3.0.1:
+    resolution: {integrity: sha512-tt6PvKu4WyzPwWUzy/hvPFqn+uwXO0K1ZHka8az3NnrhWJDmSqI8ncWq0fkL0k/lmmi5tAC11FXwXuh0rFbt1A==}
+    engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
 
   obug@2.1.1:
     resolution: {integrity: sha512-uTqF9MuPraAQ+IsnPf366RG4cP9RtUi7MLO1N3KEc+wb0a6yKpeL0lmk2IB1jY5KHPAlTc6T/JRdC/YqxHNwkQ==}
@@ -1714,6 +1734,18 @@ packages:
         optional: true
       yaml:
         optional: true
+
+  vitepress-plugin-npm-commands@0.9.0:
+    resolution: {integrity: sha512-DS/3MRFPdOJ17SPwppopjXyomI/qL/dqXpP1KEaf/hD53Q04wgTFfmH0REXE68dWslqamTFMVdPdOwNo9QOKCA==}
+    peerDependencies:
+      vitepress: ^1.0.0
+      vitepress-plugin-tabs: ^0.8.0
+
+  vitepress-plugin-tabs@0.8.0:
+    resolution: {integrity: sha512-86FWHAuS9XCyTMDpMd5MELwp3bQyITDf/+IdZ20+iYbB8TIR8yoCp08PkDHxi4WWSVsCZ3n1uUIC7YCVhMsI3A==}
+    peerDependencies:
+      vitepress: ^1.0.0
+      vue: ^3.5.0
 
   vitepress@2.0.0-alpha.16:
     resolution: {integrity: sha512-w1nwsefDVIsje7BZr2tsKxkZutDGjG0YoQ2yxO7+a9tvYVqfljYbwj5LMYkPy8Tb7YbPwa22HtIhk62jbrvuEQ==}
@@ -2706,6 +2738,8 @@ snapshots:
 
   jsonc-parser@3.3.1: {}
 
+  klona@2.0.6: {}
+
   lightningcss-android-arm64@1.32.0:
     optional: true
 
@@ -2799,6 +2833,8 @@ snapshots:
   mrmime@2.0.1: {}
 
   nanoid@3.3.11: {}
+
+  npm-to-yarn@3.0.1: {}
 
   obug@2.1.1: {}
 
@@ -3214,6 +3250,18 @@ snapshots:
       fsevents: 2.3.3
       jiti: 2.6.1
       yaml: 2.8.2
+
+  vitepress-plugin-npm-commands@0.9.0(vitepress-plugin-tabs@0.8.0(vitepress@2.0.0-alpha.16(@types/node@24.12.0)(esbuild@0.27.4)(jiti@2.6.1)(oxc-minify@0.120.0)(postcss@8.5.8)(typescript@5.9.3)(yaml@2.8.2))(vue@3.5.30(typescript@5.9.3)))(vitepress@2.0.0-alpha.16(@types/node@24.12.0)(esbuild@0.27.4)(jiti@2.6.1)(oxc-minify@0.120.0)(postcss@8.5.8)(typescript@5.9.3)(yaml@2.8.2)):
+    dependencies:
+      klona: 2.0.6
+      npm-to-yarn: 3.0.1
+      vitepress: 2.0.0-alpha.16(@types/node@24.12.0)(esbuild@0.27.4)(jiti@2.6.1)(oxc-minify@0.120.0)(postcss@8.5.8)(typescript@5.9.3)(yaml@2.8.2)
+      vitepress-plugin-tabs: 0.8.0(vitepress@2.0.0-alpha.16(@types/node@24.12.0)(esbuild@0.27.4)(jiti@2.6.1)(oxc-minify@0.120.0)(postcss@8.5.8)(typescript@5.9.3)(yaml@2.8.2))(vue@3.5.30(typescript@5.9.3))
+
+  vitepress-plugin-tabs@0.8.0(vitepress@2.0.0-alpha.16(@types/node@24.12.0)(esbuild@0.27.4)(jiti@2.6.1)(oxc-minify@0.120.0)(postcss@8.5.8)(typescript@5.9.3)(yaml@2.8.2))(vue@3.5.30(typescript@5.9.3)):
+    dependencies:
+      vitepress: 2.0.0-alpha.16(@types/node@24.12.0)(esbuild@0.27.4)(jiti@2.6.1)(oxc-minify@0.120.0)(postcss@8.5.8)(typescript@5.9.3)(yaml@2.8.2)
+      vue: 3.5.30(typescript@5.9.3)
 
   vitepress@2.0.0-alpha.16(@types/node@24.12.0)(esbuild@0.27.4)(jiti@2.6.1)(oxc-minify@0.120.0)(postcss@8.5.8)(typescript@5.9.3)(yaml@2.8.2):
     dependencies:

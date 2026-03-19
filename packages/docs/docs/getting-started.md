@@ -13,7 +13,7 @@ Vue refs, respects Vue effect scopes, and keeps cache ownership explicit through
 Inside your Vue project directory, run:
 
 ```bash
-vp add swrv vue
+npm i swrv vue // [!=npm auto]
 ```
 
 ## Quick start

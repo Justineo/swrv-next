@@ -97,7 +97,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - `mutation.md`
   - `prefetching.md`
   - `advanced/understanding.md`
-- The docs package now includes a minimal custom home page, a SWR-shaped guide and advanced nav, a dedicated `Migrate from v1` page, and a Vue-first SSR and hydration guide built around provider-scoped clients, config-level `fallback`, and snapshot helpers.
+- The docs package now uses the default VitePress home layout, a SWR-shaped guide and advanced nav, a dedicated `Migrate from v1` page, and a Vue-first SSR and hydration guide built around provider-scoped clients, config-level `fallback`, and snapshot helpers.
 - The docs package now documents snapshot-based SSR handoff through `serializeSWRVSnapshot()` and `hydrateSWRVSnapshot()`, so the SSR story is no longer limited to manually wiring config-level `fallback`.
 - The docs package now targets the VitePress 2 prerelease line (`2.0.0-alpha.16`) instead of the VitePress 1 stable line so the docs stack stays on the intended forward-looking baseline.
 - Under the VitePress 2 plus Rolldown path used here, the docs package now also carries `oxc-minify` explicitly because VitePress requires it for production builds on that toolchain.
@@ -156,7 +156,8 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - the repo now contains a concrete stable-release checklist under `journey/logs/2026-03-19-stable-release-checklist.md`
   - the remaining non-suspense release work is now mostly outside the repo: Trusted Publisher production verification, stable release-note preparation, and the actual stable tag decision
 - the pre-stable refinement lane is now complete for the current scope: the runtime types and middleware boundaries have been simplified, the remaining code-level naming rough edges have been cleaned up, and the docs site has now completed its from-scratch SWR-structured rebuild
-- the docs site now uses a lighter custom VitePress theme layer that stays close to default VitePress docs chrome, keeps the built-in code block treatment, and applies a restrained Kong-flavored visual system with both light and dark mode
+- the docs site now uses default VitePress layout primitives, keeps the built-in code block treatment and highlighting, and limits theme customization to color-token overrides plus the SWRV logo
+- the docs site now renders install snippets through `vitepress-plugin-npm-commands`, with a local markdown extension that adds a `vp` tab beside the standard package-manager commands
 - the rebuilt docs now use Vue-correct composable examples and treat `useSWRV` usage as `setup()` or `<script setup>`-only across the narrative docs
 - the remaining non-suspense work has returned to stable-release execution rather than more in-repo feature or docs churn
 - Internal simplification work has now started after parity closure:
