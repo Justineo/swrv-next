@@ -25,21 +25,23 @@ export default useSWRV;
 export { unstable_serialize, useSWRV };
 
 export type {
+  Arguments,
   BareFetcher,
-  BoundMutator,
+  Cache,
   Compare,
   Fetcher,
-  KeySource,
+  Key,
+  KeyedMutator,
   MutatorCallback,
   MutatorOptions,
   PreloadFunction,
-  RawKey,
   RevalidateOptions,
   ScopedMutator,
   SWRVClient,
   SWRVConfiguration,
   SWRVConfigurationValue,
   SWRVFallbackSnapshot,
+  State,
   SWRVMiddleware,
   SWRVResponse,
 } from "./_internal";

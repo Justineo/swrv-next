@@ -13,12 +13,14 @@ export type SWRVInfiniteKeyLoader<Data = unknown, Key extends RawKey = RawKey> =
   previousPageData: Data | null,
 ) => Key;
 
+export type SWRVInfiniteFetcher<Data = unknown, Key extends RawKey = RawKey> = Fetcher<Data, Key>;
+
 export interface SWRVInfiniteConfiguration<
   Data = unknown,
   Error = unknown,
   Key extends RawKey = RawKey,
 > extends Omit<SWRVConfiguration<Data[], Error>, "compare" | "fetcher"> {
-  fetcher?: Fetcher<Data, Key> | null;
+  fetcher?: SWRVInfiniteFetcher<Data, Key> | null;
   initialSize?: number;
   parallel?: boolean;
   persistSize?: boolean;

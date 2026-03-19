@@ -31,10 +31,13 @@ export interface SWRVMutationConfiguration<
   ) => void;
 }
 
-export type MutationFetcher<Data = unknown, Key extends RawKey = RawKey, ExtraArg = unknown> = (
-  key: Key,
-  options: { arg: ExtraArg },
-) => Data | Promise<Data>;
+export type MutationFetcher<
+  Data = unknown,
+  Key extends RawKey = RawKey,
+  ExtraArg = unknown,
+> = Key extends null | undefined | false
+  ? never
+  : (key: Key, options: { arg: ExtraArg }) => Data | Promise<Data>;
 
 export interface TriggerWithArgs<
   Data = unknown,

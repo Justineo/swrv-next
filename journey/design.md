@@ -81,10 +81,13 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
 - Public typing and package-shape coverage are now materially stronger:
   - `useSWRV` and `useSWRVImmutable` now infer array-key fetcher arguments more precisely
   - `useSWRV` and `useSWRVImmutable` now also preserve non-null fetcher argument types for nullable string and object keys, and accept readonly tuple keys in positional fetcher signatures
+  - root exports now expose SWR-shaped aliases for `Arguments`, `Key`, `State`, `Cache`, and `KeyedMutator` instead of leaking `RawKey`, `KeySource`, and `BoundMutator`
   - public compile-time coverage exists for root and subpath APIs
   - bound and scoped mutators now expose the mutation-result type instead of collapsing everything to cached-data type, and mutator callbacks can now model different output payloads from their input snapshot
   - `useSWRVInfinite` bound mutators now also accept mutation payload types distinct from the aggregate page-array shape, which keeps `populateCache` and optimistic transform flows type-safe for both single-page and multi-page cases
+  - `useSWRVInfinite` now also infers SWR-style positional tuple fetchers from `getKey`, and the infinite entry exposes a named `SWRVInfiniteFetcher` type
   - `useSWRVMutation` now models SWR-style trigger overloads more closely, including no-arg and optional-arg triggers, hook-level `throwOnError` defaults, and separate cache-data typing for `optimisticData` and `populateCache`
+  - mutation fetchers now also strip falsy keys from their callback type, matching the runtime rule that missing mutation keys fail before fetch
   - mutation type coverage now also explicitly checks no-arg trigger typing and ensures mutation responses do not leak base-hook fields like `mutate`
   - `useSWRVSubscription` handler keys now narrow to the resolved non-nullish key type even when the key source itself is conditional
   - per-hook `fallbackData` now narrows `data.value` to a defined ref type across base and immutable hooks, including both config-only and fetcher-plus-config call forms
@@ -193,8 +196,8 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - the main divergences that should remain are Vue-native refs and watchers, provide/inject context, effect-scope enforcement, and explicit Vue SSR handoff primitives instead of React server-component paths
 - the latest 2026-03-20 source audit shows the remaining safe drift is now concentrated in public types and helper boundaries rather than core runtime behavior:
   - default compare, retry scheduling, online state tracking, slow-connection defaults, cached-error mount behavior, and `useSWRVInfinite` mount revalidation are already aligned with SWR
-  - the main remaining alignable drift is now public-type and boundary-level: `SWRVHook`, `SWRVInfiniteHook`, and `SWRVMutationHook` still under-model their real overload surfaces; root type exports still leak SWRV-specific or internal shapes such as `CacheState`, `RawKey`, `KeySource`, and `BoundMutator`; and `immutable` still carries a duplicated overload surface
-  - mutation and subscription type ownership still drift on callback key shapes, generic ordering, and subscription updater typing, and preload plus internal key-prefix ownership still differs from SWR's middleware and constants layout
+  - the largest public-type drifts from that audit are now closed: hook aliases follow their real callable surfaces, root exports use SWR-shaped public names, immutable stays a thin middleware wrapper, infinite supports positional tuple fetchers, and mutation fetchers no longer expose falsy keys
+  - the main remaining alignable drift is now helper-boundary and file-layout cleanup rather than runtime behavior: preload ownership still differs from SWR's built-in middleware path, and SWRV still keeps its Vue-specific top-level `src/index.ts` and `src/config.ts` facades instead of mirroring SWR's exact React-oriented file placement
   - the remaining intentional drift is still Vue reactive key sources and refs, explicit provider-scoped client state, provide/inject config flow, explicit SSR snapshot helpers, and the still-deferred React-only Suspense or RSC machinery
 - The main reference materials for the rebuild remain:
   - `journey/research/swr-vs-swrv.md`

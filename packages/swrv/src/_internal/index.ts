@@ -6,14 +6,18 @@ export { callFetcher, resolveKeyValue, serialize } from "./serialize";
 export { getTimestamp } from "./timestamp";
 
 export type {
+  Arguments,
   BareFetcher,
   BoundMutator,
+  Cache,
   CacheAdapter,
   CacheState,
   Compare,
   Fetcher,
+  Key,
   KeyFilter,
   KeySource,
+  KeyedMutator,
   MutatorCallback,
   MutatorOptions,
   PreloadFunction,
@@ -29,6 +33,7 @@ export type {
   SWRVConfigurationValue,
   SWRVFallbackSnapshot,
   InternalSWRVHook,
+  State,
   SWRVMiddleware,
   SWRVResponse,
 } from "./types";

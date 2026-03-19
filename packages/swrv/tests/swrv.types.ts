@@ -14,7 +14,11 @@ import useSWRVInfinite, { unstable_serialize as unstableSerializeInfinite } from
 import useSWRVMutation from "../src/mutation";
 import useSWRVSubscription from "../src/subscription";
 import type {
-  RawKey,
+  Arguments,
+  Cache,
+  Key,
+  KeyedMutator,
+  State,
   SWRVConfiguration,
   SWRVMutationConfiguration,
   SWRVMiddleware,
@@ -176,6 +180,20 @@ const validUndefinedConfigProps: SWRVConfigProps = {
 const validCallbackConfigProps: SWRVConfigProps = {
   value: () => ({}),
 };
+const keyAliasFromRef: Key = ref("/api/root-key");
+const keyAliasFromGetter: Key = () => "/api/root-getter";
+const publicStateAlias: State<string, Error> = {
+  data: "value",
+  error: undefined,
+  isLoading: false,
+  isValidating: true,
+};
+const publicCacheAlias: Cache<string, Error> = {
+  get: (_key) => publicStateAlias,
+  set: (_key, _value) => undefined,
+  delete: (_key) => undefined,
+  keys: function* () {},
+};
 
 // @ts-expect-error SWRVConfig.value should not accept null
 const _invalidNullConfigProps: SWRVConfigProps = { value: null };
@@ -221,7 +239,7 @@ const boundMutateResult = boundMutateResponse.mutate<string>(Promise.resolve("Ch
 
 const filteredNumberMutateResult = mutate<number>(
   (key) => {
-    type FilteredKey = Expect<Equal<typeof key, RawKey | undefined>>;
+    type FilteredKey = Expect<Equal<typeof key, Arguments | undefined>>;
     void (true as FilteredKey);
     return typeof key === "string" && key.startsWith("swr");
   },
@@ -329,6 +347,10 @@ const infiniteConfigFetcherResponse = useSWRVInfinite<string, never, string>(
     },
   },
 );
+const infiniteTupleFetcherResponse = useSWRVInfinite(
+  (index) => ["typed-page", index] as const,
+  async (prefix, page) => `${prefix}:${page}`,
+);
 
 const infiniteSerialized = unstableSerializeInfinite<string>((index, previousPageData) => {
   if (previousPageData) {
@@ -432,6 +454,16 @@ const mutationThrowOffByDefault = useSWRVMutation<string, Error, string, "foo">(
 );
 
 const mutationThrowOffResult = mutationThrowOffByDefault.trigger("foo");
+const maybeMutationKey = Math.random() > 0.5 ? ("maybe-mutation" as const) : null;
+const nullableMutation = useSWRVMutation<string, Error, "maybe-mutation" | null, number>(
+  maybeMutationKey,
+  async (key, { arg }: { arg: number }) => {
+    type NullableMutationKey = Expect<Equal<typeof key, "maybe-mutation">>;
+    void (true as NullableMutationKey);
+    return `${key}:${arg}`;
+  },
+);
+const nullableMutationResult = nullableMutation.trigger(1);
 const boundMutateWithTrigger = useSWRV("/some/key", async () => ({
   foo: "bar",
 })).mutate(
@@ -546,6 +578,10 @@ const typeAssertions = {
   defaultValueRevalidate: true as Expect<
     Equal<typeof SWRVConfig.defaultValue.revalidateOnFocus, boolean>
   >,
+  publicStateAlias: true as Expect<Equal<typeof publicStateAlias.data, string | undefined>>,
+  publicCacheAlias: true as Expect<
+    Equal<ReturnType<typeof publicCacheAlias.get>, State<string, Error> | undefined>
+  >,
   eventConfigInitFocus: true as Expect<
     Equal<typeof typedInitFocus, NonNullable<SWRVConfiguration<string>["initFocus"]>>
   >,
@@ -560,6 +596,9 @@ const typeAssertions = {
   >,
   boundMutateResult: true as Expect<
     Equal<Awaited<typeof boundMutateResult>, string[] | string | undefined>
+  >,
+  boundMutateAlias: true as Expect<
+    Equal<typeof boundMutateResponse.mutate, KeyedMutator<string[]>>
   >,
   filteredNumberMutateResult: true as Expect<
     Equal<Awaited<typeof filteredNumberMutateResult>, Array<number | undefined>>
@@ -593,6 +632,9 @@ const typeAssertions = {
   infiniteSerialized: true as Expect<Equal<typeof infiniteSerialized, string>>,
   infiniteConfigFetcherData: true as Expect<
     Equal<typeof infiniteConfigFetcherResponse.data.value, string[] | undefined>
+  >,
+  infiniteTupleFetcherData: true as Expect<
+    Equal<typeof infiniteTupleFetcherResponse.data.value, string[] | undefined>
   >,
   mutationArg: true as Expect<Equal<Parameters<typeof mutation.trigger>[0], { name: string }>>,
   extraParamMutationArg: true as Expect<
@@ -640,6 +682,7 @@ const typeAssertions = {
   mutationThrowOffResult: true as Expect<
     Equal<Awaited<typeof mutationThrowOffResult>, string | undefined>
   >,
+  nullableMutationResult: true as Expect<Equal<Awaited<typeof nullableMutationResult>, string>>,
   boundMutateWithTrigger: true as Expect<
     Equal<Awaited<typeof boundMutateWithTrigger>, { foo: string } | undefined>
   >,
@@ -656,6 +699,10 @@ void providerConfig;
 void middlewareConfig;
 void middlewareResponse;
 void configAccessor;
+void keyAliasFromRef;
+void keyAliasFromGetter;
+void publicStateAlias;
+void publicCacheAlias;
 void boundMutateResponse;
 void boundMutateCallbackResult;
 void boundMutateNoPopulateResult;
@@ -683,6 +730,7 @@ void infiniteMutateTransform;
 void multiPageInfiniteResponse;
 void multiPageInfiniteMutate;
 void infiniteConfigFetcherResponse;
+void infiniteTupleFetcherResponse;
 void mutation;
 void extraParamMutation;
 void extraParamTrigger;
@@ -702,6 +750,8 @@ void cachedDataMutation;
 void cachedDataMutationResult;
 void mutationThrowOffByDefault;
 void mutationThrowOffResult;
+void nullableMutation;
+void nullableMutationResult;
 void boundMutateWithTrigger;
 void subscription;
 void typeAssertions;

@@ -8,7 +8,7 @@ import useSWRV from "../index/use-swrv";
 import { getInfiniteRevalidationStore, getInfiniteSizeStore } from "./state";
 import { getInfinitePage, unstable_serialize } from "./serialize";
 
-import type { BareFetcher, RawKey } from "../_internal/types";
+import type { BareFetcher, FetcherResponse, RawKey } from "../_internal/types";
 import type {
   InternalSWRVInfiniteHook,
   SWRVInfiniteConfiguration,
@@ -17,6 +17,9 @@ import type {
 } from "./types";
 
 export { unstable_serialize };
+
+type NonArrayKey = Exclude<RawKey, readonly unknown[] | null | undefined | false>;
+type NullableKey<Key extends RawKey> = Key | null | undefined | false;
 
 export const infinite = function infinite(useSWRVNext: HookWithArgs): InternalSWRVInfiniteHook {
   return function useSWRVInfinite<Data = unknown, Error = unknown, Key extends RawKey = RawKey>(
@@ -258,17 +261,44 @@ export default function useSWRVInfinite<
   Data = unknown,
   Error = unknown,
   Key extends RawKey = RawKey,
+>(getKey: SWRVInfiniteKeyLoader<Data, Key>): SWRVInfiniteResponse<Data, Error>;
+export default function useSWRVInfinite<
+  Data = unknown,
+  Error = unknown,
+  Key extends readonly unknown[] = readonly unknown[],
 >(
-  getKey: SWRVInfiniteKeyLoader<Data, Key>,
-  fetcher: BareFetcher<Data> | null | undefined,
+  getKey: SWRVInfiniteKeyLoader<Data, NullableKey<Key>>,
+  fetcher: ((...args: [...Key]) => FetcherResponse<Data>) | null | undefined,
   config?: SWRVInfiniteConfiguration<Data, Error, Key>,
 ): SWRVInfiniteResponse<Data, Error>;
 export default function useSWRVInfinite<
   Data = unknown,
   Error = unknown,
-  Key extends RawKey = RawKey,
+  Key extends NonArrayKey = NonArrayKey,
 >(
-  getKey: SWRVInfiniteKeyLoader<Data, Key>,
+  getKey: SWRVInfiniteKeyLoader<Data, NullableKey<Key>>,
+  fetcher: ((arg: Key) => FetcherResponse<Data>) | null | undefined,
+  config?: SWRVInfiniteConfiguration<Data, Error, Key>,
+): SWRVInfiniteResponse<Data, Error>;
+export default function useSWRVInfinite<Data = unknown, Error = unknown>(
+  getKey: SWRVInfiniteKeyLoader<Data, RawKey>,
+  fetcher: BareFetcher<Data> | null | undefined,
+  config?: SWRVInfiniteConfiguration<Data, Error>,
+): SWRVInfiniteResponse<Data, Error>;
+export default function useSWRVInfinite<
+  Data = unknown,
+  Error = unknown,
+  Key extends readonly unknown[] = readonly unknown[],
+>(
+  getKey: SWRVInfiniteKeyLoader<Data, NullableKey<Key>>,
+  config: SWRVInfiniteConfiguration<Data, Error, Key>,
+): SWRVInfiniteResponse<Data, Error>;
+export default function useSWRVInfinite<
+  Data = unknown,
+  Error = unknown,
+  Key extends NonArrayKey = NonArrayKey,
+>(
+  getKey: SWRVInfiniteKeyLoader<Data, NullableKey<Key>>,
   config: SWRVInfiniteConfiguration<Data, Error, Key>,
 ): SWRVInfiniteResponse<Data, Error>;
 export default function useSWRVInfinite<Data = unknown, Error = unknown>(
@@ -294,6 +324,7 @@ export type SWRVInfiniteHook = typeof useSWRVInfinite;
 export type {
   SWRVInfiniteCompareFn,
   SWRVInfiniteConfiguration,
+  SWRVInfiniteFetcher,
   SWRVInfiniteKeyLoader,
   SWRVInfiniteKeyedMutator,
   SWRVInfiniteMutatorOptions,

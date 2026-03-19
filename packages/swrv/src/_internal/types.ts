@@ -9,6 +9,8 @@ export type RawKey =
   | false;
 
 export type KeySource<Key = RawKey> = Key | Ref<Key> | ComputedRef<Key> | (() => Key);
+export type Arguments = RawKey;
+export type Key = KeySource<Arguments>;
 
 export type FetcherResponse<Data = unknown> = Data | Promise<Data>;
 export type PreloadResponse<Data = unknown> = FetcherResponse<Data> | undefined;
@@ -66,6 +68,13 @@ export interface CacheState<Data = unknown, Error = unknown> {
 }
 
 export type AnyCacheState = CacheState<unknown, unknown>;
+export interface State<Data = unknown, Error = unknown> {
+  data?: Data;
+  error?: Error;
+  isLoading?: boolean;
+  isValidating?: boolean;
+}
+export type Cache<Data = unknown, Error = unknown> = CacheAdapter<State<Data, Error>>;
 
 export type Compare<Data> = (left: Data | undefined, right: Data | undefined) => boolean;
 export type SWRVEventInitializer = (callback: () => void) => void | (() => void);
@@ -230,6 +239,7 @@ export type BoundMutator<Data = unknown> = <MutationData = Data>(
   data?: MutationData | Promise<MutationData | undefined> | MutatorCallback<Data, MutationData>,
   options?: boolean | MutatorOptions<Data, MutationData>,
 ) => Promise<Data | MutationData | undefined>;
+export type KeyedMutator<Data = unknown> = BoundMutator<Data>;
 
 export interface SWRVResponse<Data = unknown, Error = unknown, Config = unknown> {
   data: Ref<BlockingData<Config> extends true ? Data : Data | undefined>;
