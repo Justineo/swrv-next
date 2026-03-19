@@ -32,6 +32,32 @@ const refKey = ref<[string, number]>(["team", 7]);
 const refResponse = useSWRV(refKey, async (resource, id) => `${resource}:${id}`);
 
 const immutableResponse = useSWRVImmutable(tupleKey, async (resource, id) => `${resource}:${id}`);
+const configFetcherResponse = useSWRV("/api/config" as const, {
+  fetcher: async (key) => {
+    type ConfigFetcherKey = Expect<Equal<typeof key, "/api/config">>;
+    void (true as ConfigFetcherKey);
+    return key;
+  },
+});
+const configTupleResponse = useSWRV(tupleKey, {
+  fetcher: async (resource, id) => {
+    type ConfigTupleResource = Expect<Equal<typeof resource, string>>;
+    type ConfigTupleId = Expect<Equal<typeof id, number>>;
+    void (true as ConfigTupleResource);
+    void (true as ConfigTupleId);
+    return `${resource}:${id}`;
+  },
+});
+const immutableConfigFetcherResponse = useSWRVImmutable("immutable-config" as const, {
+  fetcher: async (key) => {
+    type ImmutableConfigKey = Expect<Equal<typeof key, "immutable-config">>;
+    void (true as ImmutableConfigKey);
+    return key;
+  },
+});
+const fallbackOnlyResponse = useSWRV<string>("config-fallback" as const, {
+  fallbackData: "fallback",
+});
 const falseFetcherResponse = useSWRV<string>("false-fetcher", false);
 const snapshotClient = hydrateSWRVSnapshot(createSWRVClient(), {
   user: { id: "1" },
@@ -127,6 +153,17 @@ const multiPageInfiniteMutate = multiPageInfiniteResponse.mutate<string[]>(
       [...(currentData?.[1] ?? []), ...result],
     ],
     revalidate: false,
+  },
+);
+
+const infiniteConfigFetcherResponse = useSWRVInfinite<string, never, string>(
+  (index) => `page-${index}`,
+  {
+    fetcher: async (key: string) => {
+      type InfiniteConfigKey = Expect<Equal<typeof key, string>>;
+      void (true as InfiniteConfigKey);
+      return key;
+    },
   },
 );
 
@@ -260,6 +297,16 @@ const typeAssertions = {
   >,
   refData: true as Expect<Equal<typeof refResponse.data.value, string | undefined>>,
   immutableData: true as Expect<Equal<typeof immutableResponse.data.value, string | undefined>>,
+  configFetcherData: true as Expect<
+    Equal<typeof configFetcherResponse.data.value, "/api/config" | undefined>
+  >,
+  configTupleData: true as Expect<Equal<typeof configTupleResponse.data.value, string | undefined>>,
+  immutableConfigData: true as Expect<
+    Equal<typeof immutableConfigFetcherResponse.data.value, "immutable-config" | undefined>
+  >,
+  fallbackOnlyData: true as Expect<
+    Equal<typeof fallbackOnlyResponse.data.value, string | undefined>
+  >,
   falseFetcherData: true as Expect<
     Equal<typeof falseFetcherResponse.data.value, string | undefined>
   >,
@@ -296,6 +343,9 @@ const typeAssertions = {
     Equal<Awaited<typeof multiPageInfiniteMutate>, string[][] | string[] | undefined>
   >,
   infiniteSerialized: true as Expect<Equal<typeof infiniteSerialized, string>>,
+  infiniteConfigFetcherData: true as Expect<
+    Equal<typeof infiniteConfigFetcherResponse.data.value, string[] | undefined>
+  >,
   mutationArg: true as Expect<Equal<Parameters<typeof mutation.trigger>[0], { name: string }>>,
   mutationResult: true as Expect<Equal<Awaited<typeof mutationResult>, string>>,
   mutationWithOptions: true as Expect<Equal<Awaited<typeof mutationWithOptions>, string>>,
@@ -339,11 +389,16 @@ void preloadedTuple;
 void preloadedFunctionKey;
 void refResponse;
 void immutableResponse;
+void configFetcherResponse;
+void configTupleResponse;
+void immutableConfigFetcherResponse;
+void fallbackOnlyResponse;
 void infiniteResponse;
 void infiniteMutate;
 void infiniteMutateTransform;
 void multiPageInfiniteResponse;
 void multiPageInfiniteMutate;
+void infiniteConfigFetcherResponse;
 void mutation;
 void mutationResult;
 void mutationWithOptions;

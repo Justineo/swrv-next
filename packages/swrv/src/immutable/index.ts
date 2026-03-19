@@ -1,5 +1,6 @@
 import useSWRV from "../use-swrv";
 import { withMiddleware } from "../_internal";
+import { normalizeHookArgs } from "../_internal/normalize";
 
 import type {
   BareFetcher,
@@ -49,14 +50,43 @@ export default function useSWRVImmutable<
   fetcher: ((arg: Key) => FetcherResponse<Data>) | null | undefined,
   config?: SWRVConfiguration<Data, Error>,
 ): SWRVResponse<Data, Error>;
+export default function useSWRVImmutable<
+  Data = unknown,
+  Error = unknown,
+  Key extends readonly unknown[] = readonly unknown[],
+>(
+  key: KeySource<Key>,
+  config: SWRVConfiguration<Data, Error, (...args: Key) => FetcherResponse<Data>>,
+): SWRVResponse<Data, Error>;
+export default function useSWRVImmutable<
+  Data = unknown,
+  Error = unknown,
+  Key extends string = string,
+>(
+  key: KeySource<Key>,
+  config: SWRVConfiguration<Data, Error, (arg: Key) => FetcherResponse<Data>>,
+): SWRVResponse<Data, Error>;
+export default function useSWRVImmutable<
+  Data = unknown,
+  Error = unknown,
+  Key extends Record<string, unknown> = Record<string, unknown>,
+>(
+  key: KeySource<Key>,
+  config: SWRVConfiguration<Data, Error, (arg: Key) => FetcherResponse<Data>>,
+): SWRVResponse<Data, Error>;
 export default function useSWRVImmutable<Data = unknown, Error = unknown>(
   key: KeySource<RawKey>,
-  fetcher?: ((...args: readonly unknown[]) => FetcherResponse<Data>) | null,
+  fetcherOrConfig?:
+    | ((...args: readonly unknown[]) => FetcherResponse<Data>)
+    | SWRVConfiguration<Data, Error>
+    | null
+    | false,
   config?: SWRVConfiguration<Data, Error>,
 ): SWRVResponse<Data, Error> {
+  const [fetcher, normalizedConfig] = normalizeHookArgs(fetcherOrConfig, config);
   return useSWRVImmutableWithMiddleware(
     key,
     fetcher as BareFetcher<Data> | null | undefined,
-    config,
+    normalizedConfig,
   ) as SWRVResponse<Data, Error>;
 }

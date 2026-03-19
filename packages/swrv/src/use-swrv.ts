@@ -4,6 +4,7 @@ import { mergeConfiguration, useSWRVContext } from "./config";
 import { createScopedMutator } from "./_internal/mutate";
 import { getDevtoolsUse } from "./_internal/devtools";
 import { isServerEnvironment } from "./_internal/env";
+import { normalizeHookArgs } from "./_internal/normalize";
 import { callFetcher, resolveKeyValue, serialize } from "./_internal/serialize";
 import { getTimestamp } from "./_internal/timestamp";
 
@@ -734,16 +735,39 @@ export default function useSWRV<Data = unknown, Error = unknown>(
   fetcher: BareFetcher<Data> | null | undefined | false,
   config?: SWRVConfiguration<Data, Error>,
 ): SWRVResponse<Data, Error>;
+export default function useSWRV<
+  Data = unknown,
+  Error = unknown,
+  Key extends readonly unknown[] = readonly unknown[],
+>(
+  key: KeySource<Key>,
+  config: SWRVConfiguration<Data, Error, (...args: Key) => FetcherResponse<Data>>,
+): SWRVResponse<Data, Error>;
+export default function useSWRV<Data = unknown, Error = unknown, Key extends string = string>(
+  key: KeySource<Key>,
+  config: SWRVConfiguration<Data, Error, (arg: Key) => FetcherResponse<Data>>,
+): SWRVResponse<Data, Error>;
+export default function useSWRV<
+  Data = unknown,
+  Error = unknown,
+  Key extends Record<string, unknown> = Record<string, unknown>,
+>(
+  key: KeySource<Key>,
+  config: SWRVConfiguration<Data, Error, (arg: Key) => FetcherResponse<Data>>,
+): SWRVResponse<Data, Error>;
 export default function useSWRV<Data = unknown, Error = unknown>(
   key: KeySource<RawKey>,
-  fetcher?: BareFetcher<Data> | null | false,
+  fetcherOrConfig?: BareFetcher<Data> | SWRVConfiguration<Data, Error> | null | false,
   config?: SWRVConfiguration<Data, Error>,
 ): SWRVResponse<Data, Error> {
+  const [fetcher, normalizedConfig] = normalizeHookArgs(fetcherOrConfig, config);
   const context = useSWRVContext();
-  const middlewares = getDevtoolsUse().concat(mergeConfiguration(context.config.value, config).use);
+  const middlewares = getDevtoolsUse().concat(
+    mergeConfiguration(context.config.value, normalizedConfig).use,
+  );
 
   if (middlewares.length === 0) {
-    return useSWRVHandler(key, fetcher, config);
+    return useSWRVHandler(key, fetcher, normalizedConfig);
   }
 
   let next = useSWRVHandler as SWRVHook;
@@ -751,5 +775,5 @@ export default function useSWRV<Data = unknown, Error = unknown>(
     next = middlewares[index](next);
   }
 
-  return next(key, fetcher, config);
+  return next(key, fetcher, normalizedConfig);
 }

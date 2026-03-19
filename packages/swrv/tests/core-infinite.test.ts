@@ -10,7 +10,7 @@ describe("swrv core infinite behavior", () => {
     const state = runComposable(() =>
       useSWRVInfinite<string>(
         (index) => ["page", index] as const,
-        async (...args) => args.join(":"),
+        async (...args: readonly unknown[]) => args.map(String).join(":"),
         { initialSize: 2 },
       ),
     );

@@ -45,11 +45,7 @@ export interface CacheState<Data = unknown, Error = unknown> {
 export type Compare<Data> = (left: Data | undefined, right: Data | undefined) => boolean;
 export type SWRVEventInitializer = (callback: () => void) => void | (() => void);
 
-export interface SWRVConfiguration<
-  Data = unknown,
-  Error = unknown,
-  Fn extends BareFetcher<Data> = BareFetcher<Data>,
-> {
+export interface SWRVConfiguration<Data = unknown, Error = unknown, Fn = BareFetcher<Data>> {
   cache?: CacheAdapter<CacheState<any, any>>;
   client?: SWRVClient;
   compare?: Compare<Data>;
@@ -105,18 +101,14 @@ export interface SWRVConfiguration<
   use?: SWRVMiddleware[];
 }
 
-export type SWRVConfigurationValue<
-  Data = unknown,
-  Error = unknown,
-  Fn extends BareFetcher<Data> = BareFetcher<Data>,
-> =
+export type SWRVConfigurationValue<Data = unknown, Error = unknown, Fn = BareFetcher<Data>> =
   | SWRVConfiguration<Data, Error, Fn>
   | ((parent: ResolvedSWRVConfiguration<Data, Error, Fn>) => SWRVConfiguration<Data, Error, Fn>);
 
 export interface ResolvedSWRVConfiguration<
   Data = unknown,
   Error = unknown,
-  Fn extends BareFetcher<Data> = BareFetcher<Data>,
+  Fn = BareFetcher<Data>,
 > extends SWRVConfiguration<Data, Error, Fn> {
   compare: Compare<Data>;
   dedupingInterval: number;
