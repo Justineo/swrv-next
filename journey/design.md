@@ -148,10 +148,15 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
 - Internal simplification work has now started after parity closure:
   - web-preset defaults and event initializers now live in a dedicated `_internal/web-preset.ts` module instead of being mixed into `config.ts` and `client.ts`
   - provider-scoped runtime maps now live behind `_internal/provider-state.ts`, and cache read/write concerns now live behind `_internal/cache-helper.ts`
+  - config responsibilities are now split across a thin public `config.ts` facade plus `config-context.ts` and `config-utils.ts`
   - shared internal key prefixes for `infinite` and `subscription` now live in `_internal/key-prefix.ts`
   - repeated WeakMap store initialization for the base hook, `infinite`, and `subscription` now lives behind a shared `_internal/scoped-storage.ts` helper
+  - `infinite` and `subscription` side stores now live behind `_internal/infinite-state.ts` and `_internal/subscription-state.ts`
+  - stable scoped helper identities for `mutate` and `preload` now live in provider state instead of separate module-level helper caches
   - `createSWRVClient()` is now a much thinner facade over provider-state, cache-helper, and event binding helpers
   - the public `useSWRV` entrypoint is now a thin overload plus middleware wrapper, and the heavy runtime logic now lives in `use-swrv-handler.ts`
+  - middleware resolution and SSR missing-prefetch warnings are now isolated into `_internal/middleware-stack.ts` and `_internal/server-prefetch-warning.ts` instead of being owned directly by the public hook modules
+  - three explicit post-refactor review rounds did not reveal further safe simplification work beyond the current shape; the remaining complexity is now mostly the unavoidable base-hook runtime itself
 - The main reference materials for the rebuild remain:
   - `journey/research/swr-vs-swrv.md`
   - `journey/research/2026-03-18-swrv-next-vs-swr-and-swrv-current-state.md`
@@ -196,4 +201,4 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
 - Whether `2.0` should ship limited initial-mount `suspense: true` support, or defer fuller SWR suspense parity because later key-change fallback behavior is not cleanly achievable with Vue's current mechanics
 - Whether any remaining advanced edge semantics in `infinite`, `mutation`, and `subscription` are worth tightening further before or after the first stable `2.0` release
 - How much additional type-level precision is worth adding beyond the current public overloads once the API surface is exercised by real consumers
-- Whether the next simplification phase should fully remove the remaining `SWRVClient` facade from advanced APIs, or stop at the current helper-backed client boundary for the `2.0` line
+- Whether any future simplification effort should go beyond the current helper-backed client boundary, given that the remaining complexity is now concentrated in the core hook runtime rather than in removable cross-module abstractions

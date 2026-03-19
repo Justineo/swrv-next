@@ -31,6 +31,7 @@ function getCallbackSet<Callback>(store: Map<string, Set<Callback>>, key: string
 export function createProviderState(): SWRVClientState {
   return {
     fetches: new Map<string, FetchRecord>(),
+    helpers: {},
     listeners: new Map<string, Set<CacheListener>>(),
     latestFetchTimestamp: new Map<string, number>(),
     mutations: new Map<string, [number, number]>(),

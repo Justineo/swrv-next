@@ -12,8 +12,6 @@ import type {
   SWRVClient,
 } from "./types";
 
-const scopedPreloadStore = new WeakMap<SWRVClient, PreloadFunction>();
-
 function isPromiseLike<Data>(value: unknown): value is Promise<Data> {
   return (
     value !== null &&
@@ -54,13 +52,13 @@ export function preloadKey<Key extends RawKey = RawKey, Data = unknown>(
 }
 
 export function getScopedPreload(client: SWRVClient): PreloadFunction {
-  const current = scopedPreloadStore.get(client);
+  const current = client.state.helpers.preload;
   if (current) {
     return current;
   }
 
   const next = ((key: KeySource<RawKey>, fetcher: Fetcher<unknown, RawKey>) =>
     preloadKey(client, key, fetcher)) as PreloadFunction;
-  scopedPreloadStore.set(client, next);
+  client.state.helpers.preload = next;
   return next;
 }

@@ -273,6 +273,10 @@ export interface FetchRecord {
 
 export interface SWRVClientState {
   fetches: Map<string, FetchRecord>;
+  helpers: {
+    mutate?: ScopedMutator;
+    preload?: PreloadFunction;
+  };
   listeners: Map<string, Set<CacheListener>>;
   latestFetchTimestamp: Map<string, number>;
   mutations: Map<string, [number, number]>;

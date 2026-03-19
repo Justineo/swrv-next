@@ -2,9 +2,13 @@ import { ref, watch } from "vue";
 
 import { useSWRVConfig } from "../config";
 import { withMiddleware } from "../_internal";
+import {
+  getInfiniteRevalidationStore,
+  getInfiniteSizeStore,
+  type InfiniteRevalidateFn,
+} from "../_internal/infinite-state";
 import { createInfiniteCacheKey } from "../_internal/key-prefix";
 import { normalizeHookArgs } from "../_internal/normalize";
-import { getOrCreateScopedValue } from "../_internal/scoped-storage";
 import useSWRV from "../use-swrv";
 import { callFetcher, serialize } from "../_internal/serialize";
 
@@ -20,9 +24,6 @@ import type {
   SWRVMiddleware,
   SWRVResponse,
 } from "../_internal/types";
-
-const sizeStorage = new WeakMap<object, Map<string, number>>();
-const revalidationStorage = new WeakMap<object, Map<string, InfiniteRevalidationState<any>>>();
 
 export type SWRVInfiniteKeyLoader<Data = unknown, Key extends RawKey = RawKey> = (
   index: number,
@@ -48,9 +49,7 @@ export interface SWRVInfiniteCompareFn<Data = unknown> {
   (left: Data[] | undefined, right: Data[] | undefined): boolean;
 }
 
-export interface SWRVInfiniteRevalidateFn<Data = unknown> {
-  (data: Data | undefined, key: RawKey): boolean;
-}
+export type SWRVInfiniteRevalidateFn<Data = unknown> = InfiniteRevalidateFn<Data>;
 
 export type SWRVInfiniteKeyedMutator<Data> = <MutationData = Data>(
   data?: MutationData | Promise<MutationData | undefined> | MutatorCallback<Data, MutationData>,
@@ -71,21 +70,6 @@ export interface SWRVInfiniteResponse<Data = unknown, Error = unknown> extends O
   mutate: SWRVInfiniteKeyedMutator<Data[]>;
   setSize: (size: number | ((currentSize: number) => number)) => Promise<Data[] | undefined>;
   size: SWRVResponse<number, never>["data"];
-}
-
-interface InfiniteRevalidationState<Data = unknown> {
-  revalidate?: boolean | SWRVInfiniteRevalidateFn<Data>;
-  revalidateAll?: boolean;
-}
-
-function getSizeStore(storageKey: object) {
-  return getOrCreateScopedValue(sizeStorage, storageKey, () => new Map<string, number>());
-}
-
-function getRevalidationStore(storageKey: object) {
-  return getOrCreateScopedValue(revalidationStorage, storageKey, () => {
-    return new Map<string, InfiniteRevalidationState<any>>();
-  });
 }
 
 function serializePage<Data = unknown, Key extends RawKey = RawKey>(
@@ -114,8 +98,8 @@ const infinite = (<Data = unknown, Error = unknown>(useSWRVNext: SWRVHook) =>
     config: SWRVInfiniteConfiguration<Data, Error> = {},
   ): SWRVInfiniteResponse<Data, Error> => {
     const { client } = useSWRVConfig();
-    const sizeStore = getSizeStore(client.cache as object);
-    const revalidationStore = getRevalidationStore(client.cache as object);
+    const sizeStore = getInfiniteSizeStore(client.cache as object);
+    const revalidationStore = getInfiniteRevalidationStore(client.cache as object);
     const initialSize = config.initialSize ?? 1;
 
     const size = ref(initialSize);

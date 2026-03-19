@@ -1,5 +1,5 @@
-import { mergeConfiguration, useSWRVContext } from "./config";
-import { getDevtoolsUse } from "./_internal/devtools";
+import { useSWRVContext } from "./config";
+import { resolveMiddlewareStack } from "./_internal/middleware-stack";
 import { normalizeHookArgs } from "./_internal/normalize";
 import { useSWRVHandler, unstable_serialize } from "./use-swrv-handler";
 
@@ -124,9 +124,7 @@ export default function useSWRV<Data = unknown, Error = unknown>(
 ): SWRVResponse<Data, Error> {
   const [fetcher, normalizedConfig] = normalizeHookArgs(fetcherOrConfig, config);
   const context = useSWRVContext();
-  const middlewares = getDevtoolsUse().concat(
-    mergeConfiguration(context.config.value, normalizedConfig).use,
-  );
+  const middlewares = resolveMiddlewareStack(context.config.value, normalizedConfig);
 
   if (middlewares.length === 0) {
     return useSWRVHandler(key, fetcher, normalizedConfig);

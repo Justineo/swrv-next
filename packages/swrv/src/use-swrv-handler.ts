@@ -3,8 +3,8 @@ import { getCurrentScope, onScopeDispose, ref, watch } from "vue";
 import { mergeConfiguration, useSWRVContext } from "./config";
 import { isServerEnvironment } from "./_internal/env";
 import { getScopedMutator } from "./_internal/mutate";
-import { getOrCreateScopedValue } from "./_internal/scoped-storage";
 import { callFetcher, resolveKeyValue, serialize } from "./_internal/serialize";
+import { warnMissingServerPrefetch } from "./_internal/server-prefetch-warning";
 import { getTimestamp } from "./_internal/timestamp";
 
 import type {
@@ -25,8 +25,6 @@ type CurrentKeyState = {
   rawKey: RawKey;
   serializedKey: string;
 };
-
-const serverPrefetchWarnings = new WeakMap<object, Set<string>>();
 
 function hasDefinedValue<Data>(value: Data | undefined): value is Data {
   return value !== undefined;
@@ -82,10 +80,6 @@ function shouldRevalidateOnActivation<Data>(
   return !hasDefinedValue(currentData) || config.revalidateIfStale;
 }
 
-function getServerPrefetchWarningStore(storageKey: object): Set<string> {
-  return getOrCreateScopedValue(serverPrefetchWarnings, storageKey, () => new Set<string>());
-}
-
 export function unstable_serialize(key: RawKey | (() => RawKey)): string {
   return serialize(key)[0];
 }
@@ -103,7 +97,7 @@ export function useSWRVHandler<Data = unknown, Error = unknown>(
   const mergedConfig = () => mergeConfiguration(context.config.value, config);
   const client = context.client;
   const scopedMutate = getScopedMutator(client);
-  const serverPrefetchWarningStore = getServerPrefetchWarningStore(client.cache as object);
+  const serverPrefetchStorageKey = client.cache as object;
 
   const data = ref<Data | undefined>(config?.fallbackData);
   const error = ref<Error | undefined>();
@@ -595,13 +589,9 @@ export function useSWRVHandler<Data = unknown, Error = unknown>(
         isServerEnvironment() &&
         serializedKey &&
         !hasDefinedValue(resolvedData) &&
-        Boolean(fetcher ?? configValue.fetcher) &&
-        !serverPrefetchWarningStore.has(serializedKey)
+        Boolean(fetcher ?? configValue.fetcher)
       ) {
-        serverPrefetchWarningStore.add(serializedKey);
-        console.warn(
-          `Missing pre-initiated data for serialized key "${serializedKey}" during server-side rendering. Data fetching should be initiated on the server and provided to SWRV via fallback data or a hydrated snapshot. You can set "strictServerPrefetchWarning: false" to disable this warning.`,
-        );
+        warnMissingServerPrefetch(serverPrefetchStorageKey, serializedKey);
       }
 
       if (cached) {
