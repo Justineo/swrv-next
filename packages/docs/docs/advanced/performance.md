@@ -1,50 +1,59 @@
+---
+title: Performance
+description: Optimize SWRV performance with deduplication, compare, and Vue-native state tracking.
+---
+
 # Performance
 
-SWRV performance is built around the same core goals as SWR:
+SWRV is built around the same performance goals as SWR:
 
 - no unnecessary requests
-- no unnecessary revalidation bursts
-- no unnecessary cache churn
+- no unnecessary reactive churn
+- no unnecessary code imported
 
 ## Deduplication
 
-Hooks sharing the same serialized key dedupe in-flight requests inside the same cache boundary.
+Hooks sharing the same key dedupe in-flight requests inside the same cache boundary.
 
-That means repeated `useSWRV("/api/user", fetcher)` calls do not fan out into one request per component.
+That means repeated `useSWRV("/api/user", fetcher)` calls do not fan out into one request per
+component.
 
-## Compare only on data
+There is also a `dedupingInterval` option when you need to tune the default window.
 
-SWRV uses `compare` to preserve the current data identity when the next resolved value is equivalent.
+## Deep comparison
 
-That matters for:
+SWRV uses `compare` to preserve the current data identity when the next resolved value is
+equivalent.
 
-- reducing reactive churn
-- preserving stable data objects
-- avoiding unnecessary downstream updates
+This matters because it helps reduce reactive churn in downstream computed values, watchers, and
+components that consume the data ref.
 
-## Keep previous data
+You can override `compare` if your data contains fields such as timestamps that should be ignored in
+equality checks.
 
-`keepPreviousData` is often the right trade-off when a key changes but the screen should not drop back to an empty state.
+## Dependency collection
 
-## Poll carefully
+SWR’s React implementation has a dependency-collection optimization that avoids updating state
+slices a component never reads.
 
-`refreshInterval` is powerful, but it is still a policy choice. Prefer:
+SWRV intentionally does not port that mechanism.
 
-- deduped shared polling keys
-- longer idle intervals
-- function-style intervals when the server state can decide the cadence
+In Vue, `data`, `error`, `isLoading`, and `isValidating` are already separate refs, so Vue’s native
+dependency tracking covers the important part of that performance model:
 
-## Why SWR dependency collection is not ported
+- a template that only reads `data` is not coupled to `error`
+- a computed that only reads `isValidating` is not coupled to `data`
+- the optimization happens through Vue reactivity, not through React-specific getter collection
 
-SWR has a React-specific dependency collection mechanism that helps avoid object-level render work in React.
-
-SWRV does not port that mechanism because Vue already tracks reactive reads at the ref level. SWRV returns separate refs for `data`, `error`, `isLoading`, and `isValidating`, so Vue's native dependency tracking already covers the important part of that performance story.
-
-That means the performance work in SWRV should stay focused on:
+Performance work in SWRV should stay focused on:
 
 - dedupe
 - compare behavior
+- stable keys
 - cache boundary design
-- unnecessary watch invalidation
+- avoiding unnecessary watch invalidation
 
-not on re-creating React's getter-based state slicing.
+## Tree shaking
+
+The package is export-oriented and tree-shakeable. If you only import the core `useSWRV` API, the
+companion APIs such as `swrv/infinite` are not pulled into the bundle unless you import them.

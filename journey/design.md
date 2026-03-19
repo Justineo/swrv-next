@@ -1,6 +1,6 @@
 # SWRV Next Design Snapshot
 
-Status: Post-refinement prerelease, ready for stable-release execution
+Status: Post-docs-reset prerelease, ready for stable-release execution
 Last updated: 2026-03-19
 
 ## Mission
@@ -89,9 +89,16 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - compile-time coverage now also exercises `useSWRVConfig()` accessors, filtered mutate callback typing, readonly tuple keys, nullable-key fetcher narrowing, config-bound provider hook typing, and bound-mutate composition with mutation triggers
   - the package export map now points at the emitted `.d.mts` declaration files and is checked by a package-export smoke test
   - the remaining non-suspense partial row in the upstream SWR and legacy SWRV test matrix is now closed; only the explicitly deferred suspense lane remains open
-- The docs package now builds with VitePress and includes a guide, API overview, and a dedicated `Migrate from v1` page.
-- The docs package now also includes examples, a current-scope page, and an explicit SSR guide built around provider-scoped clients plus config-level fallback data.
-- The docs package now also documents snapshot-based SSR handoff through `serializeSWRVSnapshot()` and `hydrateSWRVSnapshot()`, so the SSR story is no longer limited to manually wiring config-level `fallback`.
+- The docs package now builds with VitePress and has been rebuilt from scratch around the SWR docs source structure.
+- The docs tree and nav now use SWR-shaped filenames and ordering, including:
+  - `arguments.md`
+  - `revalidation.md`
+  - `middleware.md`
+  - `mutation.md`
+  - `prefetching.md`
+  - `advanced/understanding.md`
+- The docs package now includes a minimal custom home page, a SWR-shaped guide and advanced nav, a dedicated `Migrate from v1` page, and a Vue-first SSR and hydration guide built around provider-scoped clients, config-level `fallback`, and snapshot helpers.
+- The docs package now documents snapshot-based SSR handoff through `serializeSWRVSnapshot()` and `hydrateSWRVSnapshot()`, so the SSR story is no longer limited to manually wiring config-level `fallback`.
 - The docs package now targets the VitePress 2 prerelease line (`2.0.0-alpha.16`) instead of the VitePress 1 stable line so the docs stack stays on the intended forward-looking baseline.
 - Under the VitePress 2 plus Rolldown path used here, the docs package now also carries `oxc-minify` explicitly because VitePress requires it for production builds on that toolchain.
 - Browser-facing end-to-end coverage now exists through a Playwright fixture app under `packages/swrv/e2e`, covering focus revalidation, reconnect revalidation, optimistic mutation UI, and subscription pushes in a real browser runtime.
@@ -148,9 +155,10 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - the docs site no longer carries a separate status page; the launch surface is documented inline through the main docs and `Migrate from v1`
   - the repo now contains a concrete stable-release checklist under `journey/logs/2026-03-19-stable-release-checklist.md`
   - the remaining non-suspense release work is now mostly outside the repo: Trusted Publisher production verification, stable release-note preparation, and the actual stable tag decision
-  - the pre-stable refinement lane is now complete for the current scope: the runtime types and middleware boundaries have been simplified, the remaining code-level naming rough edges have been cleaned up, and the docs site has been rewritten and redesigned around the SWR docs source structure
-  - the docs site now uses a custom VitePress theme layer, a SWR-shaped information architecture, sentence case across the site chrome and rewritten prose, and a restrained Kong-flavored visual system that supports both light and dark mode, uses a white light canvas plus black dark canvas, restores the built-in VitePress code-block treatment, keeps the home page to a minimal hero plus install command plus basic example, and centers the ribbon-style SWRV mark instead of heavier decorative chrome
-  - the remaining non-suspense work has returned to stable-release execution rather than more in-repo feature or docs churn
+- the pre-stable refinement lane is now complete for the current scope: the runtime types and middleware boundaries have been simplified, the remaining code-level naming rough edges have been cleaned up, and the docs site has now completed its from-scratch SWR-structured rebuild
+- the docs site now uses a lighter custom VitePress theme layer that stays close to default VitePress docs chrome, keeps the built-in code block treatment, and applies a restrained Kong-flavored visual system with both light and dark mode
+- the rebuilt docs now use Vue-correct composable examples and treat `useSWRV` usage as `setup()` or `<script setup>`-only across the narrative docs
+- the remaining non-suspense work has returned to stable-release execution rather than more in-repo feature or docs churn
 - Internal simplification work has now started after parity closure:
   - web-preset defaults and event initializers now live in a dedicated `_internal/web-preset.ts` module instead of being mixed into `config.ts` and `client.ts`
   - provider-scoped runtime maps now live behind `_internal/provider-state.ts`, and cache read/write concerns now live behind `_internal/cache-helper.ts`
@@ -197,6 +205,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
 - Freeze the typed-consumer and contributor TypeScript baseline at `>=5.5`.
 - Keep `ttl` as a supported compatibility-oriented extension in the current cut, but do not restore `serverTTL` as part of the rebuilt core API.
 - Use sentence case throughout docs, site chrome, and non-code copy unless a proper noun or code literal requires otherwise.
+- Treat the docs tree, navigation, and page depth from the upstream SWR docs source as the active baseline for future documentation work. New docs changes should preserve that structure instead of drifting back toward one-off page naming or ad hoc navigation.
 
 ## Planned Repository Shape
 

@@ -1,16 +1,29 @@
-# Data fetching
+---
+title: Data fetching
+description: Fetch data with SWRV using custom fetcher functions.
+---
 
-The core contract is:
+# Data fetching
 
 ```ts
 const { data, error } = useSWRV(key, fetcher);
 ```
 
-The fetcher receives the key and returns either a value or a promise.
+This is the core contract of SWRV. The fetcher receives the key and returns the data. If it throws,
+the error is exposed through `error`.
 
-## Fetch with `fetch`
+> [!TIP]
+> The fetcher can be omitted from the hook call if it is provided globally through
+> [`SWRVConfig`](/global-configuration).
 
-```ts
+## Fetch
+
+You can use the platform `fetch` API directly:
+
+```vue
+<script setup lang="ts">
+import useSWRV from "swrv";
+
 const fetcher = async (url: string) => {
   const response = await fetch(url);
   if (!response.ok) {
@@ -18,43 +31,70 @@ const fetcher = async (url: string) => {
   }
   return response.json();
 };
+
+const { data, error } = useSWRV("/api/data", fetcher);
+</script>
 ```
 
-## Use a shared fetcher
+If your app always uses the same request shape, move the fetcher to `SWRVConfig` and keep the hook
+calls shorter:
 
-If your app uses one fetcher everywhere, set it on `SWRVConfig`.
+```vue
+<script setup lang="ts">
+import { SWRVConfig } from "swrv";
 
-```ts
-const config = {
-  fetcher: async (url: string) => {
-    const response = await fetch(url);
-    return response.json();
-  },
+const value = {
+  fetcher: (url: string) => fetch(url).then((response) => response.json()),
 };
+</script>
+
+<template>
+  <SWRVConfig :value="value">
+    <App />
+  </SWRVConfig>
+</template>
 ```
 
-Then the hook can omit the positional fetcher:
+Now any nested `useSWRV("/api/data")` call can omit the positional fetcher.
 
-```ts
-const swrv = useSWRV("/api/user");
+## Axios
+
+SWRV works with Axios the same way:
+
+```vue
+<script setup lang="ts">
+import axios from "axios";
+import useSWRV from "swrv";
+
+const fetcher = (url: string) => axios.get(url).then((response) => response.data);
+const { data, error } = useSWRV("/api/data", fetcher);
+</script>
 ```
 
-## Disable a positional fetcher
+## GraphQL
 
-SWRV accepts `null`, `undefined`, and `false` as disabled fetchers.
+GraphQL clients work as long as the fetcher returns the data:
 
-```ts
-useSWRV("/api/user", false);
+```vue
+<script setup lang="ts">
+import { request } from "graphql-request";
+import useSWRV from "swrv";
+
+const query = `
+  query Movie {
+    movie(title: "Inception") {
+      releaseDate
+      actors {
+        name
+      }
+    }
+  }
+`;
+
+const fetcher = (document: string) => request("/api/graphql", document);
+const { data, error } = useSWRV(query, fetcher);
+</script>
 ```
 
-This is useful when you want the hook shape, cached data, or config-driven behavior without starting a request locally.
-
-## Keep fetchers pure
-
-Treat fetchers as pure request functions:
-
-- take the key
-- return data or throw an error
-- avoid mutating cache directly inside the fetcher
-
-Use `mutate` and `useSWRVMutation` for writes instead.
+If you need query variables, use tuple or object keys so the request arguments and cache key stay
+aligned. See [Arguments](/arguments).

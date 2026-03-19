@@ -1,49 +1,109 @@
+---
+title: Error handling
+description: Handle errors when fetching data with SWRV.
+---
+
 # Error handling
 
-If the fetcher throws, the error is exposed through `error`.
+If the fetcher throws, the error is exposed through `error`:
 
-```ts
-const { data, error } = useSWRV("/api/user", async (key) => {
-  const response = await fetch(key);
+```vue
+<script setup lang="ts">
+import useSWRV from "swrv";
+
+const fetcher = async (url: string) => {
+  const response = await fetch(url);
   if (!response.ok) {
     throw new Error("Failed to fetch the user.");
   }
   return response.json();
-});
+};
+
+const { data, error } = useSWRV("/api/user", fetcher);
+</script>
 ```
 
-## Keep the last good data
+## Status code and error object
 
-Like SWR, SWRV can show `data` and `error` at the same time. A revalidation may fail while the last successful data value still exists.
+Sometimes you need the parsed error payload and the HTTP status code:
 
-That makes it possible to keep the old screen state visible while still surfacing the new failure.
+```ts
+const fetcher = async (url: string) => {
+  const response = await fetch(url);
 
-## Retry behavior
+  if (!response.ok) {
+    const error = new Error("An error occurred while fetching the data.") as Error & {
+      info?: unknown;
+      status?: number;
+    };
+    error.info = await response.json();
+    error.status = response.status;
+    throw error;
+  }
 
-Automatic retries are controlled through:
+  return response.json();
+};
+```
+
+This is useful because `data` and `error` can exist at the same time. A revalidation may fail while
+the last successful data value is still available in the UI.
+
+## Error retry
+
+SWRV retries errors by default. You can disable or customize the behavior with:
 
 - `shouldRetryOnError`
 - `errorRetryCount`
 - `errorRetryInterval`
 - `onErrorRetry`
 
-```ts
+```vue
+<script setup lang="ts">
+import useSWRV from "swrv";
+
 useSWRV("/api/user", fetcher, {
-  errorRetryCount: 2,
-  shouldRetryOnError: (error) => error.message !== "Not found",
-});
-```
+  onErrorRetry(error, key, _config, revalidate, { retryCount }) {
+    const typedError = error as Error & { status?: number };
 
-## Lifecycle callbacks
+    if (typedError.status === 404) {
+      return;
+    }
 
-Use `onError` for side effects such as logging or toasts.
+    if (retryCount >= 3) {
+      return;
+    }
 
-```ts
-useSWRV("/api/user", fetcher, {
-  onError(error) {
-    console.error(error);
+    setTimeout(() => {
+      void revalidate({ retryCount });
+    }, 5000);
   },
 });
+</script>
 ```
 
-For mutation flows, see [Mutation and revalidation](/mutation-and-revalidation).
+## Global error report
+
+If you want a single place to report errors, register `onError` through `SWRVConfig`:
+
+```vue
+<script setup lang="ts">
+import { SWRVConfig } from "swrv";
+
+const value = {
+  onError(error: Error & { status?: number }, key: string) {
+    if (error.status !== 403 && error.status !== 404) {
+      console.error("Report this error", key, error);
+    }
+  },
+};
+</script>
+
+<template>
+  <SWRVConfig :value="value">
+    <App />
+  </SWRVConfig>
+</template>
+```
+
+Use hook-level `onError` when the effect is local to one request, and config-level `onError` when
+you want one shared reporting path for a whole subtree.

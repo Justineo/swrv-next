@@ -1,33 +1,31 @@
+---
+title: Migrate from v1
+description: Move an existing SWRV v1 codebase to the rebuilt 2.x line.
+---
+
 # Migrate from v1
 
-SWRV 2 is a rewrite, not an incremental patch over the legacy line. Migrate with that assumption.
+SWRV 2 is a rewrite, not an incremental patch over the legacy line. Treat the migration as a move
+to a new runtime model rather than a minor dependency bump.
 
 ## What changed structurally
 
-- the repo is now a Vite-era monorepo with separate library and docs packages
-- runtime state is scoped by `SWRVConfig` provider boundaries instead of leaning on one global cache
-- the public surface follows the same major capability groups as SWR: base hook, immutable, mutation,
-  infinite, and subscription
-- tests, type coverage, packaging checks, and release automation are now part of the normal delivery path
+- the repo is now a modern monorepo with separate library and docs packages
+- cache state is scoped through `SWRVConfig` boundaries instead of leaning on one implicit global
+  cache
+- the public surface follows SWR’s capability groups more closely: base hook, immutable, infinite,
+  mutation, and subscription
+- types, tests, packaging checks, and release automation are first-class project scope
 
 ## Main API changes
 
-- `SWRVConfig` is now the center of cache boundaries, shared fetchers, fallback data, middleware,
-  and platform hooks
-- `fallback` and snapshot hydration replace the older ad hoc SSR handoff patterns
-- `useSWRVInfinite`, `useSWRVMutation`, and `useSWRVSubscription` are maintained first-class
-  entry points
-- `ttl` remains available, but it is now a compatibility-oriented extension instead of the center
-  of cache behavior
+- `SWRVConfig` is now the center of shared fetchers, fallback data, middleware, and cache boundaries
+- `fallback` and snapshot hydration replace older ad hoc SSR handoff patterns
+- `useSWRVInfinite`, `useSWRVMutation`, and `useSWRVSubscription` are first-class maintained entry
+  points
+- `ttl` still exists, but it is now a compatibility-oriented extension instead of the center of the
+  cache model
 - `serverTTL` is not part of the rebuilt core API
-
-## Migration checklist
-
-1. Wrap application boundaries that need shared cache state in `SWRVConfig`.
-2. Move imperative write paths to `mutate` or `useSWRVMutation`.
-3. Replace legacy pagination helpers with `useSWRVInfinite`.
-4. Move SSR initial data to `fallback` or snapshot hydration.
-5. Re-check custom cache access code. Provider-scoped helpers are the supported path now.
 
 ## Common replacements
 
@@ -39,9 +37,69 @@ SWRV 2 is a rewrite, not an incremental patch over the legacy line. Migrate with
 | server-prefetch-only initial state | `fallback` or snapshot hydration                |
 | `serverTTL`-driven SSR behavior    | explicit Vue SSR handoff                        |
 
+## Migration checklist
+
+1. Add a root `SWRVConfig` boundary.
+2. Move shared fetcher logic into that boundary.
+3. Replace direct cache writes with `mutate` or `useSWRVMutation`.
+4. Replace legacy pagination flows with `useSWRVInfinite`.
+5. Move SSR initial data to `fallback` or snapshot hydration.
+6. Re-check custom cache access code and switch to `useSWRVConfig()` where needed.
+
+## Migrate by concern, not by page
+
+For larger apps, it is usually safer to migrate one concern at a time:
+
+### 1. Cache boundaries
+
+Start by wrapping the app, route subtree, or embedded widget in `SWRVConfig`:
+
+```vue
+<script setup lang="ts">
+import { SWRVConfig, createSWRVClient } from "swrv";
+
+const value = {
+  client: createSWRVClient(),
+  fetcher: (url: string) => fetch(url).then((response) => response.json()),
+};
+</script>
+
+<template>
+  <SWRVConfig :value="value">
+    <App />
+  </SWRVConfig>
+</template>
+```
+
+### 2. Reads
+
+Most basic `useSWRV` calls can migrate directly, but check:
+
+- key shape
+- shared fetcher location
+- SSR expectations
+- any assumptions about immediate server fetching
+
+### 3. Writes
+
+Move imperative update paths to `mutate` or `useSWRVMutation`.
+
+### 4. Pagination and live data
+
+Replace bespoke paginated cache management with `useSWRVInfinite`, and move push-based sources to
+`useSWRVSubscription`.
+
+## Things to re-check during migration
+
+- tuple fetchers are positional in SWRV 2, so confirm helper signatures when moving shared
+  fetchers
+- SSR hooks no longer start network requests on the server
+- custom provider or cache code should be tested inside the new scoped client model
+- old tests that depended on one global cache should be updated to create a fresh client per test
+
 ## Rollout advice
 
-If your v1 codebase is large, migrate by cache boundary instead of by page. Start with a root
-`SWRVConfig`, move shared fetcher logic there, then update mutation and pagination flows one area at
-a time. That keeps the migration legible and makes it easier to verify behavior against the new
+If the codebase is large, migrate by boundary instead of by route. Start with one `SWRVConfig`
+boundary, move shared fetcher logic there, then convert mutation, pagination, and SSR handoff area
+by area. That keeps the migration legible and makes it easier to verify behavior against the new
 runtime.

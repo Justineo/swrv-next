@@ -1,44 +1,124 @@
+---
+title: Middleware
+description: Extend SWRV hooks with reusable middleware.
+---
+
 # Middleware
 
 Middleware lets you wrap SWRV hooks the same way SWR does.
 
-## Basic shape
+## Usage
+
+Register middleware either per hook or through `SWRVConfig`:
 
 ```ts
-const logger = (useSWRNext) => (key, fetcher, config) => {
+const logger = (useSWRVNext) => (key, fetcher, config) => {
   console.log("swrv key", key);
-  return useSWRNext(key, fetcher, config);
+  return useSWRVNext(key, fetcher, config);
 };
 ```
 
-Register middleware:
+```vue
+<script setup lang="ts">
+import useSWRV, { SWRVConfig } from "swrv";
 
-- per hook with `config.use`
-- per subtree with `SWRVConfig`
+const logger = (useSWRVNext) => (key, fetcher, config) => {
+  console.log("swrv key", key);
+  return useSWRVNext(key, fetcher, config);
+};
 
-## Order
+const value = { use: [logger] };
+const user = useSWRV("/api/user", fetcher, { use: [logger] });
+</script>
 
-Middleware composes in SWR order:
+<template>
+  <SWRVConfig :value="value">
+    <App />
+  </SWRVConfig>
+</template>
+```
 
-- parent `SWRVConfig` middleware first
-- nested `SWRVConfig` middleware next
-- per-hook middleware last
+## API
 
-## Original keys
+A middleware receives the next SWRV hook and returns a wrapped version of it:
 
-For `useSWRVInfinite`, `useSWRVMutation`, and `useSWRVSubscription`, middleware still receives the original public key shape instead of the internal serialized helper key.
+```ts
+const middleware = (useSWRVNext) => (key, fetcher, config) => {
+  return useSWRVNext(key, fetcher, config);
+};
+```
 
-That makes middleware useful for logging, auth decoration, and instrumentation across the companion APIs too.
+The wrapped call still receives the original public key shape. That matters for:
 
-## Built-in immutable middleware
+- tuple keys
+- object keys
+- function keys
+- `useSWRVInfinite`
+- `useSWRVMutation`
+- `useSWRVSubscription`
 
-`swrv/immutable` uses the same middleware model to turn off stale revalidation, focus revalidation, reconnect revalidation, and polling.
+Middleware can inspect or replace the fetcher, inject options, or wrap the returned response.
 
-## Devtools hooks
+## Extend
 
-SWRV also exposes a lightweight built-in debug surface through:
+Middleware is composable, so one middleware can extend another:
 
-- `window.__SWRV_DEVTOOLS_USE__`
-- `window.__SWRV_DEVTOOLS_VUE__`
+```ts
+const withTiming = (useSWRVNext) => (key, fetcher, config) => {
+  const timedFetcher =
+    fetcher &&
+    (async (...args: Parameters<typeof fetcher>) => {
+      const startedAt = performance.now();
+      try {
+        return await fetcher(...args);
+      } finally {
+        console.log("request time", performance.now() - startedAt);
+      }
+    });
 
-See [Advanced > Devtools](/advanced/devtools).
+  return useSWRVNext(key, timedFetcher ?? fetcher, config);
+};
+```
+
+## Multiple middleware
+
+Middleware order matches SWR’s composition order:
+
+1. parent `SWRVConfig` middleware
+2. nested `SWRVConfig` middleware
+3. per-hook middleware
+
+This makes it easy to keep broad behavior at the app boundary and local behavior at the hook call.
+
+## Examples
+
+### Request logger
+
+```ts
+const logger = (useSWRVNext) => (key, fetcher, config) => {
+  console.log("request", key);
+  return useSWRVNext(key, fetcher, config);
+};
+```
+
+### Set shared defaults
+
+```ts
+const noFocusRevalidate = (useSWRVNext) => (key, fetcher, config) => {
+  return useSWRVNext(key, fetcher, {
+    ...config,
+    revalidateOnFocus: false,
+  });
+};
+```
+
+### Prefer built-in features where they exist
+
+SWR’s middleware examples sometimes demonstrate features that SWRV already supports directly:
+
+- use `keepPreviousData` instead of custom “laggy” middleware
+- rely on built-in key serialization for object keys
+- use `swrv/immutable` or the named `immutable` middleware for immutable resources
+
+That keeps middleware focused on cross-cutting concerns such as logging, auth, analytics, or
+debugging.

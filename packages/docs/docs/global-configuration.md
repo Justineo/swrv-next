@@ -1,83 +1,125 @@
+---
+title: Global configuration
+description: Configure default options for all SWRV hooks.
+---
+
 # Global configuration
 
-`SWRVConfig` provides shared configuration to every hook inside the boundary.
+`SWRVConfig` provides shared configuration for every SWRV hook inside the boundary.
+
+```vue
+<script setup lang="ts">
+import { SWRVConfig } from "swrv";
+
+const value = {
+  refreshInterval: 3000,
+  fetcher: (url: string) => fetch(url).then((response) => response.json()),
+};
+</script>
+
+<template>
+  <SWRVConfig :value="value">
+    <Dashboard />
+  </SWRVConfig>
+</template>
+```
+
+Inside `Dashboard`, any `useSWRV("/api/projects")` call can reuse that fetcher and polling policy.
+
+## Nesting configurations
+
+Nested `SWRVConfig` boundaries merge with the parent configuration.
+
+### Object configuration example
+
+```vue
+<template>
+  <SWRVConfig :value="{ dedupingInterval: 100, refreshInterval: 100, fallback: { a: 1, b: 1 } }">
+    <SWRVConfig :value="{ dedupingInterval: 200, fallback: { a: 2, c: 2 } }">
+      <Page />
+    </SWRVConfig>
+  </SWRVConfig>
+</template>
+```
+
+The nested boundary resolves to:
+
+```ts
+{
+  dedupingInterval: 200,
+  refreshInterval: 100,
+  fallback: { a: 2, b: 1, c: 2 },
+}
+```
+
+Primitive values override. Mergeable objects such as `fallback` are merged.
+
+### Functional configuration example
+
+You can also derive the next configuration from the parent:
+
+```ts
+const value = (parent: ReturnType<typeof useSWRVConfig>["config"]) => ({
+  ...parent,
+  dedupingInterval: parent.dedupingInterval * 5,
+});
+```
+
+This is useful when you want to preserve most of the parent settings but adjust a few values for a
+local subtree.
+
+## Extra APIs
+
+### Cache provider
+
+`SWRVConfig` can also define cache ownership:
+
+- `client`: provide a full SWRV client
+- `cache`: provide a specific cache instance
+- `provider`: create or extend a cache provider from the parent cache
+
+These options are useful when you need one cache per app, test, or SSR request.
 
 ```vue
 <script setup lang="ts">
 import { SWRVConfig, createSWRVClient } from "swrv";
 
 const client = createSWRVClient();
-const value = {
-  client,
-  dedupingInterval: 1500,
-  fetcher: async (url: string) => {
-    const response = await fetch(url);
-    return response.json();
-  },
-};
 </script>
 
 <template>
-  <SWRVConfig :value="value">
+  <SWRVConfig :value="{ client }">
     <App />
   </SWRVConfig>
 </template>
 ```
 
-## Shared fetchers
+### Access to global configurations
 
-Provide `fetcher` here when most requests in the subtree should use the same network logic.
-
-## Fallback data
-
-Use `fallback` for config-level initial data keyed by the serialized SWRV key.
+Use `useSWRVConfig()` inside `setup()` to access the active scoped helpers:
 
 ```ts
-const fallback = {
-  "/api/user": { id: "1", name: "Ada" },
-};
+const { cache, client, config, mutate, preload } = useSWRVConfig();
 ```
 
-This is the right tool for SSR handoff and request-scoped initial data.
-
-## Provider and cache boundaries
-
-You can isolate or extend cache state with:
-
-- `client`
-- `cache`
-- `provider`
-
-Use these when you need explicit cache ownership for one app, one test, or one SSR request.
+This is the correct way to reach the active cache boundary. If a custom provider is in use, the
+scoped `mutate` returned here stays aligned with that provider.
 
 ## Middleware
 
-Use `value.use` to register middleware for everything inside the boundary.
+Register middleware at the boundary with `value.use`:
 
 ```ts
-const logger = (useSWRNext) => (key, fetcher, config) => {
+const logger = (useSWRVNext) => (key, fetcher, config) => {
   console.log("swrv key", key);
-  return useSWRNext(key, fetcher, config);
+  return useSWRVNext(key, fetcher, config);
 };
 ```
 
-## Functional values
-
-`value` can also be a function. It receives the parent config and returns a replacement object.
-
-```ts
-const scopedValue = (parent: ReturnType<typeof useSWRVConfig>["config"]) => ({
-  ...parent,
-  dedupingInterval: 500,
-});
+```vue
+<SWRVConfig :value="{ use: [logger] }">
+  <App />
+</SWRVConfig>
 ```
 
-## useSWRVConfig
-
-Inside a boundary, `useSWRVConfig()` gives you the active:
-
-- `cache`
-- `client`
-- `config`
-- `mutate`
-- `preload`
+See [Middleware](/middleware) for the full middleware model.

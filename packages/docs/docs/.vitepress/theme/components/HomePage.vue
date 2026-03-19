@@ -60,13 +60,12 @@ function toggleAppearance() {
         <p class="home-kicker">An open source Kong project</p>
         <h1>Stale-while-revalidate for Vue.</h1>
         <p class="home-lead">
-          SWRV follows SWR closely while keeping Vue-native refs, explicit cache boundaries, and a
-          runtime that fits naturally into Vue applications.
+          SWRV follows SWR closely while staying native to Vue composables, refs, and explicit cache
+          boundaries.
         </p>
         <div class="home-links">
           <a class="home-link home-link--primary" href="/getting-started">Get started</a>
           <a class="home-link" href="/api">API</a>
-          <a class="home-link" href="/migrate-from-v1">Migrate from v1</a>
         </div>
         <div class="home-install">
           <span class="home-install__label">Install</span>
@@ -77,14 +76,21 @@ function toggleAppearance() {
       <aside class="home-sample">
         <p class="home-sample__label">Basic usage</p>
         <div class="home-code">
-          <pre><code>import useSWRV from "swrv";
+          <pre><code>&lt;script setup lang="ts"&gt;
+import useSWRV from "swrv";
 
-const { data, error, isLoading } = useSWRV(
-  "/api/user",
-  (key) =&gt; fetch(key).then((response) =&gt; response.json()),
-);</code></pre>
+const fetcher = (url: string) =&gt; fetch(url).then((response) =&gt; response.json());
+
+const { data, error, isLoading } = useSWRV("/api/user", fetcher);
+&lt;/script&gt;
+
+&lt;template&gt;
+  &lt;p v-if="error"&gt;Failed to load.&lt;/p&gt;
+  &lt;p v-else-if="isLoading"&gt;Loading…&lt;/p&gt;
+  &lt;p v-else&gt;Hello {{ data?.name }}&lt;/p&gt;
+&lt;/template&gt;</code></pre>
         </div>
-        <p class="home-sample__note">Read the docs like SWR. Use it like Vue.</p>
+        <p class="home-sample__note">Use it inside setup. Read it like SWR.</p>
       </aside>
     </section>
   </main>

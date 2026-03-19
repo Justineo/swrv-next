@@ -1,47 +1,95 @@
+---
+title: Server rendering and hydration
+description: Use SWRV with Vue SSR and explicit hydration handoff.
+---
+
 # Server rendering and hydration
 
-The rebuilt SWRV SSR story is explicit: server rendering reads provided data, but does not silently start network requests from hooks.
+SWRV’s SSR model is explicit: hooks can read prefetched data on the server, but they do not start
+network requests automatically during server rendering.
 
 ## Hooks do not fetch on the server
 
 During server rendering:
 
-- `useSWRV` reads `fallbackData`
-- `useSWRV` reads config `fallback`
-- `useSWRV` reads hydrated snapshots
-- hooks do not start fetches
+- `useSWRV` can read `fallbackData`
+- `useSWRV` can read config-level `fallback`
+- `useSWRV` can read hydrated snapshots
+- hooks do not start new fetches
 
-That keeps request ownership explicit and avoids accidental server-side waterfalls.
+This keeps request ownership explicit and avoids accidental server-side waterfalls.
 
-## Use config fallback for initial data
+## Request-scoped clients
+
+Create one SWRV client per SSR request:
+
+```ts
+import { createSWRVClient } from "swrv";
+
+export function createRequestContext() {
+  return {
+    swrv: createSWRVClient(),
+  };
+}
+```
+
+Then provide that client through `SWRVConfig` when you render the app.
+
+## Pre-rendering with default data
+
+If you already have the data on the server, pass it through `fallback`:
 
 ```vue
 <script setup lang="ts">
 import { SWRVConfig } from "swrv";
 
-const fallback = {
-  "/api/user": { id: "1", name: "Ada" },
+const user = { id: "1", name: "Ada" };
+
+const value = {
+  fallback: {
+    "/api/user": user,
+  },
 };
 </script>
 
 <template>
-  <SWRVConfig :value="{ fallback }">
+  <SWRVConfig :value="value">
     <App />
   </SWRVConfig>
 </template>
 ```
 
-## Serialize and hydrate a snapshot
+The hook reads that data during SSR and then resumes normal client-side revalidation after
+hydration.
+
+### Complex keys
+
+When the key is not a simple string, use `unstable_serialize`:
+
+```ts
+import { unstable_serialize } from "swrv";
+
+const key = ["/api/projects", { page: 1, status: "open" }] as const;
+
+const value = {
+  fallback: {
+    [unstable_serialize(key)]: await fetchProjects(),
+  },
+};
+```
+
+## Snapshot hydration
+
+If you want to pre-fill a full request-scoped client, serialize and hydrate a snapshot:
 
 ```ts
 import { createSWRVClient, hydrateSWRVSnapshot, serializeSWRVSnapshot } from "swrv";
-```
 
-On the server:
+const serverClient = createSWRVClient();
 
-```ts
-const client = createSWRVClient();
-const snapshot = serializeSWRVSnapshot(client);
+// ...seed the client through mutate or other server-side preparation
+
+const snapshot = serializeSWRVSnapshot(serverClient);
 ```
 
 On the client:
@@ -50,12 +98,26 @@ On the client:
 const client = hydrateSWRVSnapshot(createSWRVClient(), snapshot);
 ```
 
-Pass the hydrated client through `SWRVConfig`.
+Then provide that hydrated client through `SWRVConfig`.
+
+## Client-side data fetching after hydration
+
+After hydration, SWRV behaves the same way it does in a purely client-rendered app:
+
+- cached data is available immediately
+- revalidation follows the normal mount, focus, reconnect, and interval rules
+- mutations and subscriptions stay scoped to the hydrated client boundary
 
 ## Strict warnings for missing handoff data
 
-If you want a warning when a server-rendered hook reaches a key without fallback or snapshot data, enable `strictServerPrefetchWarning`.
+Enable `strictServerPrefetchWarning` when you want to find keys that are rendered on the server
+without fallback or snapshot data:
 
-## What is deferred
+```ts
+const value = {
+  strictServerPrefetchWarning: true,
+};
+```
 
-This lane intentionally does not add a first-party Nuxt module or a suspense-based SSR story.
+This is especially useful while you are incrementally moving an SSR app toward an explicit data
+handoff model.
