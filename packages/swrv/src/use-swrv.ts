@@ -2,6 +2,7 @@ import { getCurrentScope, onScopeDispose, ref, watch } from "vue";
 
 import { mergeConfiguration, useSWRVContext } from "./config";
 import { createScopedMutator } from "./_internal/mutate";
+import { getDevtoolsUse } from "./_internal/devtools";
 import { callFetcher, resolveKeyValue, serialize } from "./_internal/serialize";
 import { getTimestamp } from "./_internal/timestamp";
 
@@ -701,7 +702,7 @@ export default function useSWRV<Data = unknown, Error = unknown>(
   config?: SWRVConfiguration<Data, Error>,
 ): SWRVResponse<Data, Error> {
   const context = useSWRVContext();
-  const middlewares = mergeConfiguration(context.config.value, config).use;
+  const middlewares = getDevtoolsUse().concat(mergeConfiguration(context.config.value, config).use);
 
   if (middlewares.length === 0) {
     return useSWRVHandler(key, fetcher, config);
