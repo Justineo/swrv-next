@@ -27,6 +27,11 @@ AI-connectivity theme without drifting into generic gradient-heavy UI.
 - improved brand-button contrast in dark mode
 - simplified the home page to only the core hero copy, installation command, and minimal usage
   example
+- switched the light theme background to pure white and softened the light-mode primary accent
+- restored the default VitePress docs code-block presentation instead of keeping the custom block
+  chrome
+- added an explicit light and dark toggle to the custom home header
+- aligned the footer credit copy to the requested Apache and Kong wording
 
 ## Validation
 

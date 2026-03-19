@@ -1,10 +1,35 @@
 <script setup lang="ts">
+import { computed, onMounted, ref } from "vue";
+
 const homeNav = [
   { href: "/getting-started", label: "Docs" },
   { href: "/api", label: "API" },
   { href: "/migrate-from-v1", label: "Migrate from v1" },
   { href: "https://github.com/Kong/swrv", label: "GitHub" },
 ];
+
+const isDark = ref(false);
+
+const appearanceLabel = computed(() =>
+  isDark.value ? "Switch to light mode" : "Switch to dark mode",
+);
+const appearanceSymbol = computed(() => (isDark.value ? "☀" : "☾"));
+
+onMounted(() => {
+  isDark.value = document.documentElement.classList.contains("dark");
+});
+
+function toggleAppearance() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const nextAppearance = isDark.value ? "light" : "dark";
+
+  window.localStorage.setItem("vitepress-theme-appearance", nextAppearance);
+  document.documentElement.classList.toggle("dark", nextAppearance === "dark");
+  isDark.value = nextAppearance === "dark";
+}
 </script>
 
 <template>
@@ -17,6 +42,17 @@ const homeNav = [
       <nav aria-label="Home" class="home-header__nav">
         <a v-for="item in homeNav" :key="item.href" :href="item.href">{{ item.label }}</a>
       </nav>
+      <button
+        :aria-label="appearanceLabel"
+        :title="appearanceLabel"
+        class="home-appearance"
+        type="button"
+        @click="toggleAppearance"
+      >
+        <span class="home-appearance__track">
+          <span class="home-appearance__thumb">{{ appearanceSymbol }}</span>
+        </span>
+      </button>
     </header>
 
     <section class="home-hero">

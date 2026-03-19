@@ -8,7 +8,7 @@ export default defineConfig({
   cleanUrls: true,
   lastUpdated: true,
   head: [
-    ["meta", { content: "#f7f8f3", media: "(prefers-color-scheme: light)", name: "theme-color" }],
+    ["meta", { content: "#ffffff", media: "(prefers-color-scheme: light)", name: "theme-color" }],
     ["meta", { content: "#000000", media: "(prefers-color-scheme: dark)", name: "theme-color" }],
     ["link", { href: "/mark.svg", rel: "icon", type: "image/svg+xml" }],
   ],
@@ -28,8 +28,8 @@ export default defineConfig({
     ],
     socialLinks: [{ icon: "github", link: "https://github.com/Kong/swrv" }],
     footer: {
-      message: "Maintained by Kong Inc. and the SWRV contributors.",
-      copyright: "Released under the Apache-2.0 license.",
+      message: "Released under the Apache-2.0 License.",
+      copyright: "Copyright © 2020-present Kong, Inc.",
     },
     lastUpdatedText: "Last updated",
     outlineTitle: "On this page",
