@@ -1,7 +1,7 @@
 # Pre-stable refinement plan
 
 Date: 2026-03-19
-Status: Active
+Status: Completed
 
 ## Why this plan exists
 
@@ -15,6 +15,11 @@ Before the first stable release, `swrv-next` now needs one more deliberate produ
 4. a full docs-site visual redesign and copy polish
 
 This plan intentionally reopens in-repo work before stable release. It supersedes the narrower "only release execution remains" view.
+
+Completion note:
+
+- The type cleanup, final simplification pass, docs IA rebuild, docs redesign, and sentence-case sweep are complete for the current scope.
+- Validation closed cleanly with `vp run ready`, pack dry-runs, publish dry-runs, and a browser review of the rebuilt docs site.
 
 ## External references
 

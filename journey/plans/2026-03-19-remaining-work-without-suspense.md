@@ -3,10 +3,10 @@
 Date: 2026-03-19
 Status: Active
 
-Superseded note:
+Status note:
 
-- This plan reflects the narrower release-closure view that existed before the pre-stable refinement lane was reopened.
-- The current active plan for in-repo work is `journey/plans/2026-03-19-pre-stable-refinement-plan.md`.
+- This file described the release-closure lane before the pre-stable refinement pass reopened in-repo work.
+- The refinement pass in `journey/plans/2026-03-19-pre-stable-refinement-plan.md` is now complete, so this file once again reflects the active non-suspense remaining work.
 
 ## Context
 
