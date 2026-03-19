@@ -12,6 +12,7 @@ import {
 import { createSWRVClient } from "./_internal/client";
 import { getScopedMutator } from "./_internal/mutate";
 import { getScopedPreload } from "./_internal/preload";
+import { attachProviderEvents } from "./_internal/provider-state";
 import {
   createClientFromConfiguration,
   mergeConfiguration,
@@ -20,7 +21,6 @@ import {
 import { INTERNAL_DEFAULT_CONFIGURATION } from "./config-utils";
 
 import type {
-  CacheAdapter,
   SWRVConfigAccessor,
   SWRVConfigComponent,
   SWRVConfigurationValue,
@@ -68,8 +68,9 @@ export const SWRVConfig = defineComponent({
   setup(props, { slots }) {
     const parentContext = useSWRVContext();
     const resolvedValue = () => resolveConfigurationValue(parentContext.config.value, props.value);
+    const initialValue = resolvedValue();
     const { client, ownsClient } = createClientFromConfiguration(
-      resolvedValue(),
+      initialValue,
       parentContext.client,
     );
     const resolvedConfig = computed(() => {
@@ -92,13 +93,20 @@ export const SWRVConfig = defineComponent({
       });
     }
 
+    if (!ownsClient && (initialValue?.initFocus || initialValue?.initReconnect)) {
+      const releaseEvents = attachProviderEvents(client.state, {
+        initFocus: initialValue.initFocus,
+        initReconnect: initialValue.initReconnect,
+      });
+
+      onScopeDispose(() => {
+        releaseEvents();
+      });
+    }
+
     return () => slots.default?.();
   },
 }) as SWRVConfigComponent;
-
-export function createCacheProvider<Value = unknown>(): CacheAdapter<Value> {
-  return new Map<string, Value>();
-}
 
 export const GLOBAL_SWRV_CLIENT = defaultClient;
 

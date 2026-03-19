@@ -2,6 +2,7 @@ import { ref } from "vue";
 import { describe, expect, it, vi } from "vite-plus/test";
 
 import { createSWRVClient, mutate, preload, useSWRV, useSWRVConfig, useSWRVInfinite } from "../src";
+import { serialize } from "../src/_internal";
 import { unstable_serialize as unstableSerializeInfinite } from "../src/infinite";
 import { flush, mountWithConfig, runComposable, settle } from "./test-utils";
 
@@ -170,6 +171,43 @@ describe("swrv core infinite behavior", () => {
 
     expect(requests).toBe(2);
     expect(state.data.value).toEqual(["page 0, ", "page 1, "]);
+  });
+
+  it("revalidates cached pages on mount when revalidateOnMount is true", async () => {
+    const key = `infinite-revalidate-on-mount-${Date.now()}`;
+    const client = createSWRVClient();
+    const getKey = (index: number) => [key, index] as const;
+    const pageKey = serialize(getKey(0))[0];
+    const infiniteKey = unstableSerializeInfinite(getKey);
+    const fetcher = vi.fn(
+      async (...args: readonly unknown[]) => `${String(args[0])}:${String(args[1])}`,
+    );
+
+    client.setState(pageKey, {
+      data: "cached",
+      error: undefined,
+      isLoading: false,
+      isValidating: false,
+    });
+    client.setState(infiniteKey, {
+      data: ["cached"],
+      error: undefined,
+      isLoading: false,
+      isValidating: false,
+    });
+
+    const getState = mountWithConfig(
+      () =>
+        useSWRVInfinite<string>(getKey, fetcher, {
+          revalidateOnMount: true,
+        }),
+      { client },
+    );
+
+    await settle();
+
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(getState().data.value).toEqual([`${key}:0`]);
   });
 
   it("revalidates all loaded pages when infinite mutate() is called without data", async () => {

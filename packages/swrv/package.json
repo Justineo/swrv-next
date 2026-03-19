@@ -45,6 +45,9 @@
     "dev": "vp pack src/index.ts src/infinite/index.ts src/mutation/index.ts src/subscription/index.ts src/immutable/index.ts src/_internal/index.ts --watch",
     "test": "vp test"
   },
+  "dependencies": {
+    "dequal": "catalog:"
+  },
   "devDependencies": {
     "@types/node": "catalog:",
     "@vue/server-renderer": "catalog:",

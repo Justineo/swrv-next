@@ -1,3 +1,7 @@
+import { dequal } from "dequal/lite";
+
+import { slowConnection } from "./env";
+
 import type {
   AnyResolvedConfiguration,
   Compare,
@@ -7,7 +11,9 @@ import type {
 
 const noop = () => {};
 
-export const defaultCompare: Compare<unknown> = (left, right) => Object.is(left, right);
+let online = true;
+
+export const defaultCompare: Compare<unknown> = dequal;
 
 export const defaultInitFocus: SWRVEventInitializer = (callback) => {
   const disposers: Array<() => void> = [];
@@ -20,15 +26,9 @@ export const defaultInitFocus: SWRVEventInitializer = (callback) => {
   }
 
   if (typeof document !== "undefined" && typeof document.addEventListener === "function") {
-    const onVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        callback();
-      }
-    };
-
-    document.addEventListener("visibilitychange", onVisibilityChange);
+    document.addEventListener("visibilitychange", callback);
     disposers.push(() => {
-      document.removeEventListener("visibilitychange", onVisibilityChange);
+      document.removeEventListener("visibilitychange", callback);
     });
   }
 
@@ -44,13 +44,23 @@ export const defaultInitReconnect: SWRVEventInitializer = (callback) => {
     return noop;
   }
 
-  window.addEventListener("online", callback);
+  const handleOnline = () => {
+    online = true;
+    callback();
+  };
+  const handleOffline = () => {
+    online = false;
+  };
+
+  window.addEventListener("online", handleOnline);
+  window.addEventListener("offline", handleOffline);
   return () => {
-    window.removeEventListener("online", callback);
+    window.removeEventListener("online", handleOnline);
+    window.removeEventListener("offline", handleOffline);
   };
 };
 
-export const defaultIsOnline = () => typeof navigator === "undefined" || navigator.onLine !== false;
+export const defaultIsOnline = () => online;
 export const defaultIsVisible = () =>
   typeof document === "undefined" || document.visibilityState !== "hidden";
 
@@ -69,20 +79,22 @@ export const defaultOnErrorRetry = <Data = unknown, Error = unknown>(
     throwOnError: boolean;
   },
 ) => {
-  if (options.retryCount > config.errorRetryCount) {
+  const retryCount = options.retryCount < 8 ? options.retryCount : 8;
+  const timeout = Math.trunc((Math.random() + 0.5) * (1 << retryCount)) * config.errorRetryInterval;
+
+  if (config.errorRetryCount !== undefined && options.retryCount > config.errorRetryCount) {
     return;
   }
 
   setTimeout(() => {
     void revalidate(options);
-  }, config.errorRetryInterval);
+  }, timeout);
 };
 
 export const INTERNAL_DEFAULT_CONFIGURATION: AnyResolvedConfiguration = {
   compare: defaultCompare,
   dedupingInterval: 2000,
-  errorRetryCount: 5,
-  errorRetryInterval: 5000,
+  errorRetryInterval: slowConnection ? 10000 : 5000,
   fallback: {},
   focusThrottleInterval: 5000,
   initFocus: defaultInitFocus,
@@ -91,7 +103,7 @@ export const INTERNAL_DEFAULT_CONFIGURATION: AnyResolvedConfiguration = {
   isPaused: () => false,
   isVisible: defaultIsVisible,
   keepPreviousData: false,
-  loadingTimeout: 3000,
+  loadingTimeout: slowConnection ? 5000 : 3000,
   onDiscarded: noop,
   onError: noop,
   onErrorRetry: defaultOnErrorRetry,

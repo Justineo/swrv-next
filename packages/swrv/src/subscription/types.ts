@@ -1,7 +1,13 @@
-import type { KeySource, RawKey, SWRVConfiguration, SWRVResponse } from "../_internal/types";
+import type {
+  KeySource,
+  MutatorCallback,
+  RawKey,
+  SWRVConfiguration,
+  SWRVResponse,
+} from "../_internal/types";
 
 export interface SWRVSubscriptionOptions<Data = unknown, Error = unknown> {
-  next: (error?: Error | null, data?: Data) => void;
+  next: (error?: Error | null, data?: Data | MutatorCallback<Data>) => void;
 }
 
 export type SWRVSubscription<Data = unknown, Error = unknown, Key extends RawKey = RawKey> = (
@@ -14,7 +20,11 @@ export interface SWRVSubscriptionResponse<Data = unknown, Error = unknown> {
   error: SWRVResponse<Data, Error>["error"];
 }
 
-export type SWRVSubscriptionHook = <Data = unknown, Error = unknown, Key extends RawKey = RawKey>(
+export type InternalSWRVSubscriptionHook = <
+  Data = unknown,
+  Error = unknown,
+  Key extends RawKey = RawKey,
+>(
   key: KeySource<Key>,
   subscribe: SWRVSubscription<Data, Error, Key>,
   config?: SWRVConfiguration<Data, Error>,

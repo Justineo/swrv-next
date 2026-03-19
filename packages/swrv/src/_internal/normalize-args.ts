@@ -7,22 +7,21 @@ type HookConfig = {
 
 type HookArgs<Key, Data, Config extends HookConfig> =
   | [key: Key]
-  | [key: Key, fetcherOrConfig: HookFetcher<Data> | Config | null | false | undefined]
+  | [key: Key, fetcherOrConfig: HookFetcher<Data> | Config | null | undefined]
   | [
       key: Key,
-      fetcherOrConfig: HookFetcher<Data> | Config | null | false | undefined,
+      fetcherOrConfig: HookFetcher<Data> | Config | null | undefined,
       config: Config | undefined,
     ];
 
-export function normalizeArgs<Key, Data = unknown, Config extends HookConfig = HookConfig>(
+export function normalize<Key, Data = unknown, Config extends HookConfig = HookConfig>(
   args: HookArgs<Key, Data, Config>,
-): [Key, HookFetcher<Data> | null | false | undefined, Config | undefined] {
+): [Key, HookFetcher<Data> | null | undefined, Config | undefined] {
   const [key, fetcherOrConfig, config] = args;
 
   if (
     typeof fetcherOrConfig === "function" ||
     fetcherOrConfig === null ||
-    fetcherOrConfig === false ||
     fetcherOrConfig === undefined
   ) {
     return [key, fetcherOrConfig, config];

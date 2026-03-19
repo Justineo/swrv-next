@@ -570,7 +570,33 @@ describe("swrv core cache provider behavior", () => {
     expect(focusRegistered).toBe(true);
   });
 
-  it("uses custom focus and reconnect initializers without replacing the parent cache", async () => {
+  it("binds custom initFocus and initReconnect without replacing the parent cache", async () => {
+    const key = `provider-events-no-boundary-${Date.now()}`;
+    const initFocus = vi.fn();
+    const initReconnect = vi.fn();
+    const fetcher = vi.fn(async () => "value");
+    let cache!: CacheAdapter<CacheState<any, any>>;
+
+    mountWithConfig(
+      () => {
+        cache = useSWRVConfig().cache;
+        return useSWRV<string>(key, fetcher);
+      },
+      {
+        initFocus,
+        initReconnect,
+      },
+    );
+
+    await settle();
+
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(initFocus).toHaveBeenCalledTimes(1);
+    expect(initReconnect).toHaveBeenCalledTimes(1);
+    expect(cache).toBe(GLOBAL_SWRV_CLIENT.cache);
+  });
+
+  it("uses custom focus and reconnect initializers when a provider reuses the parent cache", async () => {
     const key = `provider-events-${Date.now()}`;
     const focusCallbacks: Array<() => void> = [];
     const reconnectCallbacks: Array<() => void> = [];
@@ -602,10 +628,13 @@ describe("swrv core cache provider behavior", () => {
 
     let state!: ReturnType<typeof useSWRV<string>>;
     let cache!: CacheAdapter<CacheState<any, any>>;
+    let childClient!: ReturnType<typeof useSWRVConfig>["client"];
 
     const Child = defineComponent({
       setup() {
-        cache = useSWRVConfig().cache;
+        const access = useSWRVConfig();
+        cache = access.cache;
+        childClient = access.client;
         state = useSWRV<string>(key, fetcher, {
           dedupingInterval: 0,
           focusThrottleInterval: 0,
@@ -625,6 +654,7 @@ describe("swrv core cache provider behavior", () => {
             SWRVConfig,
             {
               value: {
+                provider: (parentCache: CacheAdapter<CacheState<any, any>>) => parentCache,
                 initFocus,
                 initReconnect,
               },
@@ -643,6 +673,102 @@ describe("swrv core cache provider behavior", () => {
     expect(initFocus).toHaveBeenCalledTimes(1);
     expect(initReconnect).toHaveBeenCalledTimes(1);
     expect(cache).toBe(GLOBAL_SWRV_CLIENT.cache);
+    expect(childClient).toBe(GLOBAL_SWRV_CLIENT);
+
+    focusCallbacks[0]?.();
+    await settle();
+    expect(fetcher).toHaveBeenCalledTimes(2);
+
+    reconnectCallbacks[0]?.();
+    await settle();
+    expect(fetcher).toHaveBeenCalledTimes(3);
+
+    app.unmount();
+
+    expect(disposeFocus).toHaveBeenCalledTimes(1);
+    expect(disposeReconnect).toHaveBeenCalledTimes(1);
+    expect(focusCallbacks).toHaveLength(0);
+    expect(reconnectCallbacks).toHaveLength(0);
+  });
+
+  it("uses custom focus and reconnect initializers when a provider creates a child boundary", async () => {
+    const key = `provider-events-child-${Date.now()}`;
+    const focusCallbacks: Array<() => void> = [];
+    const reconnectCallbacks: Array<() => void> = [];
+    const disposeFocus = vi.fn();
+    const disposeReconnect = vi.fn();
+    const initFocus = vi.fn((callback: () => void) => {
+      focusCallbacks.push(callback);
+      return () => {
+        const index = focusCallbacks.indexOf(callback);
+        if (index >= 0) {
+          focusCallbacks.splice(index, 1);
+        }
+
+        disposeFocus();
+      };
+    });
+    const initReconnect = vi.fn((callback: () => void) => {
+      reconnectCallbacks.push(callback);
+      return () => {
+        const index = reconnectCallbacks.indexOf(callback);
+        if (index >= 0) {
+          reconnectCallbacks.splice(index, 1);
+        }
+
+        disposeReconnect();
+      };
+    });
+    const fetcher = vi.fn(async () => `value:${fetcher.mock.calls.length}`);
+
+    let cache!: CacheAdapter<CacheState<any, any>>;
+    let childClient!: ReturnType<typeof useSWRVConfig>["client"];
+
+    const Child = defineComponent({
+      setup() {
+        const access = useSWRVConfig();
+        cache = access.cache;
+        childClient = access.client;
+
+        useSWRV<string>(key, fetcher, {
+          dedupingInterval: 0,
+          focusThrottleInterval: 0,
+        });
+
+        return () => h("div");
+      },
+    });
+
+    const container = registerContainer(document.createElement("div"));
+    document.body.appendChild(container);
+
+    const app = registerApp(
+      createApp({
+        render: () =>
+          h(
+            SWRVConfig,
+            {
+              value: {
+                provider: () => new Map(),
+                initFocus,
+                initReconnect,
+              },
+            },
+            {
+              default: () => h(Child),
+            },
+          ),
+      }),
+    );
+
+    app.mount(container);
+    await settle();
+
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(initFocus).toHaveBeenCalledTimes(1);
+    expect(initReconnect).toHaveBeenCalledTimes(1);
+    expect(cache).not.toBe(GLOBAL_SWRV_CLIENT.cache);
+    expect(childClient).not.toBe(GLOBAL_SWRV_CLIENT);
 
     focusCallbacks[0]?.();
     await settle();

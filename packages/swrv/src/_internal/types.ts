@@ -14,7 +14,7 @@ export type FetcherResponse<Data = unknown> = Data | Promise<Data>;
 export type PreloadResponse<Data = unknown> = FetcherResponse<Data> | undefined;
 
 export type BareFetcher<Data = unknown> = (...args: readonly unknown[]) => FetcherResponse<Data>;
-export type HookFetcher<Data = unknown> = BareFetcher<Data> | null | undefined | false;
+export type HookFetcher<Data = unknown> = BareFetcher<Data> | null | undefined;
 
 export type Fetcher<Data = unknown, Key extends RawKey = RawKey> = Key extends readonly unknown[]
   ? (...args: [...Key]) => FetcherResponse<Data>
@@ -87,7 +87,7 @@ export interface SWRVConfiguration<Data = unknown, Error = unknown, Fn = BareFet
   errorRetryInterval?: number;
   fallback?: Record<string, unknown>;
   fallbackData?: Data;
-  fetcher?: Fn | null | false;
+  fetcher?: Fn;
   focusThrottleInterval?: number;
   initFocus?: SWRVEventInitializer;
   initReconnect?: SWRVEventInitializer;
@@ -144,7 +144,7 @@ export interface ResolvedSWRVConfiguration<
 > extends SWRVConfiguration<Data, Error, Fn> {
   compare: Compare<Data>;
   dedupingInterval: number;
-  errorRetryCount: number;
+  errorRetryCount?: number;
   errorRetryInterval: number;
   fallback: Record<string, unknown>;
   focusThrottleInterval: number;
@@ -239,13 +239,13 @@ export interface SWRVResponse<Data = unknown, Error = unknown, Config = unknown>
   mutate: BoundMutator<Data>;
 }
 
-export type SWRVHook = <Data = unknown, Error = unknown, Key extends RawKey = RawKey>(
+export type InternalSWRVHook = <Data = unknown, Error = unknown, Key extends RawKey = RawKey>(
   key: KeySource<Key>,
   fetcher?: HookFetcher<Data>,
   config?: SWRVConfiguration<Data, Error>,
 ) => SWRVResponse<Data, Error>;
 
-export type SWRVMiddleware = (useSWRNext: SWRVHook) => SWRVHook;
+export type SWRVMiddleware = (useSWRNext: InternalSWRVHook) => InternalSWRVHook;
 
 export type RevalidateEvent = "focus" | "reconnect" | "mutate" | "error-revalidate";
 

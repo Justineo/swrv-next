@@ -1,9 +1,8 @@
+import { INFINITE_PREFIX } from "../_internal/constants";
 import { serialize } from "../_internal/serialize";
 
 import type { RawKey } from "../_internal/types";
 import type { SWRVInfiniteKeyLoader } from "./types";
-
-export const INFINITE_PREFIX = "$inf$";
 
 export function createInfiniteCacheKey(serializedKey: string): string {
   return `${INFINITE_PREFIX}${serializedKey}`;

@@ -1,4 +1,4 @@
-import { withArgs } from "../_internal/with-args";
+import { withArgs } from "../_internal/resolve-args";
 import { useSWRVHandler } from "./use-swrv-handler";
 import { unstable_serialize } from "./serialize";
 
@@ -27,7 +27,7 @@ export default function useSWRV<
   Key extends readonly unknown[] = readonly unknown[],
 >(
   key: KeySource<NullableKey<Key>>,
-  fetcher: ((...args: [...Key]) => FetcherResponse<Data>) | null | undefined | false,
+  fetcher: ((...args: [...Key]) => FetcherResponse<Data>) | null | undefined,
   config: SWRVConfiguration<Data, Error, (...args: [...Key]) => FetcherResponse<Data>> & {
     fallbackData: Data;
   },
@@ -38,14 +38,14 @@ export default function useSWRV<
   Key extends NonArrayKey = NonArrayKey,
 >(
   key: KeySource<NullableKey<Key>>,
-  fetcher: ((arg: Key) => FetcherResponse<Data>) | null | undefined | false,
+  fetcher: ((arg: Key) => FetcherResponse<Data>) | null | undefined,
   config: SWRVConfiguration<Data, Error, (arg: Key) => FetcherResponse<Data>> & {
     fallbackData: Data;
   },
 ): SWRVResponse<Data, Error, { fallbackData: Data }>;
 export default function useSWRV<Data = unknown, Error = unknown>(
   key: KeySource<RawKey>,
-  fetcher: BareFetcher<Data> | null | undefined | false,
+  fetcher: BareFetcher<Data> | null | undefined,
   config: SWRVConfiguration<Data, Error, BareFetcher<Data>> & { fallbackData: Data },
 ): SWRVResponse<Data, Error, { fallbackData: Data }>;
 export default function useSWRV<
@@ -80,7 +80,7 @@ export default function useSWRV<
   Key extends readonly unknown[] = readonly unknown[],
 >(
   key: KeySource<NullableKey<Key>>,
-  fetcher: ((...args: [...Key]) => FetcherResponse<Data>) | null | undefined | false,
+  fetcher: ((...args: [...Key]) => FetcherResponse<Data>) | null | undefined,
   config?: SWRVConfiguration<Data, Error>,
 ): SWRVResponse<Data, Error>;
 export default function useSWRV<
@@ -89,12 +89,12 @@ export default function useSWRV<
   Key extends NonArrayKey = NonArrayKey,
 >(
   key: KeySource<NullableKey<Key>>,
-  fetcher: ((arg: Key) => FetcherResponse<Data>) | null | undefined | false,
+  fetcher: ((arg: Key) => FetcherResponse<Data>) | null | undefined,
   config?: SWRVConfiguration<Data, Error>,
 ): SWRVResponse<Data, Error>;
 export default function useSWRV<Data = unknown, Error = unknown>(
   key: KeySource<RawKey>,
-  fetcher: BareFetcher<Data> | null | undefined | false,
+  fetcher: BareFetcher<Data> | null | undefined,
   config?: SWRVConfiguration<Data, Error>,
 ): SWRVResponse<Data, Error>;
 export default function useSWRV<
@@ -119,8 +119,10 @@ export default function useSWRV<
 ): SWRVResponse<Data, Error>;
 export default function useSWRV<Data = unknown, Error = unknown>(
   key: KeySource<RawKey>,
-  fetcherOrConfig?: BareFetcher<Data> | SWRVConfiguration<Data, Error> | null | false,
+  fetcherOrConfig?: BareFetcher<Data> | SWRVConfiguration<Data, Error> | null,
   config?: SWRVConfiguration<Data, Error>,
 ): SWRVResponse<Data, Error> {
   return useSWRVBase(key, fetcherOrConfig, config);
 }
+
+export type SWRVHook = typeof useSWRV;

@@ -65,6 +65,31 @@ describe("swrv core subscription behavior", () => {
     expect(subscription.error.value).toBeUndefined();
   });
 
+  it("accepts mutator callbacks in subscription pushes using cached data", async () => {
+    let nextValue!: (error?: Error | null, data?: string | ((current?: string) => string)) => void;
+
+    const subscription = runComposable(() =>
+      useSWRVSubscription<string, Error>(
+        `subscription-mutator-${Date.now()}`,
+        (_resolvedKey, { next }) => {
+          nextValue = next;
+          return () => {};
+        },
+        {
+          fallbackData: "fallback",
+        },
+      ),
+    );
+
+    await settle();
+    expect(subscription.data.value).toBe("fallback");
+
+    nextValue(undefined, (current) => `${current ?? "empty"}:next`);
+    await settle();
+
+    expect(subscription.data.value).toBe("empty:next");
+  });
+
   it("passes the original key shape to subscription handlers", async () => {
     const originalKeys: Array<readonly string[]> = [];
     const swrKey = `subscription-key-${Date.now()}`;

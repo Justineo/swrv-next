@@ -13,7 +13,13 @@ import useSWRV, {
 import useSWRVInfinite, { unstable_serialize as unstableSerializeInfinite } from "../src/infinite";
 import useSWRVMutation from "../src/mutation";
 import useSWRVSubscription from "../src/subscription";
-import type { RawKey, SWRVConfiguration, SWRVMiddleware, TriggerWithoutArgs } from "../src";
+import type {
+  RawKey,
+  SWRVConfiguration,
+  SWRVMutationConfiguration,
+  SWRVMiddleware,
+  TriggerWithoutArgs,
+} from "../src";
 
 type Equal<Left, Right> =
   (<Value>() => Value extends Left ? 1 : 2) extends <Value>() => Value extends Right ? 1 : 2
@@ -146,7 +152,6 @@ const objectFallbackResponse = useSWRV(
   async (key) => ({ value: key }),
   { fallbackData: { value: "fallback" } },
 );
-const falseFetcherResponse = useSWRV<string>("false-fetcher", false);
 const snapshotClient = hydrateSWRVSnapshot(createSWRVClient(), {
   user: { id: "1" },
 });
@@ -343,7 +348,7 @@ const extraParamMutation = useSWRVMutation("extra-param" as const, (key, opts) =
   void opts;
   return key;
 });
-const extraParamTrigger: TriggerWithoutArgs<"extra-param", unknown, never, "extra-param"> =
+const extraParamTrigger: TriggerWithoutArgs<"extra-param", unknown, "extra-param", never> =
   extraParamMutation.trigger;
 const extraParamTriggerResult = extraParamMutation.trigger();
 
@@ -355,9 +360,31 @@ const mutationWithOptions = mutation.trigger(
   },
 );
 
+const typedMutationCallbacks: SWRVMutationConfiguration<string, Error, string, { name: string }> = {
+  onError(_error, key) {
+    type MutationErrorKey = Expect<Equal<typeof key, string>>;
+    void (true as MutationErrorKey);
+  },
+  onSuccess(_data, key) {
+    type MutationSuccessKey = Expect<Equal<typeof key, string>>;
+    void (true as MutationSuccessKey);
+  },
+};
+const tupleMutationCallbacks: SWRVMutationConfiguration<
+  string,
+  Error,
+  readonly ["tuple", number],
+  void
+> = {
+  onSuccess(_data, key) {
+    type TupleMutationSuccessKey = Expect<Equal<typeof key, string>>;
+    void (true as TupleMutationSuccessKey);
+  },
+};
+
 const mutationResult = mutation.trigger({ name: "alice" });
 
-const numericMutation = useSWRVMutation<string, Error, number, string>(
+const numericMutation = useSWRVMutation<string, Error, string, number>(
   "numeric-user",
   async (_key, { arg }) => String(arg),
 );
@@ -367,7 +394,7 @@ const numericMutationNoThrow = numericMutation.trigger(1, {
   throwOnError: false,
 });
 
-const optionalMutation = useSWRVMutation<string | undefined, Error, "foo" | undefined, string>(
+const optionalMutation = useSWRVMutation<string | undefined, Error, string, "foo" | undefined>(
   "optional-user",
   async (_key, { arg }) => arg?.toUpperCase(),
 );
@@ -376,16 +403,16 @@ const optionalMutationNoArg = optionalMutation.trigger();
 const optionalMutationUndefined = optionalMutation.trigger(undefined);
 const optionalMutationFoo = optionalMutation.trigger("foo");
 
-const noArgMutation = useSWRVMutation<string, Error, never, string>(
+const noArgMutation = useSWRVMutation<string, Error, string, never>(
   "no-arg-user",
   async (key) => key,
 );
 
 const noArgMutationResult = noArgMutation.trigger();
-const noArgMutationTrigger: TriggerWithoutArgs<string, Error, never, string> =
+const noArgMutationTrigger: TriggerWithoutArgs<string, Error, string, never> =
   noArgMutation.trigger;
 
-const cachedDataMutation = useSWRVMutation<string, Error, "foo", string, string[]>(
+const cachedDataMutation = useSWRVMutation<string, Error, string, "foo", string[]>(
   "cached-data-user",
   async (_key, { arg }) => arg.toUpperCase(),
 );
@@ -396,7 +423,7 @@ const cachedDataMutationResult = cachedDataMutation.trigger<string[]>("foo", {
   revalidate: false,
 });
 
-const mutationThrowOffByDefault = useSWRVMutation<string, Error, "foo", string>(
+const mutationThrowOffByDefault = useSWRVMutation<string, Error, string, "foo">(
   "throw-off",
   async (_key, { arg }) => arg.toUpperCase(),
   {
@@ -513,9 +540,6 @@ const typeAssertions = {
   objectFallbackData: true as Expect<
     Equal<typeof objectFallbackResponse.data.value, { value: string }>
   >,
-  falseFetcherData: true as Expect<
-    Equal<typeof falseFetcherResponse.data.value, string | undefined>
-  >,
   snapshotClient: true as Expect<Equal<typeof snapshotClient, ReturnType<typeof createSWRVClient>>>,
   serializedSnapshot: true as Expect<Equal<typeof serializedSnapshot, Record<string, unknown>>>,
   middlewareData: true as Expect<Equal<typeof middlewareResponse.data.value, string | undefined>>,
@@ -574,7 +598,7 @@ const typeAssertions = {
   extraParamMutationArg: true as Expect<
     Equal<
       typeof extraParamTrigger,
-      TriggerWithoutArgs<"extra-param", unknown, never, "extra-param">
+      TriggerWithoutArgs<"extra-param", unknown, "extra-param", never>
     >
   >,
   extraParamTriggerResult: true as Expect<
@@ -582,6 +606,18 @@ const typeAssertions = {
   >,
   mutationResult: true as Expect<Equal<Awaited<typeof mutationResult>, string>>,
   mutationWithOptions: true as Expect<Equal<Awaited<typeof mutationWithOptions>, string>>,
+  typedMutationCallbacks: true as Expect<
+    Equal<
+      typeof typedMutationCallbacks,
+      SWRVMutationConfiguration<string, Error, string, { name: string }>
+    >
+  >,
+  tupleMutationCallbacks: true as Expect<
+    Equal<
+      typeof tupleMutationCallbacks,
+      SWRVMutationConfiguration<string, Error, readonly ["tuple", number], void>
+    >
+  >,
   numericMutationArg: true as Expect<Equal<Parameters<typeof numericMutation.trigger>[0], number>>,
   numericMutationResult: true as Expect<Equal<Awaited<typeof numericMutationResult>, string>>,
   numericMutationNoThrow: true as Expect<
@@ -598,7 +634,7 @@ const typeAssertions = {
   >,
   noArgMutationResult: true as Expect<Equal<Awaited<typeof noArgMutationResult>, string>>,
   noArgMutationTrigger: true as Expect<
-    Equal<typeof noArgMutationTrigger, TriggerWithoutArgs<string, Error, never, string>>
+    Equal<typeof noArgMutationTrigger, TriggerWithoutArgs<string, Error, string, never>>
   >,
   cachedDataMutationResult: true as Expect<Equal<Awaited<typeof cachedDataMutationResult>, string>>,
   mutationThrowOffResult: true as Expect<

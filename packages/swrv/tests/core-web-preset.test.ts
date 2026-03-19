@@ -35,6 +35,11 @@ afterEach(() => {
 });
 
 describe("swrv default web preset behavior", () => {
+  it("uses deep equality for the default compare function", () => {
+    expect(SWRVConfig.defaultValue.compare({ nested: ["a"] }, { nested: ["a"] })).toBe(true);
+    expect(SWRVConfig.defaultValue.compare({ nested: ["a"] }, { nested: ["b"] })).toBe(false);
+  });
+
   it("wires SWRVConfig.defaultValue.initFocus to window focus events", () => {
     const target = createEventTarget();
     vi.stubGlobal("window", target);
@@ -53,7 +58,7 @@ describe("swrv default web preset behavior", () => {
     expect(callback).toHaveBeenCalledTimes(1);
   });
 
-  it("wires SWRVConfig.defaultValue.initFocus to document visibilitychange when visible", () => {
+  it("wires SWRVConfig.defaultValue.initFocus to document visibilitychange events", () => {
     const target = Object.assign(createEventTarget(), {
       visibilityState: "hidden" as DocumentVisibilityState,
     });
@@ -64,10 +69,6 @@ describe("swrv default web preset behavior", () => {
     const release = SWRVConfig.defaultValue.initFocus(callback);
 
     target.emit("visibilitychange");
-    expect(callback).toHaveBeenCalledTimes(0);
-
-    target.visibilityState = "visible";
-    target.emit("visibilitychange");
     expect(callback).toHaveBeenCalledTimes(1);
 
     if (typeof release === "function") {
@@ -77,15 +78,20 @@ describe("swrv default web preset behavior", () => {
     expect(callback).toHaveBeenCalledTimes(1);
   });
 
-  it("wires SWRVConfig.defaultValue.initReconnect to window online events", () => {
+  it("wires SWRVConfig.defaultValue.initReconnect to window online and offline events", () => {
     const target = createEventTarget();
     vi.stubGlobal("window", target);
 
     const callback = vi.fn();
     const release = SWRVConfig.defaultValue.initReconnect(callback);
 
+    target.emit("offline");
+    expect(callback).toHaveBeenCalledTimes(0);
+    expect(SWRVConfig.defaultValue.isOnline()).toBe(false);
+
     target.emit("online");
     expect(callback).toHaveBeenCalledTimes(1);
+    expect(SWRVConfig.defaultValue.isOnline()).toBe(true);
 
     if (typeof release === "function") {
       release();

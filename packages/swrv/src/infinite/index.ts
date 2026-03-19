@@ -1,35 +1,40 @@
-import { ref, watch } from "vue";
+import { onMounted, ref, watch } from "vue";
 
 import { useSWRVConfig } from "../config";
-import { normalizeArgs } from "../_internal/normalize-args";
+import { normalize } from "../_internal/normalize-args";
 import { callFetcher, serialize } from "../_internal/serialize";
 import { type HookWithArgs, withMiddleware } from "../_internal/with-middleware";
 import useSWRV from "../index/use-swrv";
 import { getInfiniteRevalidationStore, getInfiniteSizeStore } from "./state";
 import { getInfinitePage, unstable_serialize } from "./serialize";
 
-import type { BareFetcher, RawKey, SWRVMiddleware } from "../_internal/types";
+import type { BareFetcher, RawKey } from "../_internal/types";
 import type {
+  InternalSWRVInfiniteHook,
   SWRVInfiniteConfiguration,
-  SWRVInfiniteHook,
   SWRVInfiniteKeyLoader,
   SWRVInfiniteResponse,
 } from "./types";
 
 export { unstable_serialize };
 
-export const infinite = function infinite(useSWRVNext: HookWithArgs): SWRVInfiniteHook {
+export const infinite = function infinite(useSWRVNext: HookWithArgs): InternalSWRVInfiniteHook {
   return function useSWRVInfinite<Data = unknown, Error = unknown, Key extends RawKey = RawKey>(
     getKey: SWRVInfiniteKeyLoader<Data, Key>,
-    fetcher: BareFetcher<Data> | null | undefined | false,
+    fetcher: BareFetcher<Data> | null | undefined,
     config: SWRVInfiniteConfiguration<Data, Error, Key> = {},
   ): SWRVInfiniteResponse<Data, Error> {
-    const { client } = useSWRVConfig();
+    const { client, config: rootConfig } = useSWRVConfig();
     const sizeStore = getInfiniteSizeStore(client.cache as object);
     const revalidationStore = getInfiniteRevalidationStore<Data>(client.cache as object);
     const initialSize = config.initialSize ?? 1;
+    const didMount = ref(false);
 
     const size = ref(initialSize);
+
+    onMounted(() => {
+      didMount.value = true;
+    });
 
     function getInfiniteKey(): string {
       return unstable_serialize(getKey);
@@ -48,6 +53,7 @@ export const infinite = function infinite(useSWRVNext: HookWithArgs): SWRVInfini
       const activeFetcher = fetcher ?? config.fetcher;
       const cachedPages = client.getState<Data[], Error>(infiniteKey)?.data;
       const revalidateFirstPage = config.revalidateFirstPage !== false && cachedPages !== undefined;
+      const revalidateOnMount = config.revalidateOnMount === true && !didMount.value;
       let previousPageData: Data | null = null;
 
       async function loadPage(index: number, pageKey: RawKey): Promise<void> {
@@ -64,9 +70,10 @@ export const infinite = function infinite(useSWRVNext: HookWithArgs): SWRVInfini
           pendingRevalidation?.revalidateAll ||
           config.revalidateAll ||
           cached?.data === undefined ||
+          revalidateOnMount ||
           (revalidateFirstPage && index === 0) ||
           (aggregatePageData !== undefined &&
-            !(config.compare ?? Object.is)(aggregatePageData, cached?.data));
+            !(config.compare ?? rootConfig.compare)(aggregatePageData, cached?.data));
         const shouldRevalidatePage = pendingRevalidation?.revalidate;
         const shouldFetchCurrentPage =
           Boolean(activeFetcher) &&
@@ -245,10 +252,7 @@ export const infinite = function infinite(useSWRVNext: HookWithArgs): SWRVInfini
   };
 };
 
-const useSWRVInfiniteBase = withMiddleware(
-  useSWRV as HookWithArgs,
-  infinite as unknown as SWRVMiddleware,
-) as unknown as SWRVInfiniteHook;
+const useSWRVInfiniteBase = withMiddleware(useSWRV as HookWithArgs, infinite);
 
 export default function useSWRVInfinite<
   Data = unknown,
@@ -256,7 +260,7 @@ export default function useSWRVInfinite<
   Key extends RawKey = RawKey,
 >(
   getKey: SWRVInfiniteKeyLoader<Data, Key>,
-  fetcher: BareFetcher<Data> | null | undefined | false,
+  fetcher: BareFetcher<Data> | null | undefined,
   config?: SWRVInfiniteConfiguration<Data, Error, Key>,
 ): SWRVInfiniteResponse<Data, Error>;
 export default function useSWRVInfinite<
@@ -269,26 +273,27 @@ export default function useSWRVInfinite<
 ): SWRVInfiniteResponse<Data, Error>;
 export default function useSWRVInfinite<Data = unknown, Error = unknown>(
   getKey: SWRVInfiniteKeyLoader<Data>,
-  fetcherOrConfig?: BareFetcher<Data> | SWRVInfiniteConfiguration<Data, Error> | null | false,
+  fetcherOrConfig?: BareFetcher<Data> | SWRVInfiniteConfiguration<Data, Error> | null,
   config?: SWRVInfiniteConfiguration<Data, Error>,
 ): SWRVInfiniteResponse<Data, Error> {
-  const [, fetcher, localConfig] = normalizeArgs<
+  const [, fetcher, localConfig] = normalize<
     SWRVInfiniteKeyLoader<Data>,
     Data,
     SWRVInfiniteConfiguration<Data, Error>
   >([
     getKey,
-    fetcherOrConfig as BareFetcher<Data> | SWRVInfiniteConfiguration<Data, Error> | null | false,
+    fetcherOrConfig as BareFetcher<Data> | SWRVInfiniteConfiguration<Data, Error> | null,
     config,
   ]);
 
   return useSWRVInfiniteBase(getKey, fetcher, localConfig);
 }
 
+export type SWRVInfiniteHook = typeof useSWRVInfinite;
+
 export type {
   SWRVInfiniteCompareFn,
   SWRVInfiniteConfiguration,
-  SWRVInfiniteHook,
   SWRVInfiniteKeyLoader,
   SWRVInfiniteKeyedMutator,
   SWRVInfiniteMutatorOptions,

@@ -12,8 +12,8 @@ type IsUndefinedIncluded<T> = undefined extends T ? true : false;
 export interface SWRVMutationConfiguration<
   Data = unknown,
   Error = unknown,
-  ExtraArg = unknown,
   Key extends RawKey = RawKey,
+  ExtraArg = unknown,
   SWRData = Data,
 >
   extends
@@ -21,17 +21,17 @@ export interface SWRVMutationConfiguration<
     MutatorOptions<SWRData, Data> {
   onError?: (
     error: Error,
-    key: Key,
-    config: SWRVMutationConfiguration<Data, Error, ExtraArg, Key, SWRData>,
+    key: string,
+    config: SWRVMutationConfiguration<Data, Error, Key, ExtraArg, SWRData>,
   ) => void;
   onSuccess?: (
     data: Data,
-    key: Key,
-    config: SWRVMutationConfiguration<Data, Error, ExtraArg, Key, SWRData>,
+    key: string,
+    config: SWRVMutationConfiguration<Data, Error, Key, ExtraArg, SWRData>,
   ) => void;
 }
 
-export type MutationFetcher<Data = unknown, ExtraArg = unknown, Key extends RawKey = RawKey> = (
+export type MutationFetcher<Data = unknown, Key extends RawKey = RawKey, ExtraArg = unknown> = (
   key: Key,
   options: { arg: ExtraArg },
 ) => Data | Promise<Data>;
@@ -39,83 +39,83 @@ export type MutationFetcher<Data = unknown, ExtraArg = unknown, Key extends RawK
 export interface TriggerWithArgs<
   Data = unknown,
   Error = unknown,
-  ExtraArg = never,
   Key extends RawKey = RawKey,
+  ExtraArg = never,
   SWRData = Data,
 > {
   <CurrentData = SWRData>(
     arg: ExtraArg,
-    options: SWRVMutationConfiguration<Data, Error, ExtraArg, Key, CurrentData> & {
+    options: SWRVMutationConfiguration<Data, Error, Key, ExtraArg, CurrentData> & {
       throwOnError: false;
     },
   ): Promise<Data | undefined>;
   <CurrentData = SWRData>(
     arg: ExtraArg,
-    options: SWRVMutationConfiguration<Data, Error, ExtraArg, Key, CurrentData> & {
+    options: SWRVMutationConfiguration<Data, Error, Key, ExtraArg, CurrentData> & {
       throwOnError: true;
     },
   ): Promise<RemoveUndefined<Data>>;
   <CurrentData = SWRData>(
     arg: ExtraArg,
-    options?: SWRVMutationConfiguration<Data, Error, ExtraArg, Key, CurrentData>,
+    options?: SWRVMutationConfiguration<Data, Error, Key, ExtraArg, CurrentData>,
   ): Promise<Data>;
 }
 
 export interface TriggerWithOptionsArgs<
   Data = unknown,
   Error = unknown,
-  ExtraArg = never,
   Key extends RawKey = RawKey,
+  ExtraArg = never,
   SWRData = Data,
 > {
   <CurrentData = SWRData>(
     arg: ExtraArg,
-    options: SWRVMutationConfiguration<Data, Error, ExtraArg, Key, CurrentData> & {
+    options: SWRVMutationConfiguration<Data, Error, Key, ExtraArg, CurrentData> & {
       throwOnError: false;
     },
   ): Promise<Data | undefined>;
   <CurrentData = SWRData>(
     arg: ExtraArg,
-    options: SWRVMutationConfiguration<Data, Error, ExtraArg, Key, CurrentData> & {
+    options: SWRVMutationConfiguration<Data, Error, Key, ExtraArg, CurrentData> & {
       throwOnError: true;
     },
   ): Promise<RemoveUndefined<Data>>;
   <CurrentData = SWRData>(
     arg?: ExtraArg,
-    options?: SWRVMutationConfiguration<Data, Error, ExtraArg, Key, CurrentData>,
+    options?: SWRVMutationConfiguration<Data, Error, Key, ExtraArg, CurrentData>,
   ): Promise<Data>;
 }
 
 export interface TriggerWithoutArgs<
   Data = unknown,
   Error = unknown,
-  ExtraArg = never,
   Key extends RawKey = RawKey,
+  ExtraArg = never,
   SWRData = Data,
 > {
   <CurrentData = SWRData>(
     arg: null | undefined,
-    options: SWRVMutationConfiguration<Data, Error, ExtraArg, Key, CurrentData> & {
+    options: SWRVMutationConfiguration<Data, Error, Key, ExtraArg, CurrentData> & {
       throwOnError: false;
     },
   ): Promise<Data>;
   <CurrentData = SWRData>(
     arg: null | undefined,
-    options: SWRVMutationConfiguration<Data, Error, ExtraArg, Key, CurrentData> & {
+    options: SWRVMutationConfiguration<Data, Error, Key, ExtraArg, CurrentData> & {
       throwOnError: true;
     },
   ): Promise<RemoveUndefined<Data>>;
   <CurrentData = SWRData>(
     arg?: null,
-    options?: SWRVMutationConfiguration<Data, Error, ExtraArg, Key, CurrentData>,
+    options?: SWRVMutationConfiguration<Data, Error, Key, ExtraArg, CurrentData>,
   ): Promise<Data>;
 }
 
 export interface SWRVMutationResponse<
   Data = unknown,
   Error = unknown,
-  ExtraArg = unknown,
   Key extends RawKey = RawKey,
+  ExtraArg = unknown,
   SWRData = Data,
 > {
   data: SWRVResponse<Data, Error>["data"];
@@ -123,20 +123,20 @@ export interface SWRVMutationResponse<
   isMutating: SWRVResponse<boolean, never>["data"];
   reset: () => void;
   trigger: [ExtraArg] extends [never]
-    ? TriggerWithoutArgs<Data, Error, ExtraArg, Key, SWRData>
+    ? TriggerWithoutArgs<Data, Error, Key, ExtraArg, SWRData>
     : IsUndefinedIncluded<ExtraArg> extends true
-      ? TriggerWithOptionsArgs<Data, Error, ExtraArg, Key, SWRData>
-      : TriggerWithArgs<Data, Error, ExtraArg, Key, SWRData>;
+      ? TriggerWithOptionsArgs<Data, Error, Key, ExtraArg, SWRData>
+      : TriggerWithArgs<Data, Error, Key, ExtraArg, SWRData>;
 }
 
-export type SWRVMutationHook = <
+export type InternalSWRVMutationHook = <
   Data = unknown,
   Error = unknown,
-  ExtraArg = unknown,
   Key extends RawKey = RawKey,
+  ExtraArg = unknown,
   SWRData = Data,
 >(
   key: KeySource<Key>,
-  fetcher: MutationFetcher<Data, ExtraArg, Key> | null,
-  config?: SWRVMutationConfiguration<Data, Error, ExtraArg, Key, SWRData>,
-) => SWRVMutationResponse<Data, Error, ExtraArg, Key, SWRData>;
+  fetcher: MutationFetcher<Data, Key, ExtraArg> | null,
+  config?: SWRVMutationConfiguration<Data, Error, Key, ExtraArg, SWRData>,
+) => SWRVMutationResponse<Data, Error, Key, ExtraArg, SWRData>;

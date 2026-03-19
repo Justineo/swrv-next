@@ -18,7 +18,7 @@ export interface SWRVInfiniteConfiguration<
   Error = unknown,
   Key extends RawKey = RawKey,
 > extends Omit<SWRVConfiguration<Data[], Error>, "compare" | "fetcher"> {
-  fetcher?: Fetcher<Data, Key> | null | false;
+  fetcher?: Fetcher<Data, Key> | null;
   initialSize?: number;
   parallel?: boolean;
   persistSize?: boolean;
@@ -62,8 +62,12 @@ export interface SWRVInfiniteResponse<Data = unknown, Error = unknown> extends O
   size: SWRVResponse<number, never>["data"];
 }
 
-export type SWRVInfiniteHook = <Data = unknown, Error = unknown, Key extends RawKey = RawKey>(
+export type InternalSWRVInfiniteHook = <
+  Data = unknown,
+  Error = unknown,
+  Key extends RawKey = RawKey,
+>(
   getKey: SWRVInfiniteKeyLoader<Data, Key>,
-  fetcher?: BareFetcher<Data> | null | false,
+  fetcher?: BareFetcher<Data> | null,
   config?: SWRVInfiniteConfiguration<Data, Error, Key>,
 ) => SWRVInfiniteResponse<Data, Error>;

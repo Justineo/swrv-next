@@ -1,7 +1,7 @@
 # SWRV Next Design Snapshot
 
 Status: Post-docs-reset prerelease, ready for stable-release execution
-Last updated: 2026-03-19
+Last updated: 2026-03-20
 
 ## Mission
 
@@ -55,8 +55,8 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - focus throttling now compares with a strict `<` boundary, so `focusThrottleInterval: 0` no longer suppresses same-millisecond focus revalidation after mount
   - stale per-hook refresh completions no longer reset polling or fire hook-local success or error callbacks after the hook has switched to a different key, while cache updates for the old key still land for other consumers
   - synchronous fetcher throws are now normalized into rejected promises at the fetcher boundary, so `error`, retry, and callback semantics match asynchronous failures instead of leaking unhandled watcher errors
-  - per-hook fetchers now accept `false` in addition to `null` and `undefined`, matching SWR's disabled-fetcher behavior in both runtime semantics and public typing
   - public hook entrypoints now support SWR-style normalized argument forms, so `useSWRV(key, config)` and `useSWRVImmutable(key, config)` can drive requests through `config.fetcher` instead of requiring a positional fetcher argument
+  - the public hook fetcher surface now aligns more closely with SWR again: normalized calls accept `null` or `undefined` as the missing fetcher forms, but no longer widen to `false`
   - `swrv/immutable` now also exposes the named `immutable` middleware, and immutable behavior coverage includes middleware-based focus suppression, ignoring provider-level `refreshInterval`, avoiding revalidation when a second immutable consumer mounts with cached data, and reusing cached keys without refetching when `revalidateIfStale` is false
   - `stableHash` now handles circular plain objects and arrays instead of overflowing recursion, which brings the serializer closer to SWR's upstream utility behavior
   - `ttl` is now removed from the rebuilt core API, and cache state no longer carries `expiresAt` or `updatedAt`
@@ -92,6 +92,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - compile-time coverage now also exercises `useSWRVConfig()` accessors, filtered mutate callback typing, readonly tuple keys, nullable-key fetcher narrowing, config-bound provider hook typing, and bound-mutate composition with mutation triggers
   - the package export map now points at the emitted `.d.mts` declaration files and is checked by a package-export smoke test
   - the remaining non-suspense partial row in the upstream SWR and legacy SWRV test matrix is now closed; only the explicitly deferred suspense lane remains open
+  - accidental extra exports have now been trimmed from the pre-release surface: `createCacheProvider` is removed, `createScopedMutator` is no longer public, and `_internal` no longer re-exports scoped-helper builder utilities
 - The site package now builds with VitePress and has been rebuilt from scratch around the SWR docs source structure.
 - The docs tree and nav now use SWR-shaped filenames and ordering, including:
   - `arguments.md`
@@ -116,7 +117,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
 - A dedicated `core-keep-previous` domain file now covers SWR-style `keepPreviousData` behavior, including key changes, mixed shared-cache consumers, fallback interaction, same-key revalidation after `mutate(undefined)`, and reactive provider-config changes.
 - A dedicated `core-broadcast-state` domain file now covers shared-key broadcast behavior for refreshed data, propagated errors, and mutate-driven `isValidating` state across multiple consumers.
 - A dedicated `core-devtools` domain file now covers the built-in devtools hook, including global middleware injection and Vue-module exposure for devtools integrations.
-- A dedicated `core-fetcher` domain file now covers falsy per-hook fetchers plus reactive provider-fetcher updates, so `null`, `undefined`, and `false` all stay idle without starting requests and shared fetchers can change over time through `SWRVConfig`.
+- A dedicated `core-fetcher` domain file now covers null or undefined per-hook fetchers plus reactive provider-fetcher updates, so missing positional fetchers stay idle without starting requests and shared fetchers can change over time through `SWRVConfig`.
 - A dedicated `core-normalized-args` domain file now covers SWR-style normalized public hook arguments for `useSWRV`, `useSWRVImmutable`, and `useSWRVInfinite`, including config-only calls that rely on `config.fetcher`.
 - A dedicated `core-ssr-hydration` domain file now covers snapshot serialization, client hydration from a request-scoped snapshot, and server rendering against hydrated client state through `@vue/server-renderer`.
 - The same `core-ssr-hydration` domain file now also covers the internal server-environment helper, server-safe root `preload()` behavior, server-side hook non-fetching, immutable server behavior, and `strictServerPrefetchWarning` for missing SSR handoff data.
@@ -179,8 +180,8 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - stable scoped helper identities for `mutate` and `preload` now live in provider state instead of separate module-level helper caches
   - `createSWRVClient()` is now a much thinner facade over provider-state, cache-helper, and event binding helpers
   - the public base-hook family now lives under `src/index/`, with `index/use-swrv.ts`, `index/use-swrv-handler.ts`, and `index/serialize.ts`; the temporary top-level forwarding files and `src/index/index.ts` shim have now been removed
-  - base-hook argument normalization and middleware composition now flow through `_internal/normalize-args.ts`, `_internal/with-args.ts`, and `_internal/with-middleware.ts`, replacing the older `normalizeHookArgs` and `middleware-stack` split
-  - helper-only hook signatures no longer live in shared core types or the `_internal` barrel; the shim-only `SWRVHookWithArgs` export is removed and the helper signature now stays local to `_internal/with-args.ts` and `_internal/with-middleware.ts`
+  - base-hook argument normalization and middleware composition now flow through `_internal/normalize-args.ts`, `_internal/resolve-args.ts`, and `_internal/with-middleware.ts`, with helper naming now matching SWR's `resolve-args` and `normalize` terminology more closely
+  - helper-only hook signatures no longer live in shared core types or the `_internal` barrel; the shim-only `SWRVHookWithArgs` export is removed and the helper signature now stays local to `_internal/resolve-args.ts` and `_internal/with-middleware.ts`
   - `immutable`, `infinite`, `mutation`, and `subscription` now follow the same SWR-shaped `withMiddleware(useSWRV, feature)` wrapper pattern instead of each hand-assembling context, config, and middleware resolution
   - feature-local type ownership now lives in `infinite/types.ts`, `mutation/types.ts`, and `subscription/types.ts` instead of being mixed into larger entry modules
   - feature-local side stores now live beside their owning features in `infinite/state.ts` and `subscription/state.ts` instead of generic `_internal` modules
@@ -190,6 +191,13 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - SWRV is already aligned on provider-scoped runtime, thin public hook entry plus handler, shared runtime primitives, and base-hook-centered advanced APIs
   - the main remaining alignable drift is now mostly the heavier `SWRVClient` facade; the repeated per-feature middleware resolution, entry normalization, and feature-only generic `_internal` state have been removed
   - the main divergences that should remain are Vue-native refs and watchers, provide/inject context, effect-scope enforcement, and explicit Vue SSR handoff primitives instead of React server-component paths
+- the final pre-release SWR alignment pass has now closed the remaining safe runtime and type drifts:
+  - default compare now uses `dequal/lite`, browser online state is event-tracked, retry scheduling now follows SWR-style exponential backoff, and slow-connection timeout defaults now match SWR's model
+  - base-hook mount logic now includes SWR's cached-error guard, so a second consumer does not eagerly revalidate a cached error on initial mount
+  - `useSWRVInfinite` now refetches cached pages on mount when `revalidateOnMount: true`, matching SWR's page-level mount behavior
+  - mutation callback keys are now serialized strings, mutation fetcher generic order now matches SWR, and subscription push typing now accepts mutator callbacks
+  - internal key prefixes are now centralized in `_internal/constants.ts`, and `immutable` is again a thin middleware wrapper instead of carrying a duplicated overload surface
+  - the remaining non-React-only implementation drift is now intentional: Vue reactive key sources and refs, explicit provider-scoped client state, provide/inject config flow, provider-scoped `initFocus` and `initReconnect` listener ownership over inherited cache objects, explicit SSR snapshot helpers, and the still-deferred React-only Suspense or RSC machinery
 - The main reference materials for the rebuild remain:
   - `journey/research/swr-vs-swrv.md`
   - `journey/research/2026-03-18-swrv-next-vs-swr-and-swrv-current-state.md`

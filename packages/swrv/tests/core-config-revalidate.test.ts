@@ -726,6 +726,7 @@ describe("swrv core config and revalidation", () => {
 
   it("retries failed requests after errorRetryInterval", async () => {
     vi.useFakeTimers();
+    const random = vi.spyOn(Math, "random").mockReturnValue(0);
     const key = `retry-${Date.now()}`;
 
     const fetcher = vi
@@ -751,6 +752,7 @@ describe("swrv core config and revalidation", () => {
     expect(fetcher).toHaveBeenCalledTimes(2);
     expect(state.data.value).toBe("recovered");
     expect(state.error.value).toBeUndefined();
+    random.mockRestore();
   });
 
   it("disables polling in the immutable entry point", async () => {

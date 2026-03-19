@@ -1,21 +1,26 @@
 import { watch } from "vue";
 
 import { useSWRVConfig } from "../config";
+import { SUBSCRIPTION_PREFIX } from "../_internal/constants";
 import { resolveKeyValue, serialize } from "../_internal/serialize";
 import { type HookWithArgs, withMiddleware } from "../_internal/with-middleware";
 import useSWRV from "../index/use-swrv";
 import { getSubscriptionStorage } from "./state";
 
-import type { KeySource, RawKey, SWRVConfiguration, SWRVMiddleware } from "../_internal/types";
-import type { SWRVSubscription, SWRVSubscriptionHook, SWRVSubscriptionResponse } from "./types";
-
-export const SUBSCRIPTION_PREFIX = "$sub$";
+import type { KeySource, MutatorCallback, RawKey, SWRVConfiguration } from "../_internal/types";
+import type {
+  InternalSWRVSubscriptionHook,
+  SWRVSubscription,
+  SWRVSubscriptionResponse,
+} from "./types";
 
 export function createSubscriptionCacheKey(serializedKey: string): string {
   return `${SUBSCRIPTION_PREFIX}${serializedKey}`;
 }
 
-export const subscription = function subscription(useSWRVNext: HookWithArgs): SWRVSubscriptionHook {
+export const subscription = function subscription(
+  useSWRVNext: HookWithArgs,
+): InternalSWRVSubscriptionHook {
   return function useSWRVSubscription<Data = unknown, Error = unknown, Key extends RawKey = RawKey>(
     key: KeySource<Key>,
     subscribe: SWRVSubscription<Data, Error, Key>,
@@ -68,7 +73,7 @@ export const subscription = function subscription(useSWRVNext: HookWithArgs): SW
                 return;
               }
 
-              void swrv.mutate(subscriptionData as Data, false);
+              void swrv.mutate(subscriptionData as Data | MutatorCallback<Data>, false);
             },
           });
 
@@ -101,10 +106,7 @@ export const subscription = function subscription(useSWRVNext: HookWithArgs): SW
   };
 };
 
-const useSWRVSubscriptionBase = withMiddleware(
-  useSWRV as HookWithArgs,
-  subscription as unknown as SWRVMiddleware,
-) as unknown as SWRVSubscriptionHook;
+const useSWRVSubscriptionBase = withMiddleware(useSWRV as HookWithArgs, subscription);
 
 export default function useSWRVSubscription<
   Data = unknown,
@@ -118,9 +120,6 @@ export default function useSWRVSubscription<
   return useSWRVSubscriptionBase(key, subscribe, config);
 }
 
-export type {
-  SWRVSubscription,
-  SWRVSubscriptionHook,
-  SWRVSubscriptionOptions,
-  SWRVSubscriptionResponse,
-} from "./types";
+export type SWRVSubscriptionHook = typeof useSWRVSubscription;
+
+export type { SWRVSubscription, SWRVSubscriptionOptions, SWRVSubscriptionResponse } from "./types";

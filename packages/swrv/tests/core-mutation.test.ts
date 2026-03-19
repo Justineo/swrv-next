@@ -2,6 +2,7 @@ import { ref } from "vue";
 import { describe, expect, it, vi } from "vite-plus/test";
 
 import { useSWRV, useSWRVMutation } from "../src";
+import { serialize } from "../src/_internal";
 import type { SWRVMutationConfiguration } from "../src";
 import { flush, runComposable, settle, waitForMacrotask } from "./test-utils";
 
@@ -10,7 +11,7 @@ describe("swrv core mutation behavior", () => {
     const key = `mutation-${Date.now()}`;
     const swrv = runComposable(() => useSWRV<string>(key));
     const mutation = runComposable(() =>
-      useSWRVMutation<string, Error, string>(key, async (_key, { arg }) => arg),
+      useSWRVMutation<string, Error, string, string>(key, async (_key, { arg }) => arg),
     );
 
     await mutation.trigger("updated", {
@@ -29,7 +30,7 @@ describe("swrv core mutation behavior", () => {
         `${resolvedKey[0]}:${resolvedKey[1]}:${arg}`,
     );
     const mutation = runComposable(() =>
-      useSWRVMutation<string, Error, string, typeof key>(key, fetcher),
+      useSWRVMutation<string, Error, typeof key, string>(key, fetcher),
     );
 
     await expect(mutation.trigger("arg1")).resolves.toBe(`${key[0]}:${key[1]}:arg1`);
@@ -41,7 +42,7 @@ describe("swrv core mutation behavior", () => {
     const key = `mutation-success-${Date.now()}`;
     const onSuccess = vi.fn();
     const mutation = runComposable(() =>
-      useSWRVMutation<string, Error, void>(key, async () => "data", {
+      useSWRVMutation<string, Error, string, void>(key, async () => "data", {
         onSuccess,
       }),
     );
@@ -59,7 +60,7 @@ describe("swrv core mutation behavior", () => {
     const key = `mutation-success-trigger-${Date.now()}`;
     const onSuccess = vi.fn();
     const mutation = runComposable(() =>
-      useSWRVMutation<string, Error, void>(key, async () => "data"),
+      useSWRVMutation<string, Error, string, void>(key, async () => "data"),
     );
 
     await expect(mutation.trigger(undefined, { onSuccess })).resolves.toBe("data");
@@ -70,11 +71,27 @@ describe("swrv core mutation behavior", () => {
     expect(onSuccess.mock.calls[0]?.[1]).toBe(key);
   });
 
+  it("uses the serialized key for mutation callbacks", async () => {
+    const key = [`mutation-callback-${Date.now()}`, "arg0"] as const;
+    const onSuccess = vi.fn();
+    const expectedKey = serialize(key)[0];
+    const mutation = runComposable(() =>
+      useSWRVMutation<string, Error, typeof key, string>(key, async (_key, { arg }) => arg, {
+        onSuccess,
+      }),
+    );
+
+    await expect(mutation.trigger("data")).resolves.toBe("data");
+    await settle();
+
+    expect(onSuccess.mock.calls[0]?.[1]).toBe(expectedKey);
+  });
+
   it("calls mutation onError and throws by default", async () => {
     const key = `mutation-throw-${Date.now()}`;
     const onError = vi.fn();
     const mutation = runComposable(() =>
-      useSWRVMutation<string, Error, void>(
+      useSWRVMutation<string, Error, string, void>(
         key,
         async () => {
           throw new Error("boom");
@@ -98,7 +115,7 @@ describe("swrv core mutation behavior", () => {
     const key = `mutation-populate-transform-${Date.now()}`;
     const swrv = runComposable(() => useSWRV<string>(key));
     const mutation = runComposable(() =>
-      useSWRVMutation<string, Error, string>(key, async (_key, { arg }) => arg),
+      useSWRVMutation<string, Error, string, string>(key, async (_key, { arg }) => arg),
     );
 
     await swrv.mutate("current", { revalidate: false });
@@ -117,7 +134,7 @@ describe("swrv core mutation behavior", () => {
     const onError = vi.fn();
 
     const mutation = runComposable(() =>
-      useSWRVMutation<string, Error, void>(
+      useSWRVMutation<string, Error, string, void>(
         key,
         async () => {
           throw new Error("boom");
@@ -139,7 +156,7 @@ describe("swrv core mutation behavior", () => {
     const key = `mutation-pending-${Date.now()}`;
     let resolveMutation!: (value: string) => void;
     const mutation = runComposable(() =>
-      useSWRVMutation<string, Error, void>(
+      useSWRVMutation<string, Error, string, void>(
         key,
         async () =>
           await new Promise<string>((resolve) => {
@@ -164,7 +181,7 @@ describe("swrv core mutation behavior", () => {
     const key = `mutation-cache-isolation-${Date.now()}`;
     const swrv = runComposable(() => useSWRV<string>(key, async () => "data"));
     const mutation = runComposable(() =>
-      useSWRVMutation<string, Error, void>(key, async () => "wrong"),
+      useSWRVMutation<string, Error, string, void>(key, async () => "wrong"),
     );
 
     await settle();
@@ -184,7 +201,7 @@ describe("swrv core mutation behavior", () => {
       }),
     );
     const mutation = runComposable(() =>
-      useSWRVMutation<number, Error, void, string>(key, async () => {
+      useSWRVMutation<number, Error, string, void>(key, async () => {
         value += 10;
         return value;
       }),
@@ -194,7 +211,7 @@ describe("swrv core mutation behavior", () => {
     expect(swrv.data.value).toBe(1);
     expect(fetcher).toHaveBeenCalledTimes(1);
 
-    const options: SWRVMutationConfiguration<number, Error, void, string, number> = {
+    const options: SWRVMutationConfiguration<number, Error, string, void, number> = {
       populateCache: true,
       revalidate: (data, currentKey) => currentKey === key && (data ?? 0) < 30,
     };
@@ -256,7 +273,7 @@ describe("swrv core mutation behavior", () => {
     const key = `mutation-no-dedupe-${Date.now()}`;
     const calls = vi.fn();
     const mutation = runComposable(() =>
-      useSWRVMutation<string, Error, void>(key, async () => {
+      useSWRVMutation<string, Error, string, void>(key, async () => {
         calls();
         await waitForMacrotask();
         return "data";
@@ -279,7 +296,7 @@ describe("swrv core mutation behavior", () => {
     const key = `mutation-latest-fetcher-${Date.now()}`;
     const count = ref(0);
     const mutation = runComposable(() =>
-      useSWRVMutation<number, Error, void>(key, async () => count.value),
+      useSWRVMutation<number, Error, string, void>(key, async () => count.value),
     );
 
     await expect(mutation.trigger(undefined)).resolves.toBe(0);
@@ -297,7 +314,7 @@ describe("swrv core mutation behavior", () => {
     const count = ref(0);
     const logs: number[] = [];
     const mutation = runComposable(() =>
-      useSWRVMutation<number, Error, void>(key, async () => count.value, {
+      useSWRVMutation<number, Error, string, void>(key, async () => count.value, {
         onSuccess() {
           logs.push(count.value);
         },
@@ -314,9 +331,34 @@ describe("swrv core mutation behavior", () => {
     expect(logs).toEqual([0, 1]);
   });
 
+  it("passes the serialized key string to mutation callbacks", async () => {
+    const key = ["mutation-callback-key", Date.now()] as const;
+    const [serializedKey] = serialize(key);
+    const onSuccess = vi.fn();
+    const onError = vi.fn();
+
+    const mutation = runComposable(() =>
+      useSWRVMutation<string, Error, typeof key, void>(
+        key,
+        async (resolvedKey) => resolvedKey.join(":"),
+        {
+          onError,
+          onSuccess,
+        },
+      ),
+    );
+
+    await expect(mutation.trigger(undefined)).resolves.toBe(key.join(":"));
+    await settle();
+
+    expect(onSuccess).toHaveBeenCalledTimes(1);
+    expect(onSuccess).toHaveBeenCalledWith(key.join(":"), serializedKey, expect.any(Object));
+    expect(onError).not.toHaveBeenCalled();
+  });
+
   it("can reset mutation-local state", async () => {
     const mutation = runComposable(() =>
-      useSWRVMutation<string, Error, void>("mutation-reset", async () => "updated"),
+      useSWRVMutation<string, Error, string, void>("mutation-reset", async () => "updated"),
     );
 
     await mutation.trigger(undefined);
@@ -336,7 +378,7 @@ describe("swrv core mutation behavior", () => {
     const onSuccess = vi.fn();
 
     const mutation = runComposable(() =>
-      useSWRVMutation<string, Error, void>(
+      useSWRVMutation<string, Error, string, void>(
         "mutation-reset-race",
         async () =>
           await new Promise<string>((resolve) => {
@@ -362,7 +404,7 @@ describe("swrv core mutation behavior", () => {
     const resolvers = new Map<number, (value: number) => void>();
 
     const mutation = runComposable(() =>
-      useSWRVMutation<number, Error, number>(
+      useSWRVMutation<number, Error, string, number>(
         "mutation-race",
         async (_key, { arg }) =>
           await new Promise<number>((resolve) => {
@@ -400,7 +442,7 @@ describe("swrv core mutation behavior", () => {
     const key = `mutation-error-clear-${Date.now()}`;
     let shouldSucceed = false;
     const mutation = runComposable(() =>
-      useSWRVMutation<string[], Error, void>(key, async () => {
+      useSWRVMutation<string[], Error, string, void>(key, async () => {
         if (shouldSucceed) {
           return ["foo"];
         }
@@ -422,7 +464,7 @@ describe("swrv core mutation behavior", () => {
 
   it("throws when triggering a mutation without a fetcher", async () => {
     const mutation = runComposable(() =>
-      useSWRVMutation<string, Error, void>("missing-fetcher", null),
+      useSWRVMutation<string, Error, string, void>("missing-fetcher", null),
     );
 
     await expect(mutation.trigger(undefined)).rejects.toThrow("missing fetcher");
@@ -430,7 +472,7 @@ describe("swrv core mutation behavior", () => {
 
   it("throws when triggering a mutation without a key", async () => {
     const mutation = runComposable(() =>
-      useSWRVMutation<string, Error, void>(null, async () => "data"),
+      useSWRVMutation<string, Error, null, void>(null, async () => "data"),
     );
 
     await expect(mutation.trigger(undefined)).rejects.toThrow("missing key");
@@ -442,7 +484,7 @@ describe("swrv core mutation behavior", () => {
     const onError = vi.fn();
     const onRejected = vi.fn();
     const mutation = runComposable(() =>
-      useSWRVMutation<never, string, void>(
+      useSWRVMutation<never, string, string, void>(
         key,
         async () =>
           await new Promise<never>((_resolve, reject) => {

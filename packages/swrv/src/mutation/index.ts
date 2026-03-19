@@ -5,26 +5,26 @@ import { resolveKeyValue, serialize } from "../_internal/serialize";
 import { type HookWithArgs, withMiddleware } from "../_internal/with-middleware";
 import useSWRV from "../index/use-swrv";
 
-import type { KeySource, RawKey, SWRVMiddleware } from "../_internal/types";
+import type { KeySource, RawKey } from "../_internal/types";
 import type {
+  InternalSWRVMutationHook,
   MutationFetcher,
   SWRVMutationConfiguration,
-  SWRVMutationHook,
   SWRVMutationResponse,
 } from "./types";
 
-export const mutation = function mutation(_useSWRVNext: HookWithArgs): SWRVMutationHook {
+export const mutation = function mutation(_useSWRVNext: HookWithArgs): InternalSWRVMutationHook {
   return function useSWRVMutation<
     Data = unknown,
     Error = unknown,
-    ExtraArg = unknown,
     Key extends RawKey = RawKey,
+    ExtraArg = unknown,
     SWRData = Data,
   >(
     key: KeySource<Key>,
-    fetcher: MutationFetcher<Data, ExtraArg, Key> | null,
-    config: SWRVMutationConfiguration<Data, Error, ExtraArg, Key, SWRData> = {},
-  ): SWRVMutationResponse<Data, Error, ExtraArg, Key, SWRData> {
+    fetcher: MutationFetcher<Data, Key, ExtraArg> | null,
+    config: SWRVMutationConfiguration<Data, Error, Key, ExtraArg, SWRData> = {},
+  ): SWRVMutationResponse<Data, Error, Key, ExtraArg, SWRData> {
     const { mutate } = useSWRVConfig();
 
     const data = ref<Data>();
@@ -35,7 +35,7 @@ export const mutation = function mutation(_useSWRVNext: HookWithArgs): SWRVMutat
 
     const trigger = (async (
       arg?: ExtraArg,
-      options: SWRVMutationConfiguration<Data, Error, ExtraArg, Key, SWRData> = {},
+      options: SWRVMutationConfiguration<Data, Error, Key, ExtraArg, SWRData> = {},
     ) => {
       const resolvedKey = resolveKeyValue(key as KeySource<Key>);
       const [serializedKey] = serialize(resolvedKey);
@@ -71,7 +71,7 @@ export const mutation = function mutation(_useSWRVNext: HookWithArgs): SWRVMutat
           data.value = result;
           error.value = undefined;
           isMutating.value = false;
-          mergedOptions.onSuccess?.(result as Data, resolvedKey, mergedOptions);
+          mergedOptions.onSuccess?.(result as Data, serializedKey, mergedOptions);
         }
 
         return result;
@@ -80,7 +80,7 @@ export const mutation = function mutation(_useSWRVNext: HookWithArgs): SWRVMutat
         if (ignoreResultsBefore <= mutationStartedAt) {
           error.value = resolvedError;
           isMutating.value = false;
-          mergedOptions.onError?.(resolvedError, resolvedKey, mergedOptions);
+          mergedOptions.onError?.(resolvedError, serializedKey, mergedOptions);
           if (mergedOptions.throwOnError !== false) {
             throw resolvedError;
           }
@@ -88,7 +88,7 @@ export const mutation = function mutation(_useSWRVNext: HookWithArgs): SWRVMutat
 
         return undefined;
       }
-    }) as SWRVMutationResponse<Data, Error, ExtraArg, Key, SWRData>["trigger"];
+    }) as SWRVMutationResponse<Data, Error, Key, ExtraArg, SWRData>["trigger"];
 
     return {
       data,
@@ -105,68 +105,66 @@ export const mutation = function mutation(_useSWRVNext: HookWithArgs): SWRVMutat
   };
 };
 
-const useSWRVMutationBase = withMiddleware(
-  useSWRV as HookWithArgs,
-  mutation as unknown as SWRVMiddleware,
-) as unknown as SWRVMutationHook;
+const useSWRVMutationBase = withMiddleware(useSWRV as HookWithArgs, mutation);
 
 export default function useSWRVMutation<
   Data = unknown,
   Error = unknown,
-  ExtraArg = unknown,
   Key extends RawKey = RawKey,
+  ExtraArg = unknown,
   SWRData = Data,
 >(
   key: KeySource<Key>,
-  fetcher: MutationFetcher<Data, ExtraArg, Key> | null,
-  config: SWRVMutationConfiguration<Data, Error, ExtraArg, Key, SWRData> & {
+  fetcher: MutationFetcher<Data, Key, ExtraArg> | null,
+  config: SWRVMutationConfiguration<Data, Error, Key, ExtraArg, SWRData> & {
     throwOnError: false;
   },
-): SWRVMutationResponse<Data | undefined, Error, ExtraArg, Key, SWRData>;
+): SWRVMutationResponse<Data | undefined, Error, Key, ExtraArg, SWRData>;
 export default function useSWRVMutation<
   Data = unknown,
   Error = unknown,
-  ExtraArg = unknown,
   Key extends RawKey = RawKey,
+  ExtraArg = unknown,
   SWRData = Data,
 >(
   key: KeySource<Key>,
-  fetcher: MutationFetcher<Data, ExtraArg, Key> | null,
-  config: SWRVMutationConfiguration<Data, Error, ExtraArg, Key, SWRData> & {
+  fetcher: MutationFetcher<Data, Key, ExtraArg> | null,
+  config: SWRVMutationConfiguration<Data, Error, Key, ExtraArg, SWRData> & {
     throwOnError: true;
   },
-): SWRVMutationResponse<Data, Error, ExtraArg, Key, SWRData>;
+): SWRVMutationResponse<Data, Error, Key, ExtraArg, SWRData>;
 export default function useSWRVMutation<
   Data = unknown,
   Error = unknown,
-  ExtraArg = unknown,
   Key extends RawKey = RawKey,
+  ExtraArg = unknown,
   SWRData = Data,
 >(
   key: KeySource<Key>,
-  fetcher: MutationFetcher<Data, ExtraArg, Key> | null,
-  config?: SWRVMutationConfiguration<Data, Error, ExtraArg, Key, SWRData> & {
+  fetcher: MutationFetcher<Data, Key, ExtraArg> | null,
+  config?: SWRVMutationConfiguration<Data, Error, Key, ExtraArg, SWRData> & {
     throwOnError?: boolean;
   },
-): SWRVMutationResponse<Data, Error, ExtraArg, Key, SWRData>;
+): SWRVMutationResponse<Data, Error, Key, ExtraArg, SWRData>;
 export default function useSWRVMutation<
   Data = unknown,
   Error = unknown,
-  ExtraArg = unknown,
   Key extends RawKey = RawKey,
+  ExtraArg = unknown,
   SWRData = Data,
 >(
   key: KeySource<Key>,
-  fetcher: MutationFetcher<Data, ExtraArg, Key> | null,
-  config: SWRVMutationConfiguration<Data, Error, ExtraArg, Key, SWRData> = {},
-): SWRVMutationResponse<Data, Error, ExtraArg, Key, SWRData> {
+  fetcher: MutationFetcher<Data, Key, ExtraArg> | null,
+  config: SWRVMutationConfiguration<Data, Error, Key, ExtraArg, SWRData> = {},
+): SWRVMutationResponse<Data, Error, Key, ExtraArg, SWRData> {
   return useSWRVMutationBase(key, fetcher, config);
 }
+
+export type SWRVMutationHook = typeof useSWRVMutation;
 
 export type {
   MutationFetcher,
   SWRVMutationConfiguration,
-  SWRVMutationHook,
   SWRVMutationResponse,
   TriggerWithArgs,
   TriggerWithOptionsArgs,

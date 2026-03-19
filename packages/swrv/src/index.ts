@@ -1,17 +1,16 @@
 import useSWRV, { unstable_serialize } from "./index/use-swrv";
 
-import { GLOBAL_SWRV_CLIENT, SWRVConfig, createCacheProvider, useSWRVConfig } from "./config";
-import {
-  getScopedMutator,
-  getScopedPreload,
-  hydrateSWRVSnapshot,
-  serializeSWRVSnapshot,
-} from "./_internal";
+import { GLOBAL_SWRV_CLIENT, SWRVConfig, useSWRVConfig } from "./config";
+import { createCache } from "./_internal/cache";
+import { createSWRVClient } from "./_internal/client";
+import { getScopedMutator } from "./_internal/mutate";
+import { getScopedPreload } from "./_internal/preload";
+import { hydrateSWRVSnapshot, serializeSWRVSnapshot } from "./_internal/ssr";
 
 import type { PreloadFunction } from "./_internal/types";
 
-export { SWRVConfig, createCacheProvider, useSWRVConfig };
-export { createCache, createScopedMutator, createSWRVClient } from "./_internal";
+export { SWRVConfig, useSWRVConfig };
+export { createCache, createSWRVClient };
 export { default as useSWRVImmutable } from "./immutable";
 export { default as useSWRVInfinite } from "./infinite";
 export { default as useSWRVMutation } from "./mutation";
@@ -28,8 +27,6 @@ export { unstable_serialize, useSWRV };
 export type {
   BareFetcher,
   BoundMutator,
-  CacheAdapter,
-  CacheState,
   Compare,
   Fetcher,
   KeySource,
@@ -43,10 +40,10 @@ export type {
   SWRVConfiguration,
   SWRVConfigurationValue,
   SWRVFallbackSnapshot,
-  SWRVHook,
   SWRVMiddleware,
   SWRVResponse,
 } from "./_internal";
+export type { SWRVHook } from "./index/use-swrv";
 export type {
   MutationFetcher,
   SWRVMutationConfiguration,

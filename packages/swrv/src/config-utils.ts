@@ -47,12 +47,9 @@ export function createClientFromConfiguration(
     };
   }
 
-  const cache =
-    value.provider?.(fallback.cache) ??
-    value.cache ??
-    (value.initFocus || value.initReconnect ? fallback.cache : undefined);
+  const cache = value.provider?.(fallback.cache) ?? value.cache;
 
-  if (!cache) {
+  if (!cache || cache === fallback.cache) {
     return {
       client: fallback,
       ownsClient: false,

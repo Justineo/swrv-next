@@ -7,7 +7,7 @@ import { registerApp, registerContainer, runComposable, settle } from "./test-ut
 import type { SWRVConfigurationValue } from "../src";
 
 describe("swrv core fetcher behavior", () => {
-  it("accepts null, undefined, and false fetchers without starting requests", async () => {
+  it("accepts null and undefined fetchers without starting requests", async () => {
     const key = `falsy-fetcher-${Date.now()}`;
 
     const withNull = runComposable(() => useSWRV<string>(key, null));
@@ -21,12 +21,6 @@ describe("swrv core fetcher behavior", () => {
     expect(withUndefined.data.value).toBeUndefined();
     expect(withUndefined.isLoading.value).toBe(false);
     expect(withUndefined.isValidating.value).toBe(false);
-
-    const withFalse = runComposable(() => useSWRV<string>(key, false));
-    await settle();
-    expect(withFalse.data.value).toBeUndefined();
-    expect(withFalse.isLoading.value).toBe(false);
-    expect(withFalse.isValidating.value).toBe(false);
   });
 
   it("uses the latest provider fetcher reference for revalidation", async () => {

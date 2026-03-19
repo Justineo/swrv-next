@@ -128,6 +128,7 @@ describe("swrv core error behavior", () => {
 
   it("respects shouldRetryOnError returning true", async () => {
     vi.useFakeTimers();
+    const random = vi.spyOn(Math, "random").mockReturnValue(0);
 
     const fetcher = vi
       .fn<() => Promise<string>>()
@@ -151,6 +152,7 @@ describe("swrv core error behavior", () => {
     expect(fetcher).toHaveBeenCalledTimes(2);
     expect(state.data.value).toBe("recovered");
     expect(state.error.value).toBeUndefined();
+    random.mockRestore();
   });
 
   it("does not fire onError or onErrorRetry for a stale key after switching keys", async () => {
@@ -197,5 +199,32 @@ describe("swrv core error behavior", () => {
     expect(state.error.value).toBeUndefined();
     expect(onError).not.toHaveBeenCalled();
     expect(onErrorRetry).not.toHaveBeenCalled();
+  });
+
+  it("does not revalidate on mount when another mounted consumer already holds a cached error", async () => {
+    const key = `error-second-consumer-${Date.now()}`;
+    const fetcher = vi.fn(async () => {
+      throw new Error("boom");
+    });
+
+    runComposable(() =>
+      useSWRV<string, Error>(key, fetcher, {
+        shouldRetryOnError: false,
+      }),
+    );
+
+    await settle();
+    expect(fetcher).toHaveBeenCalledTimes(1);
+
+    const second = runComposable(() =>
+      useSWRV<string, Error>(key, fetcher, {
+        shouldRetryOnError: false,
+      }),
+    );
+
+    await settle();
+
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(second.error.value?.message).toBe("boom");
   });
 });

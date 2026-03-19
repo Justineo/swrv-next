@@ -67,9 +67,15 @@ function shouldRevalidateOnActivation<Data, Error>(
   isInitialActivation: boolean,
   currentData: Data | undefined,
   hasFetcher: boolean,
+  hasRevalidator: boolean,
+  currentError: Error | undefined,
   config: ResolvedSWRVConfiguration<Data, Error>,
 ): boolean {
   if (!hasFetcher) {
+    return false;
+  }
+
+  if (hasRevalidator && hasDefinedValue(currentError)) {
     return false;
   }
 
@@ -82,7 +88,7 @@ function shouldRevalidateOnActivation<Data, Error>(
 
 export function useSWRVHandler<Data = unknown, Error = unknown>(
   key: KeySource<RawKey>,
-  fetcher?: BareFetcher<Data> | null | false,
+  fetcher?: BareFetcher<Data> | null,
   config?: SWRVConfiguration<Data, Error>,
 ): SWRVResponse<Data, Error> {
   if (!getCurrentScope()) {
@@ -243,11 +249,7 @@ export function useSWRVHandler<Data = unknown, Error = unknown>(
 
   const revalidate = async (options: RevalidateOptions = {}) => {
     const configValue = getConfig();
-    const activeFetcher = (fetcher ?? configValue.fetcher) as
-      | BareFetcher<Data>
-      | null
-      | undefined
-      | false;
+    const activeFetcher = (fetcher ?? configValue.fetcher) as BareFetcher<Data> | null | undefined;
 
     const [serializedKey, rawKey] = serialize(key as RawKey | (() => RawKey));
     currentKey.value = { rawKey, serializedKey };
@@ -555,6 +557,8 @@ export function useSWRVHandler<Data = unknown, Error = unknown>(
         return;
       }
 
+      const hasExistingRevalidator = (client.state.revalidators.get(serializedKey)?.size ?? 0) > 0;
+
       unsubscribeCache = client.subscribe(serializedKey, (current) => {
         applyState(current as CacheState<Data, Error> | undefined, serializedKey);
       });
@@ -600,6 +604,8 @@ export function useSWRVHandler<Data = unknown, Error = unknown>(
           isInitialActivation,
           resolvedData,
           Boolean(fetcher ?? configValue.fetcher) && !configValue.isPaused(),
+          hasExistingRevalidator,
+          cached?.error,
           configValue,
         )
       ) {
