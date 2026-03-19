@@ -159,7 +159,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - the docs site no longer carries a separate status page; the launch surface is documented inline through the main docs and `Migrate from v1`
   - the repo now contains a concrete stable-release checklist under `journey/logs/2026-03-19-stable-release-checklist.md`
   - the remaining non-suspense release work is now mostly outside the repo: Trusted Publisher production verification, stable release-note preparation, and the actual stable tag decision
-- the pre-stable refinement lane is now complete for the current scope: the runtime types and middleware boundaries have been simplified, the remaining code-level naming rough edges have been cleaned up, and the docs site has now completed its from-scratch SWR-structured rebuild
+- the pre-stable refinement lane has materially reduced runtime and middleware drift, but a later 2026-03-20 source audit found a smaller remaining set of public-type and helper-boundary alignment tasks still open
 - the docs site now uses default VitePress layout primitives, keeps the built-in code block treatment and highlighting, and themes the site through separate light and dark `--theme-*` token sets bridged through a shared VitePress `--vp-*` mapping layer plus the SWRV logo
 - the docs site now uses Shiki's `night-owl-light` and `night-owl` themes for code blocks, so syntax highlighting follows a dual light/dark Night Owl pairing instead of the VitePress default
 - the docs light mode now uses a crisp white / jade palette with darker ink and cleaner neutrals, while dark mode keeps the Kong AI-connectivity palette
@@ -186,18 +186,16 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - feature-local type ownership now lives in `infinite/types.ts`, `mutation/types.ts`, and `subscription/types.ts` instead of being mixed into larger entry modules
   - feature-local side stores now live beside their owning features in `infinite/state.ts` and `subscription/state.ts` instead of generic `_internal` modules
   - infinite key serialization now lives beside the feature in `infinite/serialize.ts`, while `_internal/key-prefix.ts` is reduced to the internal-key filter used by generic mutate paths
-  - three explicit post-refactor review rounds did not reveal further safe simplification work beyond the current shape; the remaining complexity is now mostly the unavoidable base-hook runtime itself
+  - the remaining complexity is still concentrated in the base-hook runtime, but a later 2026-03-20 source audit found additional alignable public-type and helper-boundary drift beyond the earlier review rounds
 - a fresh SWR runtime-structure comparison shows the remaining implementation drift is now mostly boundary-level rather than feature-level:
   - SWRV is already aligned on provider-scoped runtime, thin public hook entry plus handler, shared runtime primitives, and base-hook-centered advanced APIs
   - the main remaining alignable drift is now mostly the heavier `SWRVClient` facade; the repeated per-feature middleware resolution, entry normalization, and feature-only generic `_internal` state have been removed
   - the main divergences that should remain are Vue-native refs and watchers, provide/inject context, effect-scope enforcement, and explicit Vue SSR handoff primitives instead of React server-component paths
-- the final pre-release SWR alignment pass has now closed the remaining safe runtime and type drifts:
-  - default compare now uses `dequal/lite`, browser online state is event-tracked, retry scheduling now follows SWR-style exponential backoff, and slow-connection timeout defaults now match SWR's model
-  - base-hook mount logic now includes SWR's cached-error guard, so a second consumer does not eagerly revalidate a cached error on initial mount
-  - `useSWRVInfinite` now refetches cached pages on mount when `revalidateOnMount: true`, matching SWR's page-level mount behavior
-  - mutation callback keys are now serialized strings, mutation fetcher generic order now matches SWR, and subscription push typing and updater semantics now match SWR's cached-state model
-  - internal key prefixes are now centralized in `_internal/constants.ts`, and `immutable` is again a thin middleware wrapper instead of carrying a duplicated overload surface
-  - after the final 2026-03-20 source audit, there are no remaining safe non-React, non-Vue-required alignment tasks left open; the remaining implementation drift is now intentional: Vue reactive key sources and refs, explicit provider-scoped client state, provide/inject config flow, explicit SSR snapshot helpers, and the still-deferred React-only Suspense or RSC machinery
+- the latest 2026-03-20 source audit shows the remaining safe drift is now concentrated in public types and helper boundaries rather than core runtime behavior:
+  - default compare, retry scheduling, online state tracking, slow-connection defaults, cached-error mount behavior, and `useSWRVInfinite` mount revalidation are already aligned with SWR
+  - the main remaining alignable drift is now public-type and boundary-level: `SWRVHook`, `SWRVInfiniteHook`, and `SWRVMutationHook` still under-model their real overload surfaces; root type exports still leak SWRV-specific or internal shapes such as `CacheState`, `RawKey`, `KeySource`, and `BoundMutator`; and `immutable` still carries a duplicated overload surface
+  - mutation and subscription type ownership still drift on callback key shapes, generic ordering, and subscription updater typing, and preload plus internal key-prefix ownership still differs from SWR's middleware and constants layout
+  - the remaining intentional drift is still Vue reactive key sources and refs, explicit provider-scoped client state, provide/inject config flow, explicit SSR snapshot helpers, and the still-deferred React-only Suspense or RSC machinery
 - The main reference materials for the rebuild remain:
   - `journey/research/swr-vs-swrv.md`
   - `journey/research/2026-03-18-swrv-next-vs-swr-and-swrv-current-state.md`
@@ -205,6 +203,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - `journey/research/2026-03-19-swr-implementation-alignment-evaluation.md`
   - `journey/research/2026-03-19-swrv-next-complexity-and-simplification.md`
   - `journey/research/2026-03-19-swr-runtime-structure-alignment.md`
+  - `journey/research/2026-03-20-final-swr-deviation-audit.md`
   - `/Users/yiling.gu@konghq.com/Developer/Justineo/swr` (local SWR source, version 2.4.1)
   - `/Users/yiling.gu@konghq.com/Developer/Justineo/swr-site/content/docs` (local SWR docs source tree for docs IA and content structure)
   - `/Users/yiling.gu@konghq.com/Developer/Kong/swrv` (local legacy SWRV source, version 1.1.0)

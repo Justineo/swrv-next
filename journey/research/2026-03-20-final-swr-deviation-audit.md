@@ -1,100 +1,179 @@
-# Final SWR deviation audit
+# SWR source drift audit
 
 Date: 2026-03-20
 Status: completed
 
 ## Scope
 
-Compare `packages/swrv/src` against local SWR 2.4.1 source at
-`/Users/yiling.gu@konghq.com/Developer/Justineo/swr/src` and classify every current deviation
-across:
+Compare local SWR 2.4.1 source at `/Users/yiling.gu@konghq.com/Developer/Justineo/swr/src`
+against `packages/swrv/src`, focusing on:
 
-- module organization
-- type interfaces
-- runtime logic
+- file and module layout
+- helper and boundary ownership
+- public and internal type-shape drift
+- naming drift that still affects maintainability or parity
 
-This pass closes every remaining deviation that is both:
+This pass does not treat "make Vue look like React" as the goal. The goal is to separate:
 
-- clearly not required by Vue semantics
-- safe to change before first public release
+- remaining alignable drift
+- intentional Vue-required drift
 
-## Final deviation inventory
+## Summary
 
-### Module organization
+Core runtime behavior is mostly aligned. The remaining safe drift is now concentrated in public
+type aliases, helper ownership, and a few layout and naming boundaries.
 
-| Area                             | SWR                                               | SWRV Next                                                              | Status      | Decision                                   |
-| -------------------------------- | ------------------------------------------------- | ---------------------------------------------------------------------- | ----------- | ------------------------------------------ |
-| Base hook entry helper           | `_internal/utils/resolve-args.ts` owns `withArgs` | `_internal/resolve-args.ts` owns `withArgs`                            | resolved    | aligned                                    |
-| Argument normalizer naming       | `normalize` in `normalize-args.ts`                | `normalize` in `normalize-args.ts`                                     | resolved    | aligned                                    |
-| Base hook file split             | `index/use-swr.ts` plus `index/serialize.ts`      | `index/use-swrv.ts`, `index/use-swrv-handler.ts`, `index/serialize.ts` | intentional | keep the Vue-specific entry/runtime split  |
-| Global runtime storage           | cache-global tuple utilities                      | explicit `SWRVClient`, `provider-state.ts`, `cache-helper.ts`          | intentional | keep explicit provider-scoped client model |
-| Internal key prefixes            | `_internal/constants.ts` owns feature prefixes    | `_internal/constants.ts` now owns infinite and subscription prefixes   | resolved    | aligned                                    |
-| Immutable wrapper shape          | thin `withMiddleware(useSWR, immutable)` wrapper  | thin `withMiddleware(useSWRV, immutable)` wrapper                      | resolved    | aligned                                    |
-| Temporary compatibility wrappers | none                                              | already removed                                                        | resolved    | aligned                                    |
+## Remaining actionable drift
 
-### Type interfaces
+### 1. Exported hook aliases under-model the real callable surface
 
-| Area                           | SWR                                               | SWRV Next                                                                 | Status      | Decision                                                               |
-| ------------------------------ | ------------------------------------------------- | ------------------------------------------------------------------------- | ----------- | ---------------------------------------------------------------------- |
-| Key model                      | `Key` and `Arguments`                             | `RawKey` plus reactive `KeySource`                                        | intentional | keep Vue-native reactive key source split                              |
-| Response model                 | plain values plus dependency collection           | Vue `Ref`s                                                                | intentional | keep Vue-native response contract                                      |
-| Public base hook alias         | `SWRHook = typeof useSWR`                         | `SWRVHook = typeof useSWRV`                                               | resolved    | aligned                                                                |
-| Public infinite hook alias     | `SWRInfiniteHook = typeof useSWRInfinite`         | `SWRVInfiniteHook = typeof useSWRVInfinite`                               | resolved    | aligned                                                                |
-| Public mutation hook alias     | `SWRMutationHook = typeof useSWRMutation`         | `SWRVMutationHook = typeof useSWRVMutation`                               | resolved    | aligned                                                                |
-| Public subscription hook alias | `SWRSubscriptionHook = typeof useSWRSubscription` | `SWRVSubscriptionHook = typeof useSWRVSubscription`                       | resolved    | aligned                                                                |
-| Mutation callback key type     | serialized string key                             | serialized string key                                                     | resolved    | aligned                                                                |
-| Mutation fetcher generic order | `Data, Key, ExtraArg`                             | `Data, Key, ExtraArg`                                                     | resolved    | aligned                                                                |
-| Subscription push typing       | data or mutator callback                          | data or mutator callback                                                  | resolved    | aligned                                                                |
-| Public root helper exports     | SWR avoids leaking internal state shape           | `CacheState` leak removed; root no longer exports it                      | resolved    | aligned                                                                |
-| Provider config surface        | no explicit client type on user config            | `client`, `cache`, `provider`, `initFocus`, `initReconnect` remain public | intentional | keep explicit client and cache control for Vue SSR and provider scopes |
+- `SWRVHook` in `packages/swrv/src/_internal/types.ts` only models `(key, fetcher?, config?)`
+  instead of the real overload-rich `typeof useSWRV` surface.
+- `SWRVInfiniteHook` in `packages/swrv/src/infinite/types.ts` misses the config-only form and
+  weaker fetcher inference than the actual `useSWRVInfinite` export.
+- `SWRVMutationHook` in `packages/swrv/src/mutation/types.ts` omits the real `throwOnError`
+  overload precision from the default export.
 
-### Runtime logic
+Files:
 
-| Area                            | SWR                                                                                   | SWRV Next                                                                                     | Status      | Decision                           |
-| ------------------------------- | ------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | ----------- | ---------------------------------- |
-| Default compare                 | deep equality via `dequal/lite`                                                       | deep equality via `dequal/lite`                                                               | resolved    | aligned                            |
-| Default retry scheduling        | exponential backoff with optional retry cap                                           | exponential backoff with optional retry cap                                                   | resolved    | aligned                            |
-| Slow-connection defaults        | longer retry and loading timeouts                                                     | longer retry and loading timeouts                                                             | resolved    | aligned                            |
-| Online detection                | event-tracked `online` flag, not raw `navigator.onLine`                               | event-tracked `online` flag                                                                   | resolved    | aligned                            |
-| Focus initializer               | `visibilitychange` and `focus` listeners without visibility filtering in the listener | same                                                                                          | resolved    | aligned                            |
-| Cached-error mount guard        | second consumer mount with cached error skips eager revalidation                      | same                                                                                          | resolved    | aligned                            |
-| Infinite `revalidateOnMount`    | cached pages refetch on mount when enabled                                            | same                                                                                          | resolved    | aligned                            |
-| Fetcher normalization           | `null` and config-only normalization, not `false`                                     | same                                                                                          | resolved    | aligned                            |
-| Mutation callback key semantics | callbacks receive serialized key                                                      | same                                                                                          | resolved    | aligned                            |
-| Provider reuse of parent cache  | reusing the parent provider does not create a fresh boundary                          | returning the parent cache now reuses the parent client instead of creating a shadow boundary | resolved    | aligned                            |
-| Subscription updater semantics  | updater functions mutate cached state, not fallback-only displayed state              | updater functions are now forwarded through the bound mutator unchanged                       | resolved    | aligned                            |
-| State subscription model        | `useSyncExternalStore` plus dependency collection                                     | cache listeners feeding Vue refs directly                                                     | intentional | keep Vue-native subscription model |
-| SSR handoff                     | fallback and React server integration                                                 | explicit snapshot serialization and hydration helpers                                         | intentional | keep explicit Vue SSR primitives   |
-| Suspense and RSC                | native React implementation                                                           | deferred                                                                                      | deferred    | not part of this pass              |
+- `packages/swrv/src/_internal/types.ts`
+- `packages/swrv/src/index/use-swrv.ts`
+- `packages/swrv/src/infinite/types.ts`
+- `packages/swrv/src/infinite/index.ts`
+- `packages/swrv/src/mutation/types.ts`
+- `packages/swrv/src/mutation/index.ts`
 
-## Closed task list
+### 2. The root type barrel still exports SWRV-specific or internal-ish shapes
 
-1. Trimmed pre-release-only public and `_internal` exports that did not match the intended final
-   surface.
-2. Removed `false` as a normalized fetcher form.
-3. Renamed helper organization to match SWR's `resolve-args` and `normalize` shape.
-4. Aligned default compare, retry scheduling, slow-connection timings, and online detection with
-   SWR.
-5. Aligned base-hook mount behavior with SWR's cached-error guard.
-6. Aligned infinite mount revalidation semantics with SWR.
-7. Aligned mutation and subscription type surfaces with SWR where React-specific behavior was not
-   involved.
-8. Reused the parent client when `provider` returns the parent cache and added symmetric coverage
-   for real child-provider boundaries.
-9. Centralized internal key-prefix constants and simplified the immutable wrapper to match SWR's
-   thinner structure.
+- Root exports still lean on `BoundMutator`, `CacheAdapter`, `CacheState`, `RawKey`, and
+  `KeySource`.
+- `CacheState` still exposes `_c` and `_k`, so the public surface leaks internal cache markers.
+- SWR root instead exposes cleaner public aliases like `KeyedMutator`, `Cache`, `State`, `Key`,
+  and `Arguments`.
 
-## Remaining intentional deviations
+Files:
 
-- Vue reactive `KeySource`
-- `Ref`-based `SWRVResponse`
-- explicit `SWRVClient` and provider-state storage
-- provide/inject config flow instead of React rerender-driven context propagation
-- explicit snapshot SSR helpers
-- deferred React-only Suspense, RSC, and dependency-collection machinery
+- `packages/swrv/src/index.ts`
+- `packages/swrv/src/_internal/types.ts`
+- `packages/swrv/src/_internal/index.ts`
 
-## Final conclusion
+### 3. `immutable` still duplicates the base-hook overload surface
 
-There are no remaining non-React, non-Vue-required deviations that can still be removed safely in
-this prerelease line. The remaining differences are structural consequences of Vue's reactive and
-provider model, or explicitly deferred React-only surface area.
+- `packages/swrv/src/immutable/index.ts` still inlines nearly the full `useSWRV` overload set.
+- SWR's `immutable` module stays a thin middleware wrapper over the base hook.
+
+Files:
+
+- `packages/swrv/src/immutable/index.ts`
+- `packages/swrv/src/index/use-swrv.ts`
+- `packages/swrv/src/_internal/types.ts`
+
+### 4. Mutation type ownership still drifts from SWR
+
+- `SWRVMutationConfiguration` types `onSuccess` and `onError` with raw key values instead of
+  serialized string keys.
+- The mutation runtime also calls those callbacks with `resolvedKey`, not the serialized key.
+- `MutationFetcher` generic order is still `Data, ExtraArg, Key` instead of `Data, Key, ExtraArg`.
+
+Files:
+
+- `packages/swrv/src/mutation/types.ts`
+- `packages/swrv/src/mutation/index.ts`
+
+### 5. Subscription typing is narrower than both runtime behavior and SWR
+
+- `SWRVSubscriptionOptions.next` only accepts data values.
+- The runtime forwards subscription payloads through the bound mutator, so callback-style updates
+  can work.
+- SWR types already model `Data | MutatorCallback<Data>` there.
+
+Files:
+
+- `packages/swrv/src/subscription/types.ts`
+- `packages/swrv/src/subscription/index.ts`
+
+### 6. Preload ownership is still split across helper, middleware, and handler layers
+
+- SWR keeps preload as both a public helper and a built-in middleware applied by `withArgs`.
+- `swrv-next` currently keeps part of the behavior in `_internal/preload.ts`, part in
+  `_internal/with-args.ts`, and part in `index/use-swrv-handler.ts`.
+
+Files:
+
+- `packages/swrv/src/_internal/preload.ts`
+- `packages/swrv/src/_internal/with-args.ts`
+- `packages/swrv/src/index/use-swrv-handler.ts`
+
+### 7. Internal key-prefix ownership is still fragmented
+
+- `INFINITE_PREFIX` lives in `infinite/serialize.ts`.
+- `SUBSCRIPTION_PREFIX` lives in `subscription/index.ts`.
+- generic mutate filtering relies on `_internal/key-prefix.ts` knowing both prefixes by regex.
+
+Files:
+
+- `packages/swrv/src/infinite/serialize.ts`
+- `packages/swrv/src/subscription/index.ts`
+- `packages/swrv/src/_internal/key-prefix.ts`
+
+### 8. Low-priority layout drift remains
+
+- `swrv-next` still uses top-level `src/index.ts` and `src/config.ts` instead of SWR's
+  `src/index/index.ts` and `src/index/config.ts` layout.
+- feature-local side stores remain split into `infinite/state.ts` and `subscription/state.ts`
+  instead of staying inline beside the owning feature module.
+
+Files:
+
+- `packages/swrv/src/index.ts`
+- `packages/swrv/src/config.ts`
+- `packages/swrv/src/config-context.ts`
+- `packages/swrv/src/infinite/index.ts`
+- `packages/swrv/src/infinite/state.ts`
+- `packages/swrv/src/subscription/index.ts`
+- `packages/swrv/src/subscription/state.ts`
+
+## Intentional Vue-required drift
+
+These differences should remain unless the project deliberately stops being Vue-native:
+
+- ref-based response objects, including `data`, `error`, `isLoading`, `isValidating`, mutation
+  `isMutating`, and infinite `size`
+- reactive key sources through `Ref`, `ComputedRef`, and function keys
+- provide/inject config flow and effect-scope enforcement instead of React context and hook rules
+- watcher-driven key, subscription, and infinite lifecycle control
+- explicit snapshot serialization and hydration helpers instead of React server entrypoints
+
+## Concrete swrv-next files implicated
+
+- `packages/swrv/src/_internal/index.ts`
+- `packages/swrv/src/_internal/key-prefix.ts`
+- `packages/swrv/src/_internal/preload.ts`
+- `packages/swrv/src/_internal/types.ts`
+- `packages/swrv/src/_internal/with-args.ts`
+- `packages/swrv/src/config-context.ts`
+- `packages/swrv/src/config.ts`
+- `packages/swrv/src/immutable/index.ts`
+- `packages/swrv/src/index.ts`
+- `packages/swrv/src/index/use-swrv-handler.ts`
+- `packages/swrv/src/index/use-swrv.ts`
+- `packages/swrv/src/infinite/index.ts`
+- `packages/swrv/src/infinite/serialize.ts`
+- `packages/swrv/src/infinite/state.ts`
+- `packages/swrv/src/infinite/types.ts`
+- `packages/swrv/src/mutation/index.ts`
+- `packages/swrv/src/mutation/types.ts`
+- `packages/swrv/src/subscription/index.ts`
+- `packages/swrv/src/subscription/state.ts`
+- `packages/swrv/src/subscription/types.ts`
+
+## Conclusion
+
+The remaining implementation drift is no longer feature-level. It is now mostly:
+
+- public type alias precision
+- helper and middleware ownership
+- key-prefix and module-boundary cleanup
+- a smaller set of naming and layout decisions
+
+The intentional drift is still the Vue-native runtime contract itself.
