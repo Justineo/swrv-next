@@ -498,7 +498,7 @@ function useSWRVHandler<Data = unknown, Error = unknown>(
     }
 
     return revalidate({
-      dedupe: options?.dedupe ?? event !== "mutate",
+      dedupe: options?.dedupe ?? true,
       force: options?.force ?? event === "mutate",
       throwOnError: options?.throwOnError,
     });

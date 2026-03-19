@@ -165,6 +165,45 @@ describe("swrv core loading and key behavior", () => {
     expect(state.data.value).toBe(`${baseKey}-1`);
   });
 
+  it("does not set loading while manually revalidating existing data", async () => {
+    vi.useFakeTimers();
+
+    const key = `loading-revalidate-${Date.now()}`;
+    const state = runComposable(() =>
+      useSWRV<string>(
+        key,
+        async () =>
+          await new Promise<string>((resolve) => {
+            setTimeout(() => {
+              resolve("data");
+            }, 10);
+          }),
+        {
+          dedupingInterval: 0,
+        },
+      ),
+    );
+
+    await vi.advanceTimersByTimeAsync(10);
+    await settle();
+
+    expect(state.isLoading.value).toBe(false);
+    expect(state.isValidating.value).toBe(false);
+
+    const revalidatePromise = state.mutate();
+    await flush();
+
+    expect(state.isLoading.value).toBe(false);
+    expect(state.isValidating.value).toBe(true);
+
+    await vi.advanceTimersByTimeAsync(10);
+    await revalidatePromise;
+    await settle();
+
+    expect(state.isLoading.value).toBe(false);
+    expect(state.isValidating.value).toBe(false);
+  });
+
   it("does not fetch when a function key throws", async () => {
     const fetcher = vi.fn(async () => "value");
 
@@ -178,6 +217,15 @@ describe("swrv core loading and key behavior", () => {
 
     expect(fetcher).not.toHaveBeenCalled();
     expect(state.data.value).toBeUndefined();
+    expect(state.isLoading.value).toBe(false);
+    expect(state.isValidating.value).toBe(false);
+  });
+
+  it("keeps loading false when the key is null", async () => {
+    const state = runComposable(() => useSWRV<string>(null, async () => "data"));
+
+    await settle();
+
     expect(state.isLoading.value).toBe(false);
     expect(state.isValidating.value).toBe(false);
   });
