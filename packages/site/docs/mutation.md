@@ -144,6 +144,8 @@ const { data, error, isMutating, reset, trigger } = useSWRVMutation(key, fetcher
 `trigger` also accepts per-call options so you can override optimistic updates or rollback behavior
 for one mutation without changing the base hook configuration.
 
+It returns the remote mutation result when the request succeeds.
+
 ### Basic usage
 
 ```vue
@@ -164,7 +166,8 @@ const { trigger, isMutating, error } = useSWRVMutation(
 
 async function submit(name: string) {
   try {
-    await trigger({ name });
+    const updatedUser = await trigger({ name });
+    console.log(updatedUser);
   } catch {
     // handle the error here
   }
@@ -205,6 +208,9 @@ async function showUser() {
 }
 </script>
 ```
+
+That makes it useful for modal-driven or user-triggered flows where loading should not start at
+mount time.
 
 ## Optimistic updates
 

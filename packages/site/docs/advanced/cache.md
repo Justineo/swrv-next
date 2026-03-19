@@ -116,4 +116,14 @@ const { mutate } = useSWRVConfig();
 await mutate("/api/user", (current) => (current ? { ...current, name: "Grace" } : current));
 ```
 
+You can also clear multiple keys through a filter:
+
+```ts
+const { mutate } = useSWRVConfig();
+
+await mutate((key) => true, undefined, {
+  revalidate: false,
+});
+```
+
 That updates the cache while preserving SWRV’s normal mutation and listener semantics.

@@ -16,6 +16,10 @@ They change independently depending on the request state.
 
 ## State machine
 
+`useSWRV` returns `data`, `error`, `isLoading`, and `isValidating` depending on the state of the
+fetcher. The diagrams in the SWR docs map to the same state transitions in SWRV, even though the
+returned values are Vue refs instead of plain React state.
+
 ### Fetch and revalidate
 
 On the first request with no cached data:
@@ -68,6 +72,26 @@ This is a useful split for UI design:
 - use `isLoading` for the initial empty-state skeleton
 - use `isValidating` for subtle background refresh indicators
 
+> [!NOTE]
+> Fallback data and previous data are not considered "loaded data". That means you can have
+> something to render while `isLoading` is still `true`.
+
+```vue
+<script setup lang="ts">
+const { data, isLoading, isValidating } = useSWRV(STOCK_API, fetcher, {
+  refreshInterval: 3000,
+});
+</script>
+
+<template>
+  <StockSkeleton v-if="isLoading" />
+  <template v-else>
+    <div>{{ data }}</div>
+    <Spinner v-if="isValidating" />
+  </template>
+</template>
+```
+
 ## Return previous data for better UX
 
 `keepPreviousData` is especially useful for search and filter UIs where the key changes frequently:
@@ -83,6 +107,18 @@ const response = useSWRV(() => `/api/search?q=${encodeURIComponent(search.value)
   keepPreviousData: true,
 });
 </script>
+
+<template>
+  <input v-model="search" placeholder="Search..." />
+
+  <div :class="{ loading: response.isLoading }">
+    <ProductCard
+      v-for="product in response.data?.products ?? []"
+      :key="product.id"
+      :product="product"
+    />
+  </div>
+</template>
 ```
 
 With that option enabled, the list does not briefly collapse to an empty state on every key change.
@@ -94,3 +130,6 @@ SWR’s React docs talk about dependency collection as a render optimization.
 SWRV does not port that exact mechanism because Vue already tracks reads at the ref level. Since
 `data`, `error`, `isLoading`, and `isValidating` are separate refs, Vue naturally tracks which
 parts of the SWRV response your template or computed values actually use.
+
+For a deeper discussion of what still matters for performance in Vue, see
+[Performance](/advanced/performance#dependency-collection).

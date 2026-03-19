@@ -23,6 +23,14 @@ This is a good fit for dashboards or other private pages where SEO is not the pr
 
 If the page must be pre-rendered, pass the prefetched data through `fallback` on `SWRVConfig`:
 
+```ts
+const article = await getArticleFromAPI();
+
+const fallback = {
+  "/api/article": article,
+};
+```
+
 ```vue
 <!-- ServerPage.vue -->
 <script setup lang="ts">
@@ -55,6 +63,9 @@ const { data } = useSWRV("/api/article", fetcher);
 
 The page is still pre-rendered, but after hydration SWRV takes over again and can revalidate on the
 client to keep the data fresh.
+
+The important part is that the article is ready during SSR because it was prefetched explicitly, not
+because the hook fetched on the server.
 
 ### Complex keys
 

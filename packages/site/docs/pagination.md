@@ -114,6 +114,8 @@ and options. It returns everything `useSWRV` returns, plus `size` and `setSize`.
 
 ### API
 
+#### Parameters
+
 - `getKey(index, previousPageData)`: returns the key for a page, or `null` to stop loading
 - `fetcher`: same as `useSWRV`'s fetcher
 - `options`: accepts all `useSWRV` options, plus:
@@ -122,9 +124,17 @@ and options. It returns everything `useSWRV` returns, plus `size` and `setSize`.
   - `revalidateFirstPage = true`
   - `persistSize = false`
   - `parallel = false`
+
+> [!NOTE]
+> `initialSize` should be treated as fixed for the lifecycle of that hook call.
+
+#### Return values
+
 - `data`: an array of page responses
 - `size`: the number of pages that should be fetched
 - `setSize`: updates the number of pages that should be fetched
+- `error`, `isLoading`, `isValidating`, and `mutate`: the same core values you get from `useSWRV`,
+  but applied to the page array
 
 ### Example 1: index-based paginated API
 
@@ -167,6 +177,9 @@ That means the top-level component can now compute totals across every loaded pa
 ```ts
 const totalUsers = computed(() => data.value?.reduce((count, page) => count + page.length, 0) ?? 0);
 ```
+
+That is the main difference from the earlier `<Page />` pattern: the top-level component has access
+to every loaded page at once.
 
 ### Example 2: cursor or offset based paginated API
 
