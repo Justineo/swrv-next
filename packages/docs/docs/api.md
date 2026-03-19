@@ -36,6 +36,7 @@ Key notes:
 - state values are Vue refs
 - `fallbackData` is per-hook
 - `SWRVConfig` can provide app-level `fallback` values keyed by serialized key
+- during server rendering, hooks read fallback or hydrated snapshot data but do not start fetches
 
 ## `preload`
 
@@ -139,4 +140,9 @@ Current behavior highlights:
 
 ## `swrv/immutable`
 
-`useSWRVImmutable` is a `useSWRV` variant with automatic focus/reconnect revalidation disabled.
+`swrv/immutable` exports:
+
+- the default `useSWRVImmutable` hook
+- a named `immutable` middleware for `use: [immutable]` composition
+
+Both forms disable automatic focus and reconnect revalidation.

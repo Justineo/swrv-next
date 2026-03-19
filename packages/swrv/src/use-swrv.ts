@@ -649,6 +649,11 @@ function useSWRVHandler<Data = unknown, Error = unknown>(
         ? Date.now() + configValue.focusThrottleInterval
         : 0;
 
+      if (isServerEnvironment()) {
+        hasMounted = true;
+        return;
+      }
+
       if (
         shouldRevalidateOnActivation(
           isInitialActivation,

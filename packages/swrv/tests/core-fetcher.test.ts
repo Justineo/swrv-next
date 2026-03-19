@@ -1,7 +1,10 @@
+import { createApp, defineComponent, h, ref } from "vue";
 import { describe, expect, it } from "vite-plus/test";
 
-import { useSWRV } from "../src";
-import { runComposable, settle } from "./test-utils";
+import { SWRVConfig, useSWRV } from "../src";
+import { registerApp, registerContainer, runComposable, settle } from "./test-utils";
+
+import type { SWRVConfigurationValue } from "../src";
 
 describe("swrv core fetcher behavior", () => {
   it("accepts null, undefined, and false fetchers without starting requests", async () => {
@@ -24,5 +27,54 @@ describe("swrv core fetcher behavior", () => {
     expect(withFalse.data.value).toBeUndefined();
     expect(withFalse.isLoading.value).toBe(false);
     expect(withFalse.isValidating.value).toBe(false);
+  });
+
+  it("uses the latest provider fetcher reference for revalidation", async () => {
+    const key = `provider-fetcher-${Date.now()}`;
+    const activeFetcher = ref<(...args: readonly unknown[]) => string>(() => "foo");
+    const configValue: SWRVConfigurationValue<string> = () => ({
+      dedupingInterval: 0,
+      fetcher: activeFetcher.value,
+    });
+    let state!: ReturnType<typeof useSWRV<string>>;
+
+    const Child = defineComponent({
+      setup() {
+        state = useSWRV<string>(key, undefined, {
+          dedupingInterval: 0,
+        });
+        return () => h("div");
+      },
+    });
+
+    const container = registerContainer(document.createElement("div"));
+    document.body.appendChild(container);
+
+    const app = registerApp(
+      createApp({
+        render: () =>
+          h(
+            SWRVConfig,
+            {
+              value: configValue,
+            },
+            {
+              default: () => h(Child),
+            },
+          ),
+      }),
+    );
+
+    app.mount(container);
+    await settle();
+
+    expect(state.data.value).toBe("foo");
+
+    activeFetcher.value = () => "bar";
+    await settle();
+    await state.mutate();
+    await settle();
+
+    expect(state.data.value).toBe("bar");
   });
 });

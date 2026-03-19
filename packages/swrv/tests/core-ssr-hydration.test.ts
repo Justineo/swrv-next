@@ -9,6 +9,7 @@ import {
   preload,
   serializeSWRVSnapshot,
   useSWRV,
+  useSWRVImmutable,
 } from "../src";
 import { flush, mountWithConfig, settle } from "./test-utils";
 
@@ -109,6 +110,54 @@ describe("swrv core ssr and hydration helpers", () => {
     expect(html).toContain("server-seed");
   });
 
+  it("renders fallback data on the server without calling the fetcher", async () => {
+    (window as Window & { Deno?: string }).Deno = "1";
+
+    const key = `server-fallback-${Date.now()}`;
+    const fetcher = vi.fn(async () => "fresh");
+
+    const Page = defineComponent({
+      setup() {
+        const state = useSWRV<string>(key, fetcher, {
+          fallbackData: "fallback",
+        });
+        return () => h("div", state.data.value ?? "");
+      },
+    });
+
+    const app = createSSRApp({
+      render: () => h(Page),
+    });
+
+    const html = await renderToString(app);
+
+    expect(html).toContain("fallback");
+    expect(fetcher).not.toHaveBeenCalled();
+  });
+
+  it("does not revalidate useSWRVImmutable on the server", async () => {
+    (window as Window & { Deno?: string }).Deno = "1";
+
+    const key = `server-immutable-${Date.now()}`;
+    const fetcher = vi.fn(async () => "fresh");
+
+    const Page = defineComponent({
+      setup() {
+        const state = useSWRVImmutable<string>(key, fetcher);
+        return () => h("div", state.data.value ?? "empty");
+      },
+    });
+
+    const app = createSSRApp({
+      render: () => h(Page),
+    });
+
+    const html = await renderToString(app);
+
+    expect(html).toContain("empty");
+    expect(fetcher).not.toHaveBeenCalled();
+  });
+
   it("makes root preload a no-op on the server", () => {
     (window as Window & { Deno?: string }).Deno = "1";
 
@@ -123,11 +172,33 @@ describe("swrv core ssr and hydration helpers", () => {
     (window as Window & { Deno?: string }).Deno = "1";
 
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-    const key = `warn-ssr-${Date.now()}`;
+    const firstKey = `warn-ssr-1-${Date.now()}`;
+    const secondKey = `warn-ssr-2-${Date.now()}`;
+    const skippedKey = `warn-ssr-skip-${Date.now()}`;
+    const fallbackKey = `warn-ssr-fallback-${Date.now()}`;
 
     const Page = defineComponent({
       setup() {
-        useSWRV<string>(key, async () => "fresh");
+        const fetcher = vi.fn(async () => "fresh");
+        const skippedFetcher = vi.fn(async () => "skip");
+        const fallbackFetcher = vi.fn(async () => "fallback");
+        const seededFetcher = vi.fn(async () => "seeded");
+
+        useSWRV<string>(firstKey, fetcher);
+        useSWRV<string>(secondKey, fetcher);
+        useSWRV<string>(skippedKey, skippedFetcher, {
+          strictServerPrefetchWarning: false,
+        });
+        useSWRV<string>(fallbackKey, fallbackFetcher, {
+          fallbackData: "fallback",
+        });
+        useSWRV<string>("warn-ssr-seeded", seededFetcher);
+
+        expect(fetcher).not.toHaveBeenCalled();
+        expect(skippedFetcher).not.toHaveBeenCalled();
+        expect(fallbackFetcher).not.toHaveBeenCalled();
+        expect(seededFetcher).not.toHaveBeenCalled();
+
         return () => h("div");
       },
     });
@@ -140,6 +211,9 @@ describe("swrv core ssr and hydration helpers", () => {
             value: {
               client: createSWRVClient(),
               strictServerPrefetchWarning: true,
+              fallback: {
+                "warn-ssr-seeded": "seeded",
+              },
             },
           },
           {
@@ -150,8 +224,13 @@ describe("swrv core ssr and hydration helpers", () => {
 
     await renderToString(app);
 
-    expect(warn).toHaveBeenCalledWith(
-      `Missing pre-initiated data for serialized key "${key}" during server-side rendering. Data fetching should be initiated on the server and provided to SWRV via fallback data or a hydrated snapshot. You can set "strictServerPrefetchWarning: false" to disable this warning.`,
-    );
+    expect(warn.mock.calls).toEqual([
+      [
+        `Missing pre-initiated data for serialized key "${firstKey}" during server-side rendering. Data fetching should be initiated on the server and provided to SWRV via fallback data or a hydrated snapshot. You can set "strictServerPrefetchWarning: false" to disable this warning.`,
+      ],
+      [
+        `Missing pre-initiated data for serialized key "${secondKey}" during server-side rendering. Data fetching should be initiated on the server and provided to SWRV via fallback data or a hydrated snapshot. You can set "strictServerPrefetchWarning: false" to disable this warning.`,
+      ],
+    ]);
   });
 });

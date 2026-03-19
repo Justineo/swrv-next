@@ -92,6 +92,10 @@ a serialized-key map of data values, not a dump of internal loading metadata.
 
 ## Server Safety
 
+`useSWRV` and `useSWRVImmutable` do not start fetches during server rendering.
+On the server they only read request-scoped `fallback` or hydrated snapshot
+data, then leave revalidation to the client runtime after hydration.
+
 Root-level `preload()` is a no-op during server rendering. That avoids
 accidentally fetching through the shared global client on the server. Use
 request-scoped fetching plus `fallback` or snapshot hydration instead.

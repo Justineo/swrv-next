@@ -34,6 +34,8 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - config-level `onSuccess` and `onError` callbacks now exist for base requests
   - config-level `isVisible()` and `isOnline()` overrides now participate in focus, reconnect, and active-state gating
   - config-level `onErrorRetry`, `onLoadingSlow`, and `onDiscarded` now exist for retry scheduling, slow-request signaling, and stale-response races
+  - reactive provider config is now covered for latest lifecycle behavior as well, so later revalidations use the latest provider `onSuccess`, `onError`, `onErrorRetry`, and `onLoadingSlow` callbacks instead of stale closures
+  - reactive provider `fetcher` updates are now covered too, so revalidation uses the latest shared fetcher reference from `SWRVConfig`
   - the request path now holds onto the exact in-flight promise instead of re-reading it through the dedupe window, which fixes `dedupingInterval: 0` flakiness
   - request and mutation ordering now use high-resolution timestamps, which avoids false stale-response discards when revalidation starts immediately after a mutation
   - fetches that start in the same tick as a finished mutation now nudge their ordering timestamp just past the mutation end marker, which preserves post-mutation revalidation without breaking concurrent dedupe at `dedupingInterval: 0`
@@ -45,11 +47,13 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - cache-listener updates now consume the listener payload directly instead of re-reading cache for the active hook, and local cache writes no longer redundantly re-apply state when the active subscription already covers the key
   - cache write notifications are now normalized through the adapter's read path before listeners fire, so custom provider caches that transform `get()` results stay consistent for active hooks as well as later reads
   - key watchers for `useSWRV` and `useSWRVSubscription` now track stable serialized keys instead of fresh tuple objects, which avoids unnecessary reactivation, refetch, and resubscription work when reactive dependencies invalidate without changing the effective key
+  - server rendering no longer starts base-hook or immutable-hook fetches; SSR hook usage now reads fallback or hydrated snapshot data only, with optional warnings for missing handoff data
   - polling timers now reschedule when provider-driven refresh settings change, including reactive `refreshInterval` updates and function-style intervals that derive their next delay from the latest data
   - focus throttling now compares with a strict `<` boundary, so `focusThrottleInterval: 0` no longer suppresses same-millisecond focus revalidation after mount
   - stale per-hook refresh completions no longer reset polling or fire hook-local success or error callbacks after the hook has switched to a different key, while cache updates for the old key still land for other consumers
   - synchronous fetcher throws are now normalized into rejected promises at the fetcher boundary, so `error`, retry, and callback semantics match asynchronous failures instead of leaking unhandled watcher errors
   - per-hook fetchers now accept `false` in addition to `null` and `undefined`, matching SWR's disabled-fetcher behavior in both runtime semantics and public typing
+  - `swrv/immutable` now also exposes the named `immutable` middleware, and immutable behavior coverage includes middleware-based focus suppression, ignoring provider-level `refreshInterval`, avoiding revalidation when a second immutable consumer mounts with cached data, and reusing cached keys without refetching when `revalidateIfStale` is false
 - The infinite and mutation helpers have also moved closer to SWR:
   - `swrv/infinite` now exposes `unstable_serialize`, resolves page keys safely, supports cursor-style sequential loading, and treats `setSize()` as a page-oriented operation instead of a raw aggregate refresh
   - `swrv/infinite` now revalidates the first page while loading new pages and lets no-arg `mutate()` revalidate all loaded pages
@@ -90,9 +94,10 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
 - A dedicated `core-keep-previous` domain file now covers SWR-style `keepPreviousData` behavior, including key changes, mixed shared-cache consumers, fallback interaction, same-key revalidation after `mutate(undefined)`, and reactive provider-config changes.
 - A dedicated `core-broadcast-state` domain file now covers shared-key broadcast behavior for refreshed data, propagated errors, and mutate-driven `isValidating` state across multiple consumers.
 - A dedicated `core-devtools` domain file now covers the built-in devtools hook, including global middleware injection and Vue-module exposure for devtools integrations.
-- A dedicated `core-fetcher` domain file now covers falsy per-hook fetchers, so `null`, `undefined`, and `false` all stay idle without starting requests.
+- A dedicated `core-fetcher` domain file now covers falsy per-hook fetchers plus reactive provider-fetcher updates, so `null`, `undefined`, and `false` all stay idle without starting requests and shared fetchers can change over time through `SWRVConfig`.
 - A dedicated `core-ssr-hydration` domain file now covers snapshot serialization, client hydration from a request-scoped snapshot, and server rendering against hydrated client state through `@vue/server-renderer`.
-- The same `core-ssr-hydration` domain file now also covers server-safe root `preload()` behavior and `strictServerPrefetchWarning` for missing SSR handoff data.
+- The same `core-ssr-hydration` domain file now also covers server-safe root `preload()` behavior, server-side hook non-fetching, immutable server behavior, and `strictServerPrefetchWarning` for missing SSR handoff data.
+- A dedicated `core-ttl-lifecycle` domain file now covers the compatibility-oriented `ttl` extension and runtime cleanup behavior, including `ttl: 0` persistence, positive-ttl expiry for later consumers, in-flight request completion after loading-entry expiry, and listener or revalidator cleanup on unmount.
 - A dedicated `core-cache-provider` domain file now covers provider-scoped cache behavior, including isolated clients, seeded cache reads, scoped cache mutation through `useSWRVConfig`, nested provider boundaries, and parent-cache extension through `provider(parentCache)`.
 - A dedicated `core-middleware` domain file now covers base and cross-API middleware behavior, including original-key forwarding, null fetchers, config-boundary `use` composition order, key rewriting, non-serialized key forwarding, and middleware passthrough for `infinite`, `mutation`, and `subscription`.
 - A dedicated `core-subscription` domain file now covers subscription behavior end to end, including push updates, scope cleanup, fallback and error recovery, original-key forwarding, deduped subscriptions, key updates, singleton switching, stable-key no-resubscribe behavior, SWR/cache isolation, and disposer enforcement.

@@ -13,7 +13,7 @@ import type {
 
 type NonArrayKey = Exclude<RawKey, readonly unknown[] | null | undefined | false>;
 
-const immutable: SWRVMiddleware =
+export const immutable: SWRVMiddleware =
   (useSWRVNext) =>
   (key, fetcher, config = {}) =>
     useSWRVNext(key, fetcher, {

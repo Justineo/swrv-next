@@ -1,7 +1,8 @@
-import { createApp, defineComponent, h, ref } from "vue";
+import { computed, createApp, defineComponent, h, ref } from "vue";
 import { describe, expect, it, vi } from "vite-plus/test";
 
 import { SWRVConfig, createSWRVClient, useSWRV, useSWRVImmutable } from "../src";
+import { immutable } from "../src/immutable";
 import { serialize } from "../src/_internal";
 import {
   flush,
@@ -323,6 +324,36 @@ describe("swrv core config and revalidation", () => {
     expect(state().data.value).toBe(1);
   });
 
+  it("respects config.isOnline when handling focus revalidation", async () => {
+    let value = 0;
+    let online = true;
+    const key = `focus-online-${Date.now()}`;
+    const state = runComposable(() =>
+      useSWRV<number>(key, async () => value++, {
+        dedupingInterval: 0,
+        focusThrottleInterval: 0,
+        isOnline: () => online,
+      }),
+    );
+
+    await settle();
+    expect(state.data.value).toBe(0);
+
+    online = false;
+    await waitForMacrotask();
+    window.dispatchEvent(new Event("focus"));
+    await settle();
+
+    expect(state.data.value).toBe(0);
+
+    online = true;
+    await waitForMacrotask();
+    window.dispatchEvent(new Event("focus"));
+    await settle();
+
+    expect(state.data.value).toBe(1);
+  });
+
   it("calls onSuccess only for the original deduped request", async () => {
     const key = `success-callback-${Date.now()}`;
     const onSuccess = vi.fn();
@@ -453,6 +484,73 @@ describe("swrv core config and revalidation", () => {
     expect(onSuccess).toHaveBeenCalledWith("data", key, expect.any(Object));
   });
 
+  it("uses the latest provider onLoadingSlow and onSuccess callbacks", async () => {
+    vi.useFakeTimers();
+
+    const key = `provider-callbacks-success-${Date.now()}`;
+    const label = ref("a");
+    let observed: string | null = null;
+    let resolveValue!: (value: string) => void;
+
+    const Child = defineComponent({
+      setup() {
+        useSWRV<string>(
+          key,
+          () =>
+            new Promise<string>((resolve) => {
+              resolveValue = resolve;
+            }),
+          {
+            dedupingInterval: 0,
+            loadingTimeout: 50,
+          },
+        );
+
+        return () => h("div");
+      },
+    });
+
+    const container = registerContainer(document.createElement("div"));
+    document.body.appendChild(container);
+
+    const app = registerApp(
+      createApp({
+        render: () =>
+          h(
+            SWRVConfig,
+            {
+              value: () => ({
+                onLoadingSlow() {
+                  observed = label.value;
+                },
+                onSuccess() {
+                  observed = label.value;
+                },
+              }),
+            },
+            {
+              default: () => h(Child),
+            },
+          ),
+      }),
+    );
+
+    app.mount(container);
+
+    await flush();
+    await vi.advanceTimersByTimeAsync(60);
+    await flush();
+    expect(observed).toBe("a");
+
+    label.value = "b";
+    await settle();
+
+    resolveValue("data");
+    await settle();
+
+    expect(observed).toBe("b");
+  });
+
   it("calls onDiscarded and skips onSuccess when a revalidation result is superseded", async () => {
     vi.useFakeTimers();
 
@@ -490,6 +588,78 @@ describe("swrv core config and revalidation", () => {
     expect(onDiscarded).toHaveBeenCalledTimes(1);
     expect(onDiscarded).toHaveBeenCalledWith(key);
     expect(onSuccess).not.toHaveBeenCalled();
+  });
+
+  it("uses the latest provider onError and onErrorRetry callbacks", async () => {
+    vi.useFakeTimers();
+
+    const key = `provider-callbacks-error-${Date.now()}`;
+    const label = ref("a");
+    const onErrorValues: string[] = [];
+    const onRetryValues: string[] = [];
+    const fetcher = vi
+      .fn<() => Promise<string>>()
+      .mockRejectedValueOnce(new Error("boom-a"))
+      .mockRejectedValueOnce(new Error("boom-b"))
+      .mockResolvedValueOnce("recovered");
+
+    const Child = defineComponent({
+      setup() {
+        useSWRV<string>(key, fetcher, {
+          dedupingInterval: 0,
+          errorRetryInterval: 10,
+          errorRetryCount: 2,
+        });
+
+        return () => h("div");
+      },
+    });
+
+    const container = registerContainer(document.createElement("div"));
+    document.body.appendChild(container);
+
+    const app = registerApp(
+      createApp({
+        render: () =>
+          h(
+            SWRVConfig,
+            {
+              value: () => ({
+                onError() {
+                  onErrorValues.push(label.value);
+                },
+                onErrorRetry(_error, _retryKey, _config, revalidate, retryOptions) {
+                  onRetryValues.push(label.value);
+                  setTimeout(() => {
+                    void revalidate(retryOptions);
+                  }, 25);
+                },
+              }),
+            },
+            {
+              default: () => h(Child),
+            },
+          ),
+      }),
+    );
+
+    app.mount(container);
+
+    await settle();
+    expect(onErrorValues).toEqual(["a"]);
+    expect(onRetryValues).toEqual(["a"]);
+
+    label.value = "b";
+    await settle();
+
+    await vi.advanceTimersByTimeAsync(25);
+    await settle();
+
+    expect(onErrorValues).toEqual(["a", "b"]);
+    expect(onRetryValues).toEqual(["a", "b"]);
+
+    await vi.advanceTimersByTimeAsync(25);
+    await settle();
   });
 
   it("retries failed requests after errorRetryInterval", async () => {
@@ -540,5 +710,109 @@ describe("swrv core config and revalidation", () => {
 
     expect(state.data.value).toBe(0);
     expect(value).toBe(1);
+  });
+
+  it("disables focus revalidation when using the immutable middleware", async () => {
+    let value = 0;
+    const key = `immutable-middleware-${Date.now()}`;
+    const state = runComposable(() =>
+      useSWRV<number>(key, async () => value++, {
+        dedupingInterval: 0,
+        focusThrottleInterval: 0,
+        use: [immutable],
+      }),
+    );
+
+    await settle();
+    expect(state.data.value).toBe(0);
+
+    await waitForMacrotask();
+    window.dispatchEvent(new Event("focus"));
+    await settle();
+
+    expect(state.data.value).toBe(0);
+    expect(value).toBe(1);
+  });
+
+  it("ignores provider refreshInterval in the immutable entry point", async () => {
+    vi.useFakeTimers();
+
+    let value = 0;
+    const state = mountWithConfig(
+      () =>
+        useSWRVImmutable<number>("immutable-provider-refresh", async () => value++, {
+          dedupingInterval: 0,
+        }),
+      {
+        refreshInterval: 10,
+      },
+    );
+
+    await settle();
+    expect(state().data.value).toBe(0);
+
+    await vi.advanceTimersByTimeAsync(50);
+    await settle();
+
+    expect(state().data.value).toBe(0);
+    expect(value).toBe(1);
+  });
+
+  it("does not revalidate when a second immutable consumer mounts with cached data", async () => {
+    let value = 0;
+    const key = `immutable-remount-${Date.now()}`;
+
+    const first = runComposable(() =>
+      useSWRVImmutable<number>(key, async () => value++, {
+        dedupingInterval: 0,
+      }),
+    );
+
+    await settle();
+    expect(first.data.value).toBe(0);
+    expect(value).toBe(1);
+
+    const second = runComposable(() =>
+      useSWRVImmutable<number>(key, async () => value++, {
+        dedupingInterval: 0,
+      }),
+    );
+
+    await settle();
+
+    expect(second.data.value).toBe(0);
+    expect(value).toBe(1);
+  });
+
+  it("reuses cached keys without refetching when revalidateIfStale is false", async () => {
+    const fetcher = vi.fn(async (key: string) => key);
+    const baseKey = `revalidate-if-stale-key-${Date.now()}`;
+    const current = ref("0");
+
+    const state = runComposable(() =>
+      useSWRV<string, unknown, string>(
+        computed(() => `${baseKey}-${current.value}`),
+        fetcher as (key: string) => Promise<string>,
+        {
+          dedupingInterval: 0,
+          revalidateIfStale: false,
+        },
+      ),
+    );
+
+    await settle();
+    expect(state.data.value).toBe(`${baseKey}-0`);
+
+    current.value = "1";
+    await settle();
+    expect(state.data.value).toBe(`${baseKey}-1`);
+
+    current.value = "0";
+    await settle();
+    expect(state.data.value).toBe(`${baseKey}-0`);
+
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(fetcher).toHaveBeenNthCalledWith(1, `${baseKey}-0`);
+    expect(fetcher).toHaveBeenNthCalledWith(2, `${baseKey}-1`);
   });
 });
