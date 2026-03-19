@@ -23,7 +23,7 @@ hero:
 ## Installation
 
 ```sh
-npm i swrv vue // [!=npm auto]
+npm i swrv // [!=npm auto]
 ```
 
 ## Quick example
