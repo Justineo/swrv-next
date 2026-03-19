@@ -8,14 +8,12 @@
   --font-family-roboto: "Roboto", "roboto Fallback";
   --font-family-space-grotesk: "Space Grotesk", "spaceGrotesk Fallback";
   --theme-font-family: var(--font-family-roboto);
-  --head-xl: clamp(64px, 61.1830985915px + 0.7511737089vw, 72px);
-  --head-l: clamp(40px, 35.7746478873px + 1.1267605634vw, 52px);
 
   --theme-bg: #ffffff;
   --theme-title: #16251d;
   --theme-text: #476355;
   --theme-primary: #42b883;
-  --theme-primary-text: #08150d;
+  --theme-primary-text: #eef2ed;
   --theme-primary-hover: #369f6b;
   --theme-secondary: #eef2ed;
   --theme-secondary-text: #16251d;
@@ -26,29 +24,7 @@
   --theme-input-border: #c9ddd1;
   --theme-border: rgba(66, 99, 85, 0.22);
   --theme-error: #da5f69;
-}
 
-.dark {
-  --theme-bg: #000;
-  --theme-title: #eef2ed;
-  --theme-text: #bcc2ba;
-  --theme-primary: #ccff00;
-  --theme-primary-text: #000;
-  --theme-primary-hover: #eef2ed;
-  --theme-secondary: #eef2ed;
-  --theme-secondary-text: #000;
-  --theme-card-bg: transparent;
-  --theme-card-border: rgba(49, 57, 25, 0.8);
-  --theme-form-label-inline: #bcc2ba;
-  --theme-form-label-inline-focus: #bcc2ba;
-  --theme-input-border: #1e1f1d;
-  --theme-border: rgba(49, 57, 25, 0.8);
-  --theme-error: #ccff00;
-}
-
-:root,
-.dark {
-  font-family: var(--theme-font-family), sans-serif;
   --vp-font-family-base: var(--theme-font-family), sans-serif;
 
   --vp-c-bg: var(--theme-bg);
@@ -123,7 +99,7 @@
   --vp-local-nav-bg-color: color-mix(in srgb, var(--theme-bg) 92%, transparent);
   --vp-sidebar-bg-color: var(--theme-bg);
 
-  --vp-home-hero-name-color: var(--theme-title);
+  --vp-home-hero-name-color: var(--vp-c-brand-1);
   --vp-home-hero-name-background: transparent;
   --vp-home-hero-image-background-image: none;
   --vp-home-hero-image-filter: none;
@@ -141,8 +117,22 @@
   --vp-local-search-highlight-text: var(--theme-primary-text);
 }
 
-body {
-  font-family: var(--theme-font-family), sans-serif;
+.dark {
+  --theme-bg: #000;
+  --theme-title: #eef2ed;
+  --theme-text: #bcc2ba;
+  --theme-primary: #ccff00;
+  --theme-primary-text: #000;
+  --theme-primary-hover: #eef2ed;
+  --theme-secondary: #eef2ed;
+  --theme-secondary-text: #000;
+  --theme-card-bg: transparent;
+  --theme-card-border: rgba(49, 57, 25, 0.8);
+  --theme-form-label-inline: #bcc2ba;
+  --theme-form-label-inline-focus: #bcc2ba;
+  --theme-input-border: #1e1f1d;
+  --theme-border: rgba(49, 57, 25, 0.8);
+  --theme-error: #ccff00;
 }
 
 :where(
@@ -157,14 +147,4 @@ body {
   .vp-doc h6
 ) {
   font-family: var(--font-family-space-grotesk), sans-serif;
-}
-
-.VPHomeHero .name {
-  font-size: var(--head-xl);
-  line-height: 0.92;
-}
-
-.VPHomeHero .text {
-  font-size: var(--head-l);
-  line-height: 1.05;
 }
