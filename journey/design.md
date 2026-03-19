@@ -27,6 +27,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - `revalidateOnMount` now only affects the initial activation, not later key changes
   - fallback data stays idle when revalidation is disabled
   - focus and reconnect revalidation now respect focus throttling and visibility/online state
+  - hooks sharing the same key now still honor their own per-hook focus settings, so a focus-enabled consumer can revalidate shared data without forcing focus-disabled siblings to register the same behavior
   - error retries now survive refresh scheduling instead of being cleared immediately
   - the immutable entry point now disables polling by forcing `refreshInterval: 0`
   - `isPaused()` now gates mount, focus, reconnect, polling, and mutate-driven revalidation, and in-flight results are discarded while paused

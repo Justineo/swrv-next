@@ -121,6 +121,69 @@ describe("swrv core config and revalidation", () => {
     expect(state.data.value).toBe(0);
   });
 
+  it("keeps per-hook focus settings separate for hooks sharing the same key", async () => {
+    vi.useFakeTimers();
+
+    let stableFetches = 0;
+    let focusFetches = 0;
+    const key = `focus-shared-config-${Date.now()}`;
+    const state = runComposable(() => {
+      const stable = useSWRV<number>(
+        key,
+        async () =>
+          await new Promise<number>((resolve) => {
+            stableFetches += 1;
+            setTimeout(() => {
+              resolve(stableFetches);
+            }, 1);
+          }),
+        {
+          dedupingInterval: 50,
+          focusThrottleInterval: 0,
+          revalidateOnFocus: false,
+        },
+      );
+      const refreshing = useSWRV<number>(
+        key,
+        async () =>
+          await new Promise<number>((resolve) => {
+            focusFetches += 1;
+            setTimeout(() => {
+              resolve(100 + focusFetches);
+            }, 1);
+          }),
+        {
+          dedupingInterval: 50,
+          focusThrottleInterval: 0,
+          revalidateOnFocus: true,
+        },
+      );
+
+      return {
+        refreshing,
+        stable,
+      };
+    });
+
+    await vi.advanceTimersByTimeAsync(1);
+    await settle();
+
+    expect(stableFetches).toBe(1);
+    expect(focusFetches).toBe(0);
+    expect(state.stable.data.value).toBe(1);
+    expect(state.refreshing.data.value).toBe(1);
+
+    await vi.advanceTimersByTimeAsync(60);
+    window.dispatchEvent(new Event("focus"));
+    await vi.advanceTimersByTimeAsync(1);
+    await settle();
+
+    expect(stableFetches).toBe(1);
+    expect(focusFetches).toBe(1);
+    expect(state.stable.data.value).toBe(101);
+    expect(state.refreshing.data.value).toBe(101);
+  });
+
   it("reacts to provider config changes for revalidateOnFocus", async () => {
     let value = 0;
     const enabled = ref(false);
