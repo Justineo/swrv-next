@@ -13,8 +13,8 @@ hero:
       text: Read the Guide
       link: /guide
     - theme: alt
-      text: See Current Scope
-      link: /parity
+      text: See Status
+      link: /status
 
 features:
   - title: Provider-Scoped Runtime
@@ -37,4 +37,4 @@ This repository is being rebuilt from the ground up. The current slice already i
 
 Use the guide and API reference as the source of truth for the current package surface.
 
-If you want a quick picture of what is already implemented versus still being hardened, start with the current-scope page.
+If you want the quickest view of what is shipped, deferred, or intentionally different, start with the status page and then the parity page.

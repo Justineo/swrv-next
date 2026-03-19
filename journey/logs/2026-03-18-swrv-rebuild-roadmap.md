@@ -99,3 +99,7 @@
   - the closure used targeted public overloads instead of a wider middleware or hook-type redesign
 - Revalidated the workspace with `vp check` and `vp test`.
 - The upstream parity matrix is now fully closed for the active non-suspense lane; only the intentionally deferred suspense-specific rows remain open.
+- Added the remaining repo-side closure artifacts after parity and simplification:
+  - the docs site now includes a dedicated status page that classifies shipped, deferred, and intentionally different behavior
+  - the migration and API pages were tightened toward a more reference-quality baseline
+  - a concrete stable-release checklist now exists in `journey/logs/2026-03-19-stable-release-checklist.md`

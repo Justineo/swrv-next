@@ -57,6 +57,16 @@ vp run release:minor
 vp run release:major
 ```
 
+Recommended release flow:
+
+1. run `vp run ready`
+2. from `packages/swrv`, run:
+   `vp pm pack -- --json --dry-run`
+3. from `packages/swrv`, run:
+   `vp pm publish -- --dry-run --access public --provenance --no-git-checks --tag next`
+4. prepare release notes from the current roadmap log, design snapshot, and the merged commits for the release window
+5. create the release tag through the version-bump flow or the release workflow
+
 External setup still matters:
 
 - GitHub Actions must have npm Trusted Publisher configured for the target
@@ -67,3 +77,10 @@ External setup still matters:
 - Actual publishing should continue to go through `vp pm publish ...`, not a
   raw `npm publish`, so the workspace package manager and `catalog:` manifests
   stay in the supported path.
+
+Release notes should focus on:
+
+- public API additions or changes
+- SWR parity changes
+- intentional Vue-native differences
+- migration-impacting changes for legacy SWRV users

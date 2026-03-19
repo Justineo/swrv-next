@@ -145,6 +145,9 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - root contributor and security guidance now exist for repository users and maintainers
   - the current release path has been revalidated after the latest parity hardening through package and publish dry-runs
   - the workspace and published package manifests are now aligned to the intended prerelease line at `2.0.0-next.0`
+  - the docs site now also has an explicit status page that classifies shipped, deferred, and intentionally different behavior for the current release line
+  - the repo now contains a concrete stable-release checklist under `journey/logs/2026-03-19-stable-release-checklist.md`
+  - the remaining non-suspense release work is now mostly outside the repo: Trusted Publisher production verification, stable release-note preparation, and the actual stable tag decision
 - Internal simplification work has now started after parity closure:
   - web-preset defaults and event initializers now live in a dedicated `_internal/web-preset.ts` module instead of being mixed into `config.ts` and `client.ts`
   - provider-scoped runtime maps now live behind `_internal/provider-state.ts`, and cache read/write concerns now live behind `_internal/cache-helper.ts`

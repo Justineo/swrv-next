@@ -38,6 +38,29 @@ Key notes:
 - `SWRVConfig` can provide app-level `fallback` values keyed by serialized key
 - during server rendering, hooks read fallback or hydrated snapshot data but do not start fetches
 
+High-value options:
+
+- `fallbackData`
+- `keepPreviousData`
+- `fetcher`
+- `revalidateOnMount`
+- `revalidateOnFocus`
+- `revalidateOnReconnect`
+- `revalidateIfStale`
+- `refreshInterval`
+- `dedupingInterval`
+- `focusThrottleInterval`
+- `isPaused`
+- `isVisible`
+- `isOnline`
+- `shouldRetryOnError`
+- `onSuccess`
+- `onError`
+- `onErrorRetry`
+- `onDiscarded`
+- `onLoadingSlow`
+- `ttl`
+
 ## `preload`
 
 ```ts
@@ -52,6 +75,30 @@ Key notes:
 - is a no-op on the server so request-scoped SSR flows stay explicit
 - failed preload requests are cleared so a later preload or hook fetch can retry
 - preloaded page keys are also consumed by `useSWRVInfinite`
+
+## `mutate`
+
+```ts
+await mutate(key, data?, options?)
+```
+
+Supports:
+
+- bound and global mutation
+- optimistic updates
+- `populateCache`
+- `rollbackOnError`
+- boolean or function `revalidate`
+- filtered mutation with a key predicate
+
+## `unstable_serialize`
+
+```ts
+const serialized = unstable_serialize(key);
+```
+
+Use this when you need the same serialized key that SWRV uses internally, most
+commonly for config `fallback` maps or for targeted `infinite` cache updates.
 
 ## `serializeSWRVSnapshot(client)`
 
@@ -70,6 +117,30 @@ const client = hydrateSWRVSnapshot(createSWRVClient(), snapshot);
 
 Seeds a client from a serialized snapshot and returns that client. Hydrated data
 is visible immediately, and normal revalidation can still refresh it on mount.
+
+## `createSWRVClient`
+
+```ts
+const client = createSWRVClient();
+```
+
+Use this when you need an explicit cache boundary:
+
+- one Vue app embedded inside another
+- isolated test setups
+- one client per SSR request
+- custom provider or cache behavior
+
+## `createCache`
+
+```ts
+const cache = createCache();
+```
+
+This creates the default in-memory cache shape used by `createSWRVClient()`.
+Most app code does not need it directly, but it is available when you want to
+build a client from an explicit cache instance or layer a custom provider
+boundary on top of the default cache behavior.
 
 ## `SWRVConfig`
 
@@ -96,6 +167,15 @@ Current supported high-value options include:
 - `strictServerPrefetchWarning` for warning on missing SSR handoff data
 - `refreshInterval`, `dedupingInterval`, and `ttl`
 
+## `useSWRVConfig`
+
+```ts
+const { cache, client, config, mutate, preload } = useSWRVConfig();
+```
+
+Use this inside `setup()` when you need the active scoped helpers instead of the
+root helpers.
+
 ## `swrv/mutation`
 
 ```ts
@@ -108,6 +188,16 @@ const { data, error, isMutating, trigger, reset } = useSWRVMutation(
 
 `trigger(arg, options?)` returns the mutation result and now ignores stale local results after `reset()` or a newer trigger.
 When `throwOnError` is `false`, the hook still records local error state and fires `onError`.
+
+Useful options:
+
+- `optimisticData`
+- `populateCache`
+- `rollbackOnError`
+- `throwOnError`
+- `revalidate`
+- `onSuccess`
+- `onError`
 
 ## `swrv/subscription`
 
@@ -138,6 +228,16 @@ Current behavior highlights:
 - no-arg `mutate()` revalidates the loaded pages
 - bound `mutate(data, { revalidate })` supports page-selective revalidation callbacks
 
+High-value options:
+
+- `initialSize`
+- `parallel`
+- `persistSize`
+- `revalidateAll`
+- `revalidateFirstPage`
+- `fetcher`
+- `compare`
+
 ## `swrv/immutable`
 
 `swrv/immutable` exports:
@@ -146,3 +246,9 @@ Current behavior highlights:
 - a named `immutable` middleware for `use: [immutable]` composition
 
 Both forms disable automatic focus and reconnect revalidation.
+
+## Internal Entry Point
+
+`swrv/_internal` is exported for advanced consumers who explicitly want the
+rebuild's lower-level helpers. It is available, but it should not be treated as
+the primary app-facing API.

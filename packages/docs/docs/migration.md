@@ -14,6 +14,15 @@ The rebuild intentionally changes a few architectural defaults:
 `ttl` remains available in the current cut, but it should be treated as a
 compatibility-oriented extension rather than the center of the new API model.
 
+Recommended migration sequence:
+
+1. introduce an explicit `SWRVConfig` boundary for each app or SSR request
+2. move app-level initial data to config `fallback`
+3. replace any assumptions about module-global cache state with scoped `client` or `provider` usage
+4. audit any `serverTTL` usage and either remove it or replace it with explicit server handoff logic
+5. verify mutation flows against the current optimistic-update and `populateCache` options
+6. update tests to use the rebuilt hook and subpath entry points directly
+
 ## From SWR
 
 The target behavioral model follows SWR, but Vue-native differences remain:
@@ -22,9 +31,17 @@ The target behavioral model follows SWR, but Vue-native differences remain:
 - configuration is typically provided with `SWRVConfig`
 - hooks are built for Composition API usage instead of React render cycles
 
+Practical mapping:
+
+- `useSWR` maps to `useSWRV`
+- `SWRConfig` maps to `SWRVConfig`
+- `useSWRConfig` maps to `useSWRVConfig`
+- `swr/immutable`, `swr/infinite`, `swr/mutation`, and `swr/subscription` map to the equivalent `swrv/*` entry points
+- SSR handoff is explicit through `createSWRVClient()`, `serializeSWRVSnapshot()`, and `hydrateSWRVSnapshot()`
+
 ## Status Notes
 
 This repository is still in active rebuild mode, but the intended stable line
 for the rewrite is `2.x`, with prereleases published on `next`. For the
-current public parity line and the main known gaps, use the published
-current-scope page.
+current public parity line and the main known gaps, use the [Status](/status)
+and [Parity](/parity) pages.

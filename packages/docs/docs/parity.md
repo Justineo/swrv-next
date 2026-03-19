@@ -1,49 +1,46 @@
-# Current Scope
+# Parity
 
-## What Is Already In Place
+## SWR As The Main Reference
 
-- provider-scoped cache clients and explicit cache boundaries
-- core `useSWRV` with refs for `data`, `error`, `isLoading`, and `isValidating`
+`swrv-next` treats SWR 2.4.1 as the main behavioral and API reference for the
+client-side stale-while-revalidate model. The goal is not a literal React port;
+the goal is to match the useful semantics while presenting them as an idiomatic
+Vue runtime.
+
+## Areas Of Strong Parity
+
+- request dedupe, background revalidation, retry, and callback timing
+- focus and reconnect revalidation with provider-level overrides
+- config-level `fallback`, shared fetchers, and provider-style cache boundaries
 - global and bound `mutate`
-- global `preload`
-- dedicated `immutable`, `infinite`, `mutation`, `subscription`, and `_internal` entry points
-- behavior coverage for dedupe, revalidation triggers, optimistic mutation, infinite loading, subscription lifecycle, and package exports
-- public compile-time coverage for root and subpath APIs
+- preload reuse and serialized-key matching
+- `immutable`, `infinite`, `mutation`, and `subscription` entry points
+- SSR snapshot serialization and hydration helpers for explicit client handoff
 
-## What Is Intentionally Vue-Native
+## Intentional Vue Adaptations
 
-- hook state is returned as Vue refs instead of React state snapshots
-- configuration is typically provided through `SWRVConfig`
-- provider boundaries are explicit and map naturally to Vue app and SSR boundaries
-- the composition model assumes `setup()` or an active effect scope
+- returned state is exposed through refs
+- tuple keys are typed as positional fetcher arguments
+- `SWRVConfig` is the natural place for app-level config and cache scoping
+- usage is tied to `setup()` or an active Vue effect scope rather than React render cycles
 
-## Current Differences From SWR
+## Areas Where SWR Still Leads
 
-The project is aligned to SWR as the main behavioral reference, but it is not yet a complete drop-in parity release.
+- suspense integration that depends on React rendering mechanics
+- React-specific ecosystem integrations and extension ergonomics
+- a longer-established public compatibility surface across more consuming apps
 
-- the supported SSR path is explicit client scoping plus config-level `fallback`, not a larger framework integration layer yet
-- `ttl` remains available as a compatibility-oriented extension even though it is not part of SWR core semantics
-- some advanced `infinite` and `mutation` edge semantics still need broader ported coverage
-- the current docs focus on the working public surface, not the full final API contract
+## Legacy SWRV Comparison
 
-## Current Differences From Legacy SWRV
+Compared with the legacy `swrv` codebase, the rebuild is a new generation
+rather than a small modernization pass:
 
-- cache domains are client-scoped instead of being only module-level singletons
-- package layout follows SWR-style subpath exports
-- the repo uses Vite+, Vitest, VitePress, and modern release automation instead of Vue CLI and Jest-era tooling
-- typings are being rebuilt around stricter public inference and declaration coverage
-- `serverTTL` is not part of the rebuilt core API
+- runtime state is client-scoped instead of implicitly module-global
+- API shape is much closer to SWR's current entry-point model
+- tests, type coverage, docs, CI, and release automation are all materially stronger
+- `serverTTL` is intentionally not part of the rebuilt core API
 
-## Release Policy
+## Use This Page With The Status Page
 
-- the intended first stable line for the rewrite is `2.x`
-- prereleases stay on the `next` dist-tag until that stable line is cut
-- the supported Vue range for the published package is `>=3.2.26 <4`
-- the current typed-consumer and contributor baseline is TypeScript `>=5.5`
-
-## What To Expect Next
-
-- more SWR behavior-test ports
-- deeper Nuxt and hydration guidance beyond the current explicit-client path
-- richer docs examples and migration notes
-- publishability checks beyond static workflow scaffolding
+- use the [Status](/status) page for what is shipped, deferred, and intentionally different in the current release line
+- use this page for the higher-level relationship between `swrv-next`, SWR, and legacy SWRV
