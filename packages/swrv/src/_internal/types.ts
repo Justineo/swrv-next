@@ -43,6 +43,7 @@ export interface CacheState<Data = unknown, Error = unknown> {
 }
 
 export type Compare<Data> = (left: Data | undefined, right: Data | undefined) => boolean;
+export type SWRVEventInitializer = (callback: () => void) => void | (() => void);
 
 export interface SWRVConfiguration<
   Data = unknown,
@@ -59,6 +60,8 @@ export interface SWRVConfiguration<
   fallbackData?: Data;
   fetcher?: Fn | null | false;
   focusThrottleInterval?: number;
+  initFocus?: SWRVEventInitializer;
+  initReconnect?: SWRVEventInitializer;
   isOnline?: () => boolean;
   isPaused?: () => boolean;
   isVisible?: () => boolean;
@@ -121,6 +124,8 @@ export interface ResolvedSWRVConfiguration<
   errorRetryInterval: number;
   fallback: Record<string, unknown>;
   focusThrottleInterval: number;
+  initFocus: SWRVEventInitializer;
+  initReconnect: SWRVEventInitializer;
   isOnline: () => boolean;
   isPaused: () => boolean;
   isVisible: () => boolean;
@@ -250,6 +255,11 @@ export interface SWRVClientState {
   revalidators: Map<string, Set<Revalidator>>;
 }
 
+export interface SWRVClientOptions {
+  initFocus?: SWRVEventInitializer;
+  initReconnect?: SWRVEventInitializer;
+}
+
 export interface SWRVClient {
   cache: CacheAdapter<CacheState<any, any>>;
   state: SWRVClientState;
@@ -302,4 +312,6 @@ export interface SWRVConfigAccessor {
 
 export type SWRVConfigComponent = DefineComponent<{
   value?: SWRVConfigurationValue<any, any>;
-}>;
+}> & {
+  defaultValue: ResolvedSWRVConfiguration<any, any>;
+};

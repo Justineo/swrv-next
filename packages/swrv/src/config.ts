@@ -3,12 +3,13 @@ import {
   defineComponent,
   getCurrentInstance,
   inject,
+  onScopeDispose,
   provide,
   ref,
   type PropType,
 } from "vue";
 
-import { createSWRVClient } from "./_internal/client";
+import { createSWRVClient, defaultInitFocus, defaultInitReconnect } from "./_internal/client";
 import { createScopedMutator } from "./_internal/mutate";
 import { preloadKey } from "./_internal/preload";
 
@@ -60,6 +61,8 @@ const DEFAULT_CONFIGURATION: ResolvedSWRVConfiguration<any, any> = {
   errorRetryInterval: 5000,
   fallback: {},
   focusThrottleInterval: 5000,
+  initFocus: defaultInitFocus,
+  initReconnect: defaultInitReconnect,
   isOnline: defaultIsOnline,
   isPaused: () => false,
   isVisible: defaultIsVisible,
@@ -102,22 +105,38 @@ function createClientFromValue(
   fallback: SWRVClient,
 ) {
   if (!value) {
-    return fallback;
+    return {
+      client: fallback,
+      ownsClient: false,
+    };
   }
 
   if (value.client) {
-    return value.client;
+    return {
+      client: value.client,
+      ownsClient: false,
+    };
   }
 
-  if (value.cache) {
-    return createSWRVClient(value.cache);
+  const cache =
+    value.provider?.(fallback.cache) ??
+    value.cache ??
+    (value.initFocus || value.initReconnect ? fallback.cache : undefined);
+
+  if (!cache) {
+    return {
+      client: fallback,
+      ownsClient: false,
+    };
   }
 
-  if (value.provider) {
-    return createSWRVClient(value.provider(fallback.cache));
-  }
-
-  return fallback;
+  return {
+    client: createSWRVClient(cache, {
+      initFocus: value.initFocus,
+      initReconnect: value.initReconnect,
+    }),
+    ownsClient: true,
+  };
 }
 
 export function mergeConfiguration<Data = unknown, Error = unknown>(
@@ -134,6 +153,8 @@ export function mergeConfiguration<Data = unknown, Error = unknown>(
     base.fallback && override?.fallback
       ? { ...base.fallback, ...override.fallback }
       : (override?.fallback ?? base.fallback ?? {});
+  merged.initFocus = override?.initFocus ?? base.initFocus ?? defaultInitFocus;
+  merged.initReconnect = override?.initReconnect ?? base.initReconnect ?? defaultInitReconnect;
   merged.isOnline = override?.isOnline ?? base.isOnline ?? defaultIsOnline;
   merged.isPaused = override?.isPaused ?? base.isPaused ?? (() => false);
   merged.isVisible = override?.isVisible ?? base.isVisible ?? defaultIsVisible;
@@ -182,7 +203,7 @@ export const SWRVConfig = defineComponent({
   setup(props, { slots }) {
     const parentContext = useSWRVContext();
     const resolvedValue = () => resolveConfigurationValue(parentContext.config.value, props.value);
-    const client = createClientFromValue(resolvedValue(), parentContext.client);
+    const { client, ownsClient } = createClientFromValue(resolvedValue(), parentContext.client);
     const resolvedConfig = computed(() => {
       const value = resolvedValue();
       if (typeof props.value === "function") {
@@ -197,6 +218,12 @@ export const SWRVConfig = defineComponent({
       config: resolvedConfig,
     });
 
+    if (ownsClient) {
+      onScopeDispose(() => {
+        client.dispose();
+      });
+    }
+
     return () => slots.default?.();
   },
 }) as SWRVConfigComponent;
@@ -207,3 +234,5 @@ export function createCacheProvider<Value = unknown>(): CacheAdapter<Value> {
 
 export const INTERNAL_DEFAULT_CONFIGURATION = DEFAULT_CONFIGURATION;
 export const GLOBAL_SWRV_CLIENT = defaultClient;
+
+SWRVConfig.defaultValue = INTERNAL_DEFAULT_CONFIGURATION;

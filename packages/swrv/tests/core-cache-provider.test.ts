@@ -1,8 +1,9 @@
 import { createApp, defineComponent, h } from "vue";
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it, vi } from "vite-plus/test";
 
 import { SWRVConfig, createSWRVClient, useSWRV, useSWRVConfig } from "../src";
 import { serialize } from "../src/_internal";
+import { GLOBAL_SWRV_CLIENT } from "../src/config";
 import type { CacheAdapter, CacheState } from "../src/_internal/types";
 import {
   flush,
@@ -263,5 +264,104 @@ describe("swrv core cache provider behavior", () => {
 
     await settle();
     expect(state().data.value).toBe("data-extended");
+  });
+
+  it("uses custom focus and reconnect initializers without replacing the parent cache", async () => {
+    const key = `provider-events-${Date.now()}`;
+    const focusCallbacks: Array<() => void> = [];
+    const reconnectCallbacks: Array<() => void> = [];
+    const disposeFocus = vi.fn();
+    const disposeReconnect = vi.fn();
+    const initFocus = vi.fn((callback: () => void) => {
+      focusCallbacks.push(callback);
+      return () => {
+        const index = focusCallbacks.indexOf(callback);
+        if (index >= 0) {
+          focusCallbacks.splice(index, 1);
+        }
+
+        disposeFocus();
+      };
+    });
+    const initReconnect = vi.fn((callback: () => void) => {
+      reconnectCallbacks.push(callback);
+      return () => {
+        const index = reconnectCallbacks.indexOf(callback);
+        if (index >= 0) {
+          reconnectCallbacks.splice(index, 1);
+        }
+
+        disposeReconnect();
+      };
+    });
+    const fetcher = vi.fn(async () => `value:${fetcher.mock.calls.length}`);
+
+    let state!: ReturnType<typeof useSWRV<string>>;
+    let cache!: CacheAdapter<CacheState<any, any>>;
+
+    const Child = defineComponent({
+      setup() {
+        cache = useSWRVConfig().cache;
+        state = useSWRV<string>(key, fetcher, {
+          dedupingInterval: 0,
+          focusThrottleInterval: 0,
+        });
+
+        return () => h("div", state.data.value ?? "");
+      },
+    });
+
+    const container = registerContainer(document.createElement("div"));
+    document.body.appendChild(container);
+
+    const app = registerApp(
+      createApp({
+        render: () =>
+          h(
+            SWRVConfig,
+            {
+              value: {
+                initFocus,
+                initReconnect,
+              },
+            },
+            {
+              default: () => h(Child),
+            },
+          ),
+      }),
+    );
+
+    app.mount(container);
+    await settle();
+
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(initFocus).toHaveBeenCalledTimes(1);
+    expect(initReconnect).toHaveBeenCalledTimes(1);
+    expect(cache).toBe(GLOBAL_SWRV_CLIENT.cache);
+
+    focusCallbacks[0]?.();
+    await settle();
+    expect(fetcher).toHaveBeenCalledTimes(2);
+
+    reconnectCallbacks[0]?.();
+    await settle();
+    expect(fetcher).toHaveBeenCalledTimes(3);
+
+    app.unmount();
+
+    expect(disposeFocus).toHaveBeenCalledTimes(1);
+    expect(disposeReconnect).toHaveBeenCalledTimes(1);
+    expect(focusCallbacks).toHaveLength(0);
+    expect(reconnectCallbacks).toHaveLength(0);
+  });
+
+  it("exposes the merged baseline through SWRVConfig.defaultValue", () => {
+    expect(SWRVConfig.defaultValue.compare("left", "left")).toBe(true);
+    expect(SWRVConfig.defaultValue.dedupingInterval).toBe(2000);
+    expect(typeof SWRVConfig.defaultValue.initFocus).toBe("function");
+    expect(typeof SWRVConfig.defaultValue.initReconnect).toBe("function");
+    expect(SWRVConfig.defaultValue.revalidateOnFocus).toBe(true);
+    expect(SWRVConfig.defaultValue.revalidateOnReconnect).toBe(true);
   });
 });

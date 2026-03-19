@@ -121,6 +121,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - nested `SWRVConfig` boundaries merge fallback maps in SWR-style order
   - `SWRVConfig` now also supports the SWR-style functional `value` form, which receives the parent config but replaces parent overrides with its returned object
   - `SWRVConfig.provider` now also receives the parent cache, so nested providers can extend rather than only replace the inherited cache view
+  - `SWRVConfig` now also exposes `defaultValue` and supports SWR-style `initFocus` and `initReconnect` config hooks, with custom event initializers owning provider-scoped revalidation listeners without replacing the inherited cache by default
   - SWR-style `use` middleware composition now works across `useSWRV`, `immutable`, `infinite`, `mutation`, and `subscription`
   - the published package includes explicit typed subpath exports, a package README, and an Apache-2.0 license file
   - root exports now also include `serializeSWRVSnapshot()` and `hydrateSWRVSnapshot()` for request-scoped SSR snapshot round-trips

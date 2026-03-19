@@ -10,9 +10,56 @@ import type {
   RevalidateEventOptions,
   Revalidator,
   SWRVClient,
+  SWRVClientOptions,
+  SWRVEventInitializer,
 } from "./types";
 
 const NOOP = () => {};
+
+function toDisposer(value: void | (() => void)) {
+  return typeof value === "function" ? value : NOOP;
+}
+
+export const defaultInitFocus: SWRVEventInitializer = (callback) => {
+  const disposers: Array<() => void> = [];
+
+  if (typeof window !== "undefined" && typeof window.addEventListener === "function") {
+    window.addEventListener("focus", callback);
+    disposers.push(() => {
+      window.removeEventListener("focus", callback);
+    });
+  }
+
+  if (typeof document !== "undefined" && typeof document.addEventListener === "function") {
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        callback();
+      }
+    };
+
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    disposers.push(() => {
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    });
+  }
+
+  return () => {
+    for (const dispose of disposers) {
+      dispose();
+    }
+  };
+};
+
+export const defaultInitReconnect: SWRVEventInitializer = (callback) => {
+  if (typeof window === "undefined" || typeof window.addEventListener !== "function") {
+    return NOOP;
+  }
+
+  window.addEventListener("online", callback);
+  return () => {
+    window.removeEventListener("online", callback);
+  };
+};
 
 function cloneState<Data, Error>(
   state?: CacheState<Data, Error>,
@@ -22,6 +69,7 @@ function cloneState<Data, Error>(
 
 export function createSWRVClient(
   cache: CacheAdapter<CacheState<any, any>> = createCache<CacheState<any, any>>(),
+  options: SWRVClientOptions = {},
 ): SWRVClient {
   const state = {
     fetches: new Map<string, FetchRecord>(),
@@ -208,31 +256,21 @@ export function createSWRVClient(
   const isLatestFetch = (key: string, startedAt: number) =>
     state.latestFetchTimestamp.get(key) === startedAt;
 
-  let dispose = NOOP;
-
-  if (typeof window !== "undefined" && typeof document !== "undefined") {
-    const onFocus = () => {
+  const disposeFocus = toDisposer(
+    (options.initFocus ?? defaultInitFocus)(() => {
       void broadcastAll("focus");
-    };
-    const onVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        void broadcastAll("focus");
-      }
-    };
-    const onReconnect = () => {
+    }),
+  );
+  const disposeReconnect = toDisposer(
+    (options.initReconnect ?? defaultInitReconnect)(() => {
       void broadcastAll("reconnect");
-    };
+    }),
+  );
 
-    window.addEventListener("focus", onFocus);
-    window.addEventListener("online", onReconnect);
-    document.addEventListener("visibilitychange", onVisibilityChange);
-
-    dispose = () => {
-      window.removeEventListener("focus", onFocus);
-      window.removeEventListener("online", onReconnect);
-      document.removeEventListener("visibilitychange", onVisibilityChange);
-    };
-  }
+  const dispose = () => {
+    disposeFocus();
+    disposeReconnect();
+  };
 
   return {
     cache,

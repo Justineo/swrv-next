@@ -1,6 +1,7 @@
 import { ref } from "vue";
 
 import useSWRV, {
+  SWRVConfig,
   createSWRVClient,
   hydrateSWRVSnapshot,
   mutate,
@@ -49,6 +50,19 @@ const loggerMiddleware: SWRVMiddleware = (useSWRVNext) => (key, fetcher, config)
 const middlewareConfig = {
   use: [loggerMiddleware],
 } satisfies SWRVConfiguration<string>;
+
+const eventConfig = {
+  initFocus: (callback: () => void) => {
+    callback();
+    return () => {};
+  },
+  initReconnect: (callback: () => void) => {
+    callback();
+    return () => {};
+  },
+} satisfies SWRVConfiguration<string>;
+
+const typedInitFocus: NonNullable<SWRVConfiguration<string>["initFocus"]> = eventConfig.initFocus;
 
 const middlewareResponse = useSWRV<string, never, string>(
   "middleware",
@@ -252,6 +266,12 @@ const typeAssertions = {
   snapshotClient: true as Expect<Equal<typeof snapshotClient, ReturnType<typeof createSWRVClient>>>,
   serializedSnapshot: true as Expect<Equal<typeof serializedSnapshot, Record<string, unknown>>>,
   middlewareData: true as Expect<Equal<typeof middlewareResponse.data.value, string | undefined>>,
+  defaultValueRevalidate: true as Expect<
+    Equal<typeof SWRVConfig.defaultValue.revalidateOnFocus, boolean>
+  >,
+  eventConfigInitFocus: true as Expect<
+    Equal<typeof typedInitFocus, NonNullable<SWRVConfiguration<string>["initFocus"]>>
+  >,
   boundMutateResult: true as Expect<
     Equal<Awaited<typeof boundMutateResult>, string[] | string | undefined>
   >,
