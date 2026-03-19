@@ -1,10 +1,12 @@
 # API
 
-## Package Root
+This page is the fast reference for the published surface. The deeper behavior pages live elsewhere in the docs.
 
-`swrv` currently exports:
+## Package root
 
-- `default` / `useSWRV`
+The root `swrv` package exports:
+
+- `default` and `useSWRV`
 - `SWRVConfig`
 - `useSWRVConfig`
 - `mutate`
@@ -15,13 +17,13 @@
 - `hydrateSWRVSnapshot`
 - `unstable_serialize`
 
-## `useSWRV`
+## useSWRV
 
 ```ts
 const response = useSWRV(key, fetcher?, config?)
 ```
 
-Response shape:
+Returned refs:
 
 - `data`
 - `error`
@@ -29,31 +31,29 @@ Response shape:
 - `isValidating`
 - `mutate`
 
-Key notes:
+Key points:
 
-- array keys are supported and typed as positional fetcher arguments
-- function and ref keys are supported
-- state values are Vue refs
-- `fallbackData` is per-hook
-- `SWRVConfig` can provide app-level `fallback` values keyed by serialized key
-- during server rendering, hooks read fallback or hydrated snapshot data but do not start fetches
+- keys can be strings, tuples, objects, refs, functions, or `null`
+- tuple keys are passed to the fetcher as positional arguments
+- `fallbackData` is local to the hook
+- config-level `fallback` works across a whole `SWRVConfig` boundary
+- hooks do not start fetching during server rendering
 
-High-value options:
+Common options:
 
+- `fetcher`
 - `fallbackData`
 - `keepPreviousData`
-- `fetcher`
 - `revalidateOnMount`
+- `revalidateIfStale`
 - `revalidateOnFocus`
 - `revalidateOnReconnect`
-- `revalidateIfStale`
 - `refreshInterval`
 - `dedupingInterval`
 - `focusThrottleInterval`
 - `isPaused`
 - `isVisible`
 - `isOnline`
-- `shouldRetryOnError`
 - `onSuccess`
 - `onError`
 - `onErrorRetry`
@@ -61,22 +61,40 @@ High-value options:
 - `onLoadingSlow`
 - `ttl`
 
-## `preload`
+See [Arguments and keys](/arguments-and-keys), [Automatic revalidation](/automatic-revalidation), and [Error handling](/error-handling) for the behavior details.
 
-```ts
-await preload(key, fetcher);
+## SWRVConfig
+
+```vue
+<SWRVConfig :value="{ client, fallback, fetcher }">
+  <App />
+</SWRVConfig>
 ```
 
-Key notes:
+`value` can be:
 
-- accepts string, tuple, object, ref, and function keys
-- resolves tuple keys into positional fetcher arguments
-- dedupes repeated preload calls until a hook consumes the request
-- is a no-op on the server so request-scoped SSR flows stay explicit
-- failed preload requests are cleared so a later preload or hook fetch can retry
-- preloaded page keys are also consumed by `useSWRVInfinite`
+- a plain configuration object
+- a function that receives the parent config and returns a replacement object
 
-## `mutate`
+The main responsibilities of `SWRVConfig` are:
+
+- providing a shared fetcher
+- creating or extending cache boundaries
+- defining config-level fallback data
+- composing middleware
+- customizing focus and reconnect event sources
+
+See [Global configuration](/global-configuration).
+
+## useSWRVConfig
+
+```ts
+const { cache, client, config, mutate, preload } = useSWRVConfig();
+```
+
+Use this inside `setup()` when you need the active scoped helpers instead of the root helpers.
+
+## mutate
 
 ```ts
 await mutate(key, data?, options?)
@@ -91,132 +109,88 @@ Supports:
 - boolean or function `revalidate`
 - filtered mutation with a key predicate
 
-## `unstable_serialize`
+See [Mutation and revalidation](/mutation-and-revalidation).
+
+## preload
+
+```ts
+await preload(key, fetcher);
+```
+
+`preload`:
+
+- accepts the same key shapes as `useSWRV`
+- dedupes repeated preloads for the same serialized key
+- is consumed by the first matching hook request
+- is a no-op on the server
+
+See [Prefetching data](/prefetching-data).
+
+## unstable_serialize
 
 ```ts
 const serialized = unstable_serialize(key);
 ```
 
-Use this when you need the same serialized key that SWRV uses internally, most
-commonly for config `fallback` maps or for targeted `infinite` cache updates.
+Use this when you need the same serialized cache key that SWRV uses internally, most commonly for config `fallback` maps or targeted cache operations.
 
-## `serializeSWRVSnapshot(client)`
-
-```ts
-const snapshot = serializeSWRVSnapshot(client);
-```
-
-Returns a JSON-serializable serialized-key map of cached data values. This is
-meant for SSR handoff, not for exposing internal loading metadata.
-
-## `hydrateSWRVSnapshot(client, snapshot)`
-
-```ts
-const client = hydrateSWRVSnapshot(createSWRVClient(), snapshot);
-```
-
-Seeds a client from a serialized snapshot and returns that client. Hydrated data
-is visible immediately, and normal revalidation can still refresh it on mount.
-
-## `createSWRVClient`
+## createSWRVClient and createCache
 
 ```ts
 const client = createSWRVClient();
-```
-
-Use this when you need an explicit cache boundary:
-
-- one Vue app embedded inside another
-- isolated test setups
-- one client per SSR request
-- custom provider or cache behavior
-
-## `createCache`
-
-```ts
 const cache = createCache();
 ```
 
-This creates the default in-memory cache shape used by `createSWRVClient()`.
-Most app code does not need it directly, but it is available when you want to
-build a client from an explicit cache instance or layer a custom provider
-boundary on top of the default cache behavior.
+Most apps only need `createSWRVClient()`. `createCache()` is useful when you want to provide a specific cache instance to a custom provider boundary.
 
-## `SWRVConfig`
+## serializeSWRVSnapshot and hydrateSWRVSnapshot
 
 ```ts
-<SWRVConfig :value="{ client, fallback, dedupingInterval }">
-  <App />
-</SWRVConfig>
+const snapshot = serializeSWRVSnapshot(client);
+const hydrated = hydrateSWRVSnapshot(createSWRVClient(), snapshot);
 ```
 
-`value` can also be a function that receives the parent config and returns a
-replacement config object.
+These helpers are for server rendering and hydration handoff. See [Server rendering and hydration](/server-rendering-and-hydration).
 
-Current supported high-value options include:
-
-- `client`, `cache`, and `provider` for cache boundaries
-- `fallback` for config-level initial data
-- `fetcher` for a shared fetcher
-- `use` for SWR-style middleware composition across `useSWRV` and companion hooks
-- revalidation controls such as `revalidateOnMount`, `revalidateOnFocus`, `revalidateOnReconnect`, and `isPaused`
-- activity overrides through `isVisible` and `isOnline`
-- lifecycle callbacks through `onSuccess` and `onError`
-- retry and race callbacks through `onErrorRetry` and `onDiscarded`
-- slow-request handling through `loadingTimeout` and `onLoadingSlow`
-- `strictServerPrefetchWarning` for warning on missing SSR handoff data
-- `refreshInterval`, `dedupingInterval`, and `ttl`
-
-## `useSWRVConfig`
+## swrv/immutable
 
 ```ts
-const { cache, client, config, mutate, preload } = useSWRVConfig();
+import useSWRVImmutable from "swrv/immutable";
 ```
 
-Use this inside `setup()` when you need the active scoped helpers instead of the
-root helpers.
+This keeps the same call shape as `useSWRV`, but disables stale revalidation, focus revalidation, reconnect revalidation, and polling.
 
-## `swrv/mutation`
-
-```ts
-const { data, error, isMutating, trigger, reset } = useSWRVMutation(
-  key,
-  fetcher,
-  config?,
-);
-```
-
-`trigger(arg, options?)` returns the mutation result and now ignores stale local results after `reset()` or a newer trigger.
-When `throwOnError` is `false`, the hook still records local error state and fires `onError`.
-
-Useful options:
-
-- `optimisticData`
-- `populateCache`
-- `rollbackOnError`
-- `throwOnError`
-- `revalidate`
-- `onSuccess`
-- `onError`
-
-## `swrv/subscription`
-
-```ts
-const { data, error } = useSWRVSubscription(key, subscribe);
-```
-
-The `subscribe` callback:
-
-- receives the original key value plus `{ next }`
-- must return an unsubscribe function
-- can report errors with `next(error)` without discarding the last good data value
-
-## `swrv/infinite`
+## swrv/infinite
 
 ```ts
 const { data, error, isLoading, isValidating, mutate, size, setSize } =
   useSWRVInfinite(getKey, fetcher, config?)
 ```
+
+Use this for pagination and infinite loading. It also exports `unstable_serialize`.
+
+See [Pagination](/pagination).
+
+## swrv/mutation
+
+```ts
+const { data, error, isMutating, reset, trigger } =
+  useSWRVMutation(key, fetcher, config?)
+```
+
+Use this for imperative remote writes with dedicated mutation state.
+
+See [Mutation and revalidation](/mutation-and-revalidation).
+
+## swrv/subscription
+
+```ts
+const { data, error } = useSWRVSubscription(key, subscribe, config?)
+```
+
+Use this for real-time data sources that push new values through a disposer-based subscription contract.
+
+See [Subscription](/subscription).
 
 Current behavior highlights:
 
