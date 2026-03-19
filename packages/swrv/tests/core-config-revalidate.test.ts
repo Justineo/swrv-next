@@ -63,7 +63,6 @@ describe("swrv core config and revalidation", () => {
         isLoading: false,
         isValidating: false,
       },
-      0,
       key,
     );
 

@@ -1,7 +1,7 @@
 # TTL removal analysis
 
 Date: 2026-03-19
-Status: proposed
+Status: complete
 
 ## Recommendation
 

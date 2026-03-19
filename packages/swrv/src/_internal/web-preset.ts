@@ -105,6 +105,5 @@ export const INTERNAL_DEFAULT_CONFIGURATION: AnyResolvedConfiguration = {
   revalidateOnReconnect: true,
   shouldRetryOnError: true,
   strictServerPrefetchWarning: false,
-  ttl: 0,
   use: [],
 };

@@ -11,7 +11,6 @@ export interface SWRVCacheHelper {
   set<Data = unknown, Error = unknown>(
     key: string,
     patch: Partial<CacheState<Data, Error>>,
-    ttl?: number,
     rawKey?: RawKey,
   ): CacheState<Data, Error>;
 }
@@ -26,38 +25,22 @@ export function createCacheHelper(
 ): SWRVCacheHelper {
   return {
     get<Data = unknown, Error = unknown>(key: string): CacheState<Data, Error> | undefined {
-      const cached = cache.get(key);
-
-      if (!cached) {
-        return undefined;
-      }
-
-      if (cached.expiresAt !== Number.POSITIVE_INFINITY && cached.expiresAt <= Date.now()) {
-        cache.delete(key);
-        notify(key, undefined, cached);
-        return undefined;
-      }
-
-      return cached as CacheState<Data, Error>;
+      return cache.get(key) as CacheState<Data, Error> | undefined;
     },
     set<Data = unknown, Error = unknown>(
       key: string,
       patch: Partial<CacheState<Data, Error>>,
-      ttl = 0,
       rawKey?: RawKey,
     ): CacheState<Data, Error> {
       const previous = cloneState(this.get<Data, Error>(key));
-      const now = Date.now();
       const next = {
         data: previous?.data,
         error: previous?.error,
         isLoading: previous?.isLoading ?? false,
         isValidating: previous?.isValidating ?? false,
-        expiresAt: ttl > 0 ? now + ttl : (previous?.expiresAt ?? Number.POSITIVE_INFINITY),
         _c: previous?._c,
         _k: rawKey ?? previous?._k,
         ...patch,
-        updatedAt: now,
       } satisfies CacheState<Data, Error>;
 
       cache.set(key, next);

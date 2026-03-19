@@ -269,10 +269,8 @@ describe("swrv core local mutate behavior", () => {
             {
               data: "cached data",
               error: undefined,
-              expiresAt: Number.POSITIVE_INFINITY,
               isLoading: false,
               isValidating: false,
-              updatedAt: Date.now(),
             },
           ],
         ]),
@@ -329,10 +327,8 @@ describe("swrv core local mutate behavior", () => {
     state().cache.set(key, {
       data: 42,
       error: undefined,
-      expiresAt: Number.POSITIVE_INFINITY,
       isLoading: false,
       isValidating: false,
-      updatedAt: Date.now(),
     });
 
     await state().mutate(key, increment, false);

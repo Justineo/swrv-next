@@ -197,6 +197,14 @@ export function useSWRVHandler<Data = unknown, Error = unknown>(
     applyState(entry, serializedKey);
   };
 
+  const writeState = (
+    serializedKey: string,
+    rawKey: RawKey,
+    patch: Partial<CacheState<Data, Error>>,
+  ) => {
+    return client.setState<Data, Error>(serializedKey, patch, rawKey);
+  };
+
   const scheduleRefresh = () => {
     clearRefreshTimer();
 
@@ -296,17 +304,12 @@ export function useSWRVHandler<Data = unknown, Error = unknown>(
     let fetchPromise = currentFetch?.promise as Promise<Data> | undefined;
 
     if (!currentFetch) {
-      const loadingState = client.setState<Data, Error>(
-        serializedKey,
-        {
-          data: cached?.data,
-          error: cached?.error,
-          isLoading: cached?.data === undefined,
-          isValidating: true,
-        },
-        configValue.ttl,
-        rawKey,
-      );
+      const loadingState = writeState(serializedKey, rawKey, {
+        data: cached?.data,
+        error: cached?.error,
+        isLoading: cached?.data === undefined,
+        isValidating: true,
+      });
       syncAfterStateWrite(serializedKey, loadingState);
 
       const preloaded = client.consumePreload<Data>(serializedKey);
@@ -339,15 +342,10 @@ export function useSWRVHandler<Data = unknown, Error = unknown>(
       clearLoadingSlowTimer();
 
       if (getConfig().isPaused()) {
-        const pausedState = client.setState<Data, Error>(
-          serializedKey,
-          {
-            isLoading: false,
-            isValidating: false,
-          },
-          configValue.ttl,
-          rawKey,
-        );
+        const pausedState = writeState(serializedKey, rawKey, {
+          isLoading: false,
+          isValidating: false,
+        });
         syncAfterStateWrite(serializedKey, pausedState);
         if (isActiveKey()) {
           scheduleRefresh();
@@ -371,17 +369,12 @@ export function useSWRVHandler<Data = unknown, Error = unknown>(
       }
 
       const latestData = client.getState<Data, Error>(serializedKey)?.data;
-      const successState = client.setState<Data, Error>(
-        serializedKey,
-        {
-          data: configValue.compare(latestData, resolvedData) ? latestData : resolvedData,
-          error: undefined,
-          isLoading: false,
-          isValidating: false,
-        },
-        configValue.ttl,
-        rawKey,
-      );
+      const successState = writeState(serializedKey, rawKey, {
+        data: configValue.compare(latestData, resolvedData) ? latestData : resolvedData,
+        error: undefined,
+        isLoading: false,
+        isValidating: false,
+      });
       syncAfterStateWrite(serializedKey, successState);
       if (!currentFetch && isActiveKey()) {
         getConfig().onSuccess(resolvedData, serializedKey, getConfig());
@@ -395,15 +388,10 @@ export function useSWRVHandler<Data = unknown, Error = unknown>(
       clearLoadingSlowTimer();
 
       if (getConfig().isPaused()) {
-        const pausedErrorState = client.setState<Data, Error>(
-          serializedKey,
-          {
-            isLoading: false,
-            isValidating: false,
-          },
-          configValue.ttl,
-          rawKey,
-        );
+        const pausedErrorState = writeState(serializedKey, rawKey, {
+          isLoading: false,
+          isValidating: false,
+        });
         syncAfterStateWrite(serializedKey, pausedErrorState);
         if (isActiveKey()) {
           scheduleRefresh();
@@ -411,16 +399,11 @@ export function useSWRVHandler<Data = unknown, Error = unknown>(
         return pausedErrorState.data;
       }
 
-      const errorState = client.setState<Data, Error>(
-        serializedKey,
-        {
-          error: resolvedError,
-          isLoading: false,
-          isValidating: false,
-        },
-        configValue.ttl,
-        rawKey,
-      );
+      const errorState = writeState(serializedKey, rawKey, {
+        error: resolvedError,
+        isLoading: false,
+        isValidating: false,
+      });
       syncAfterStateWrite(serializedKey, errorState);
 
       const latestConfig = getConfig();

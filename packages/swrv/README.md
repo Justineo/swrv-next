@@ -18,8 +18,6 @@ first stable cut is tagged, prerelease publishes stay on the `next` dist-tag.
 
 - The supported SSR contract is explicit `client` scoping plus config-level
   `fallback`.
-- `ttl` remains available as a compatibility-oriented extension in the current
-  cut.
 - `serverTTL` is intentionally not returning as part of the rebuilt core API.
 
 ## Install

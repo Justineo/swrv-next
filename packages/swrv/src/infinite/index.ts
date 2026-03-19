@@ -174,7 +174,6 @@ function createInfiniteHook(useSWRVNext: SWRVHook): SWRVInfiniteHook {
             isLoading: false,
             isValidating: false,
           },
-          config.ttl ?? 0,
           rawPageKey,
         );
 

@@ -3,7 +3,6 @@ import { serialize } from "./serialize";
 import { getTimestamp } from "./timestamp";
 
 import type {
-  CacheState,
   KeyFilter,
   MutatorCallback,
   MutatorOptions,
@@ -89,23 +88,15 @@ export function createScopedMutator(client: SWRVClient): ScopedMutator {
       return client.getState<Data>(serializedKey)?.data;
     }
 
-    const currentState =
-      client.getState<Data>(serializedKey) ??
-      ({
-        isLoading: false,
-        isValidating: false,
-        updatedAt: Date.now(),
-        expiresAt: Number.POSITIVE_INFINITY,
-      } satisfies CacheState<Data, unknown>);
-
-    const committedData = currentState._c === undefined ? currentState.data : currentState._c;
+    const currentState = client.getState<Data>(serializedKey);
+    const committedData = currentState?._c === undefined ? currentState?.data : currentState._c;
 
     const mutationStartedAt = getTimestamp();
     client.setMutation(serializedKey, [mutationStartedAt, 0]);
 
     if (normalizedOptions.optimisticData !== undefined) {
       const optimisticData = isFunction(normalizedOptions.optimisticData)
-        ? normalizedOptions.optimisticData(committedData, currentState.data)
+        ? normalizedOptions.optimisticData(committedData, currentState?.data)
         : normalizedOptions.optimisticData;
 
       client.setState<Data>(
@@ -117,9 +108,6 @@ export function createScopedMutator(client: SWRVClient): ScopedMutator {
           isValidating: false,
           _c: committedData,
         },
-        currentState.expiresAt === Number.POSITIVE_INFINITY
-          ? 0
-          : currentState.expiresAt - Date.now(),
         rawKey,
       );
     }
@@ -162,11 +150,10 @@ export function createScopedMutator(client: SWRVClient): ScopedMutator {
           {
             data: committedData,
             _c: undefined,
-            error: currentState.error,
+            error: currentState?.error,
             isLoading: false,
             isValidating: false,
           },
-          0,
           rawKey,
         );
       }
@@ -187,7 +174,6 @@ export function createScopedMutator(client: SWRVClient): ScopedMutator {
           isValidating: false,
           _c: undefined,
         },
-        0,
         rawKey,
       );
     }
@@ -205,7 +191,7 @@ export function createScopedMutator(client: SWRVClient): ScopedMutator {
       throwOnError: normalizedOptions.throwOnError,
     });
 
-    client.setState<Data>(serializedKey, { _c: undefined }, 0, rawKey);
+    client.setState<Data>(serializedKey, { _c: undefined }, rawKey);
 
     if (failed) {
       if (normalizedOptions.throwOnError) {

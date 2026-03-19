@@ -1,6 +1,6 @@
 # TTL removal and runtime simplification plan
 
-Status: proposed
+Status: complete
 Date: 2026-03-19
 
 ## Goal

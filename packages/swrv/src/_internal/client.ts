@@ -90,10 +90,9 @@ export function createSWRVClient(
     setState<Data = unknown, Error = unknown>(
       key: string,
       patch: Partial<CacheState<Data, Error>>,
-      ttl?: number,
       rawKey?: RawKey,
     ): CacheState<Data, Error> {
-      return cacheHelper.set<Data, Error>(key, patch, ttl, rawKey);
+      return cacheHelper.set<Data, Error>(key, patch, rawKey);
     },
     startFetch(
       key: string,

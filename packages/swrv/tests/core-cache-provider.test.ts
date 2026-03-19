@@ -39,7 +39,6 @@ describe("swrv core cache provider behavior", () => {
         isLoading: false,
         isValidating: false,
       },
-      0,
       key,
     );
 
@@ -72,10 +71,8 @@ describe("swrv core cache provider behavior", () => {
               {
                 data: "cached",
                 error: undefined,
-                expiresAt: Number.POSITIVE_INFINITY,
                 isLoading: false,
                 isValidating: false,
-                updatedAt: Date.now(),
               },
             ],
           ]),
@@ -126,10 +123,8 @@ describe("swrv core cache provider behavior", () => {
         {
           data: "cached",
           error: undefined,
-          expiresAt: Number.POSITIVE_INFINITY,
           isLoading: false,
           isValidating: false,
-          updatedAt: Date.now(),
         },
       ],
     ]);
@@ -212,10 +207,8 @@ describe("swrv core cache provider behavior", () => {
               {
                 data: "cache",
                 error: undefined,
-                expiresAt: Number.POSITIVE_INFINITY,
                 isLoading: false,
                 isValidating: false,
-                updatedAt: Date.now(),
               },
             ],
           ]),
@@ -257,10 +250,8 @@ describe("swrv core cache provider behavior", () => {
                         {
                           data: "inner",
                           error: undefined,
-                          expiresAt: Number.POSITIVE_INFINITY,
                           isLoading: false,
                           isValidating: false,
-                          updatedAt: Date.now(),
                         },
                       ],
                     ]),
@@ -291,10 +282,8 @@ describe("swrv core cache provider behavior", () => {
                       {
                         data: "outer",
                         error: undefined,
-                        expiresAt: Number.POSITIVE_INFINITY,
                         isLoading: false,
                         isValidating: false,
-                        updatedAt: Date.now(),
                       },
                     ],
                   ]),
@@ -501,10 +490,8 @@ describe("swrv core cache provider behavior", () => {
         {
           data: "value",
           error: undefined,
-          expiresAt: Number.POSITIVE_INFINITY,
           isLoading: false,
           isValidating: false,
-          updatedAt: Date.now(),
         },
       ],
     ]);

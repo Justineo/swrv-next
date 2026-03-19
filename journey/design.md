@@ -59,6 +59,9 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - public hook entrypoints now support SWR-style normalized argument forms, so `useSWRV(key, config)` and `useSWRVImmutable(key, config)` can drive requests through `config.fetcher` instead of requiring a positional fetcher argument
   - `swrv/immutable` now also exposes the named `immutable` middleware, and immutable behavior coverage includes middleware-based focus suppression, ignoring provider-level `refreshInterval`, avoiding revalidation when a second immutable consumer mounts with cached data, and reusing cached keys without refetching when `revalidateIfStale` is false
   - `stableHash` now handles circular plain objects and arrays instead of overflowing recursion, which brings the serializer closer to SWR's upstream utility behavior
+  - `ttl` is now removed from the rebuilt core API, and cache state no longer carries `expiresAt` or `updatedAt`
+  - cache reads are now pure reads instead of lazy expiry checks with delete-on-read side effects
+  - the shared state-write path is now simpler because `setState()` no longer carries storage-policy arguments
 - The infinite and mutation helpers have also moved closer to SWR:
   - `swrv/infinite` now exposes `unstable_serialize`, resolves page keys safely, supports cursor-style sequential loading, and treats `setSize()` as a page-oriented operation instead of a raw aggregate refresh
   - `swrv/infinite` now revalidates the first page while loading new pages and lets no-arg `mutate()` revalidate all loaded pages
@@ -117,7 +120,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
 - A dedicated `core-normalized-args` domain file now covers SWR-style normalized public hook arguments for `useSWRV`, `useSWRVImmutable`, and `useSWRVInfinite`, including config-only calls that rely on `config.fetcher`.
 - A dedicated `core-ssr-hydration` domain file now covers snapshot serialization, client hydration from a request-scoped snapshot, and server rendering against hydrated client state through `@vue/server-renderer`.
 - The same `core-ssr-hydration` domain file now also covers the internal server-environment helper, server-safe root `preload()` behavior, server-side hook non-fetching, immutable server behavior, and `strictServerPrefetchWarning` for missing SSR handoff data.
-- A dedicated `core-ttl-lifecycle` domain file now covers the compatibility-oriented `ttl` extension and runtime cleanup behavior, including `ttl: 0` persistence, positive-ttl expiry for later consumers, in-flight request completion after loading-entry expiry, and listener or revalidator cleanup on unmount.
+- A dedicated `core-client-cleanup` domain file now covers listener and revalidator cleanup behavior for provider-scoped clients.
 - A dedicated `core-cache-provider` domain file now covers provider-scoped cache behavior, including isolated clients, seeded cache reads, scoped cache mutation through `useSWRVConfig`, nested provider boundaries, and parent-cache extension through `provider(parentCache)`.
 - The same `core-cache-provider` domain file now also covers default global helper exposure, fallback precedence inside custom providers, fallback hierarchy isolation across nested config boundaries, provider non-recreation on rerender, remount-safe cache reuse for stable providers, public `SWRVConfig.defaultValue` exposure, and custom `initFocus` and `initReconnect` hooks that own provider-scoped event listeners without replacing the inherited cache by default.
 - A dedicated `core-web-preset` domain file now covers the default browser preset wiring for `SWRVConfig.defaultValue.initFocus` and `initReconnect`, including cleanup and no-op behavior when browser globals lack event APIs.
@@ -212,7 +215,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
 - Freeze the rebuilt release line as a breaking `2.x` track, and keep prerelease automation on the `next` dist-tag until the first stable cut is ready.
 - Freeze the published Vue support range at `>=3.2.26 <4`.
 - Freeze the typed-consumer and contributor TypeScript baseline at `>=5.5`.
-- Keep `ttl` as a supported compatibility-oriented extension in the current cut, but do not restore `serverTTL` as part of the rebuilt core API.
+- Remove `ttl` from the rebuilt core API as well as `serverTTL`, and treat cache expiry as a provider-level extension rather than a hook-level option.
 - Use sentence case throughout docs, site chrome, and non-code copy unless a proper noun or code literal requires otherwise.
 - Treat the docs tree, navigation, and page depth from the upstream SWR docs source as the active baseline for future documentation work. New docs changes should preserve that structure instead of drifting back toward one-off page naming or ad hoc navigation.
 - When SWR already has an applicable guide or example, prefer matching its section flow, narrative, and example intent instead of inventing new docs copy. Diverge only for Vue composable semantics, SWRV-specific SSR differences, or APIs that intentionally differ.

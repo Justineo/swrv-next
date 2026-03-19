@@ -61,8 +61,6 @@ export interface CacheState<Data = unknown, Error = unknown> {
   error?: Error;
   isLoading: boolean;
   isValidating: boolean;
-  updatedAt: number;
-  expiresAt: number;
   _c?: Data;
   _k?: RawKey;
 }
@@ -130,7 +128,6 @@ export interface SWRVConfiguration<Data = unknown, Error = unknown, Fn = BareFet
   revalidateOnReconnect?: boolean;
   shouldRetryOnError?: boolean | ((error: Error) => boolean);
   strictServerPrefetchWarning?: boolean;
-  ttl?: number;
   use?: SWRVMiddleware[];
 }
 
@@ -188,7 +185,6 @@ export interface ResolvedSWRVConfiguration<
   revalidateOnReconnect: boolean;
   shouldRetryOnError: boolean | ((error: Error) => boolean);
   strictServerPrefetchWarning?: boolean;
-  ttl: number;
   use: SWRVMiddleware[];
 }
 
@@ -315,7 +311,6 @@ export interface SWRVClient {
   setState<Data = unknown, Error = unknown>(
     key: string,
     patch: Partial<CacheState<Data, Error>>,
-    ttl?: number,
     rawKey?: RawKey,
   ): CacheState<Data, Error>;
   startFetch(

@@ -23,8 +23,7 @@ to a new runtime model rather than a minor dependency bump.
 - `fallback` and snapshot hydration replace older ad hoc SSR handoff patterns
 - `useSWRVInfinite`, `useSWRVMutation`, and `useSWRVSubscription` are first-class maintained entry
   points
-- `ttl` still exists, but it is now a compatibility-oriented extension instead of the center of the
-  cache model
+- `ttl` is removed from the rebuilt core API
 - `serverTTL` is not part of the rebuilt core API
 
 ## Common replacements
@@ -44,7 +43,9 @@ to a new runtime model rather than a minor dependency bump.
 3. Replace direct cache writes with `mutate` or `useSWRVMutation`.
 4. Replace legacy pagination flows with `useSWRVInfinite`.
 5. Move SSR initial data to `fallback` or snapshot hydration.
-6. Re-check custom cache access code and switch to `useSWRVConfig()` where needed.
+6. Replace any `ttl`-based expiry assumptions with explicit invalidation, mutation, or a custom
+   provider cache if expiring storage is still required.
+7. Re-check custom cache access code and switch to `useSWRVConfig()` where needed.
 
 ## Migrate by concern, not by page
 

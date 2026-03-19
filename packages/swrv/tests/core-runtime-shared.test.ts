@@ -66,7 +66,6 @@ describe("swrv core shared runtime behavior", () => {
         isLoading: false,
         isValidating: false,
       },
-      0,
       key,
     );
 

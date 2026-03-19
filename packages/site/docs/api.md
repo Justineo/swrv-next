@@ -65,7 +65,6 @@ More information can be found in [Understanding SWRV](/advanced/understanding).
 - `isVisible()`: custom visibility source
 - `isOnline()`: custom online-state source
 - `use`: middleware array [(details)](/middleware)
-- `ttl`: compatibility-oriented cache expiration extension [(cache behavior)](/advanced/cache)
 
 Provider-level options such as `client`, `cache`, `provider`, `initFocus`, and `initReconnect`
 belong on [`SWRVConfig`](/global-configuration), not per-hook calls.

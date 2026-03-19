@@ -18,16 +18,12 @@ export function hydrateSWRVSnapshot(
   snapshot: SWRVFallbackSnapshot,
 ): SWRVClient {
   for (const [key, data] of Object.entries(snapshot)) {
-    client.setState(
-      key,
-      {
-        data,
-        error: undefined,
-        isLoading: false,
-        isValidating: false,
-      },
-      0,
-    );
+    client.setState(key, {
+      data,
+      error: undefined,
+      isLoading: false,
+      isValidating: false,
+    });
   }
 
   return client;
