@@ -93,3 +93,9 @@
 - Confirmed that the current SSR contract for the first launch-ready cut remains explicit client scoping plus config-level `fallback`, with deeper Nuxt or hydration helpers deferred to follow-up work.
 - Aligned the workspace and package manifests to the intended prerelease line at `2.0.0-next.0` and revalidated pack plus publish dry-runs against that concrete version.
 - Milestone `M7` OSS launch readiness is now complete for the current roadmap cut.
+- Closed the last non-suspense upstream matrix gap:
+  - `SWRVResponse` data typing now reflects per-hook `fallbackData`
+  - `useSWRV` and `useSWRVImmutable` now expose defined `data.value` types for fallback-backed config-only and fetcher-plus-config calls
+  - the closure used targeted public overloads instead of a wider middleware or hook-type redesign
+- Revalidated the workspace with `vp check` and `vp test`.
+- The upstream parity matrix is now fully closed for the active non-suspense lane; only the intentionally deferred suspense-specific rows remain open.

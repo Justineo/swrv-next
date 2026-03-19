@@ -84,9 +84,11 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - `useSWRVMutation` now models SWR-style trigger overloads more closely, including no-arg and optional-arg triggers, hook-level `throwOnError` defaults, and separate cache-data typing for `optimisticData` and `populateCache`
   - mutation type coverage now also explicitly checks no-arg trigger typing and ensures mutation responses do not leak base-hook fields like `mutate`
   - `useSWRVSubscription` handler keys now narrow to the resolved non-nullish key type even when the key source itself is conditional
+  - per-hook `fallbackData` now narrows `data.value` to a defined ref type across base and immutable hooks, including both config-only and fetcher-plus-config call forms
   - root and scoped `preload()` now use overload-based typing instead of a single conditional generic, which improves string-key and config-driven preload inference while leaving tuple function-key inference as a smaller remaining follow-up
   - compile-time coverage now also exercises `useSWRVConfig()` accessors, filtered mutate callback typing, readonly tuple keys, nullable-key fetcher narrowing, config-bound provider hook typing, and bound-mutate composition with mutation triggers
   - the package export map now points at the emitted `.d.mts` declaration files and is checked by a package-export smoke test
+  - the remaining non-suspense partial row in the upstream SWR and legacy SWRV test matrix is now closed; only the explicitly deferred suspense lane remains open
 - The docs package now builds with VitePress and includes a first guide, API overview, and migration page.
 - The docs package now also includes examples, a current-scope page, and an explicit SSR guide built around provider-scoped clients plus config-level fallback data.
 - The docs package now also documents snapshot-based SSR handoff through `serializeSWRVSnapshot()` and `hydrateSWRVSnapshot()`, so the SSR story is no longer limited to manually wiring config-level `fallback`.
@@ -186,4 +188,3 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
 - Whether `2.0` should ship limited initial-mount `suspense: true` support, or defer fuller SWR suspense parity because later key-change fallback behavior is not cleanly achievable with Vue's current mechanics
 - Whether any remaining advanced edge semantics in `infinite`, `mutation`, and `subscription` are worth tightening further before or after the first stable `2.0` release
 - How much additional type-level precision is worth adding beyond the current public overloads once the API surface is exercised by real consumers
-- Whether the remaining fallback-data typing gap should be closed before `2.0` by adopting a SWR-style `BlockingData` plus config-generic response model, or stay as a documented intentional difference for the current cut

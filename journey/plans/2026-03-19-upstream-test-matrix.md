@@ -18,7 +18,7 @@ Status legend:
 
 | Upstream file                                | Status         | `swrv-next` mapping                                                                                                                                        | Notes                                                                                                                                                                                                                                                   |
 | -------------------------------------------- | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `test/type/config.tsx`                       | Partial        | `packages/swrv/tests/swrv.types.ts`, `packages/swrv/tests/core-cache-provider.test.ts`, `packages/swrv/tests/core-normalized-args.test.ts`                 | Config typing, `SWRVConfig.defaultValue`, provider hooks, config-only hook calls, and config rejection cases are covered. The remaining non-suspense gap is fallback-data typing precision. Suspense-specific parts stay deferred.                      |
+| `test/type/config.tsx`                       | Covered        | `packages/swrv/tests/swrv.types.ts`, `packages/swrv/tests/core-cache-provider.test.ts`, `packages/swrv/tests/core-normalized-args.test.ts`                 | Config typing, `SWRVConfig.defaultValue`, provider hooks, config-only hook calls, config rejection cases, and per-hook `fallbackData` response narrowing are covered. Suspense-specific parts stay deferred.                                            |
 | `test/type/fetcher.ts`                       | Covered        | `packages/swrv/tests/swrv.types.ts`, `packages/swrv/tests/core-fetcher.test.ts`                                                                            | String, object, nullable-key, and readonly tuple fetcher inference are covered. The tuple-key difference is an intentional Vue adaptation: `swrv-next` spreads tuple keys into positional args instead of passing the tuple as one argument.            |
 | `test/type/helper-types.tsx`                 | Not applicable | `packages/swrv/tests/swrv.types.ts`                                                                                                                        | SWR's `BlockingData` helper is tied to React-style suspense and non-ref return semantics. Relevant filled-data behavior is covered through public hook typing instead.                                                                                  |
 | `test/type/internal.tsx`                     | Not applicable | None                                                                                                                                                       | SWR internal-only `rAF` typing is not part of the `swrv-next` public contract.                                                                                                                                                                          |
@@ -75,10 +75,8 @@ Status legend:
 
 ## Immediate Execution Order
 
-1. Finish the remaining applicable type-file parity case from:
-   - `test/type/config.tsx`
-2. Decide whether the remaining fallback-data typing gap is worth closing for `2.0` or should stay as a documented intentional difference.
-3. Keep suspense deferred unless the product decision changes.
+1. Keep suspense deferred unless the product decision changes.
+2. Reopen the matrix only if new runtime or public-type surface is added beyond the current `2.0.0-next.0` cut.
 
 ## Notes
 

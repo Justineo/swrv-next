@@ -70,6 +70,14 @@ export interface CacheState<Data = unknown, Error = unknown> {
 export type Compare<Data> = (left: Data | undefined, right: Data | undefined) => boolean;
 export type SWRVEventInitializer = (callback: () => void) => void | (() => void);
 
+type ResolvedFallbackData<Options> = Options extends { fallbackData: infer F }
+  ? Exclude<F, undefined>
+  : never;
+
+export type BlockingData<Options = unknown> = [ResolvedFallbackData<Options>] extends [never]
+  ? false
+  : true;
+
 export interface SWRVConfiguration<Data = unknown, Error = unknown, Fn = BareFetcher<Data>> {
   cache?: CacheAdapter<CacheState<any, any>>;
   client?: SWRVClient;
@@ -223,8 +231,8 @@ export type BoundMutator<Data = unknown> = <MutationData = Data>(
   options?: boolean | MutatorOptions<Data, MutationData>,
 ) => Promise<Data | MutationData | undefined>;
 
-export interface SWRVResponse<Data = unknown, Error = unknown> {
-  data: Ref<Data | undefined>;
+export interface SWRVResponse<Data = unknown, Error = unknown, Config = unknown> {
+  data: Ref<BlockingData<Config> extends true ? Data : Data | undefined>;
   error: Ref<Error | undefined>;
   isLoading: Ref<boolean>;
   isValidating: Ref<boolean>;

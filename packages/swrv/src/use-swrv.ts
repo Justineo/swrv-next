@@ -720,6 +720,59 @@ export default function useSWRV<
 >(
   key: KeySource<NullableKey<Key>>,
   fetcher: ((...args: [...Key]) => FetcherResponse<Data>) | null | undefined | false,
+  config: SWRVConfiguration<Data, Error, (...args: [...Key]) => FetcherResponse<Data>> & {
+    fallbackData: Data;
+  },
+): SWRVResponse<Data, Error, { fallbackData: Data }>;
+export default function useSWRV<
+  Data = unknown,
+  Error = unknown,
+  Key extends NonArrayKey = NonArrayKey,
+>(
+  key: KeySource<NullableKey<Key>>,
+  fetcher: ((arg: Key) => FetcherResponse<Data>) | null | undefined | false,
+  config: SWRVConfiguration<Data, Error, (arg: Key) => FetcherResponse<Data>> & {
+    fallbackData: Data;
+  },
+): SWRVResponse<Data, Error, { fallbackData: Data }>;
+export default function useSWRV<Data = unknown, Error = unknown>(
+  key: KeySource<RawKey>,
+  fetcher: BareFetcher<Data> | null | undefined | false,
+  config: SWRVConfiguration<Data, Error, BareFetcher<Data>> & { fallbackData: Data },
+): SWRVResponse<Data, Error, { fallbackData: Data }>;
+export default function useSWRV<
+  Data = unknown,
+  Error = unknown,
+  Key extends readonly unknown[] = readonly unknown[],
+>(
+  key: KeySource<NullableKey<Key>>,
+  config: SWRVConfiguration<Data, Error, (...args: [...Key]) => FetcherResponse<Data>> & {
+    fallbackData: Data;
+  },
+): SWRVResponse<Data, Error, { fallbackData: Data }>;
+export default function useSWRV<Data = unknown, Error = unknown, Key extends string = string>(
+  key: KeySource<NullableKey<Key>>,
+  config: SWRVConfiguration<Data, Error, (arg: Key) => FetcherResponse<Data>> & {
+    fallbackData: Data;
+  },
+): SWRVResponse<Data, Error, { fallbackData: Data }>;
+export default function useSWRV<
+  Data = unknown,
+  Error = unknown,
+  Key extends Record<string, unknown> = Record<string, unknown>,
+>(
+  key: KeySource<NullableKey<Key>>,
+  config: SWRVConfiguration<Data, Error, (arg: Key) => FetcherResponse<Data>> & {
+    fallbackData: Data;
+  },
+): SWRVResponse<Data, Error, { fallbackData: Data }>;
+export default function useSWRV<
+  Data = unknown,
+  Error = unknown,
+  Key extends readonly unknown[] = readonly unknown[],
+>(
+  key: KeySource<NullableKey<Key>>,
+  fetcher: ((...args: [...Key]) => FetcherResponse<Data>) | null | undefined | false,
   config?: SWRVConfiguration<Data, Error>,
 ): SWRVResponse<Data, Error>;
 export default function useSWRV<

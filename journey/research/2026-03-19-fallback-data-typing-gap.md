@@ -1,7 +1,7 @@
 # Fallback Data Typing Gap
 
 Date: 2026-03-19
-Status: Open
+Status: Closed
 
 ## Question
 
@@ -9,11 +9,11 @@ Why does `swrv-next` still have one remaining non-suspense partial row in the up
 
 ## Short Answer
 
-The remaining gap is fallback-data typing precision.
+The gap was fallback-data typing precision, and it is now closed in the current `swrv-next` type surface.
 
-`swrv-next` currently types `useSWRV(...).data.value` as `Data | undefined` even when per-hook `fallbackData` is present. SWR types this more aggressively: when `fallbackData` or `suspense` guarantees data presence, `data` becomes non-undefined at the type level.
+`swrv-next` now types `useSWRV(...).data.value` and `useSWRVImmutable(...).data.value` as defined when per-hook `fallbackData` is present in the call. That closes the last non-suspense partial row in the upstream matrix.
 
-Closing that gap cleanly is not a small assertion tweak. It requires a public type-shape refactor similar to SWR’s `BlockingData` model.
+The closure ended up being smaller than a full SWR-style config-generic response redesign. `swrv-next` now uses a conditional response data type plus targeted fallback-aware public overloads, which was enough to close the parity case without destabilizing the rest of the hook surface.
 
 ## What SWR Does
 
@@ -35,9 +35,9 @@ This is not isolated to one return type. It is a coordinated design across:
 - config helper types
 - suspense typing
 
-## Why `swrv-next` Still Differs
+## Why `swrv-next` Still Differed
 
-`swrv-next` currently models the base hook response as:
+Before the fix, `swrv-next` modeled the base hook response as:
 
 - `SWRVResponse<Data, Error>`
   - `data: Ref<Data | undefined>`
@@ -46,7 +46,7 @@ That design keeps the runtime and the Vue ref contract simple, but it means fall
 
 I tried a smaller local refactor that only changed the public overloads to narrow `data.value` when `fallbackData` exists. That failed for the right reason: the change leaks into the whole response type surface and overload resolution.
 
-The main friction points are:
+The main friction points were:
 
 - `SWRVResponse` would need a third generic for display data, not just cache data
 - `useSWRV` overloads would need to thread a config generic through every relevant call form
@@ -54,35 +54,12 @@ The main friction points are:
 - `SWRVHook` and middleware typing would need review because they currently assume a single `SWRVResponse<Data, Error>` shape
 - compile-time behavior for Vue refs has to stay coherent, especially for `mutate`, middleware composition, and subpath APIs
 
-## Practical Options
+## Outcome
 
-### Option 1: Leave as documented difference for `2.0`
+The shipped solution is:
 
-Pros:
+- add a conditional response data type so `SWRVResponse["data"]` can represent defined fallback-backed data
+- keep the general hook surface stable
+- add targeted fallback-aware overloads for base and immutable hooks instead of rewriting the entire hook or middleware type model
 
-- keeps the current public response shape stable
-- avoids a wider type refactor late in the cycle
-- matches the current runtime contract safely
-
-Cons:
-
-- leaves one meaningful non-suspense parity gap against SWR’s config typing
-
-### Option 2: Do the full SWR-style response typing refactor
-
-Pros:
-
-- closes the last meaningful non-suspense partial row in the current upstream matrix
-- gives `fallbackData` stronger ergonomic value for typed consumers
-
-Cons:
-
-- touches the core public hook typing model
-- likely needs another matrix pass across base, immutable, infinite, mutation, middleware, and docs examples
-- is bigger than the other parity fixes landed so far
-
-## Recommendation
-
-Treat this as an explicit follow-up task, not a drive-by cleanup.
-
-If we want full non-suspense SWR type parity for `2.0`, this should be tackled as a focused type-surface refactor with its own verification pass. If we want to preserve the current `2.0` cut and avoid a late public-type redesign, it is reasonable to keep this as a documented intentional difference.
+This closes the relevant `test/type/config.tsx` parity cases while keeping suspense-specific typing deferred.

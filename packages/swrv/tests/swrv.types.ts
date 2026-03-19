@@ -135,6 +135,17 @@ const immutableConfigFetcherResponse = useSWRVImmutable("immutable-config" as co
 const fallbackOnlyResponse = useSWRV<string>("config-fallback" as const, {
   fallbackData: "fallback",
 });
+const fallbackFetcherResponse = useSWRV("fetcher-fallback" as const, async (key) => key, {
+  fallbackData: "fallback",
+});
+const immutableFallbackResponse = useSWRVImmutable<string>("immutable-fallback" as const, {
+  fallbackData: "fallback",
+});
+const objectFallbackResponse = useSWRV(
+  "object-fallback" as const,
+  async (key) => ({ value: key }),
+  { fallbackData: { value: "fallback" } },
+);
 const falseFetcherResponse = useSWRV<string>("false-fetcher", false);
 const snapshotClient = hydrateSWRVSnapshot(createSWRVClient(), {
   user: { id: "1" },
@@ -496,8 +507,11 @@ const typeAssertions = {
   immutableConfigData: true as Expect<
     Equal<typeof immutableConfigFetcherResponse.data.value, "immutable-config" | undefined>
   >,
-  fallbackOnlyData: true as Expect<
-    Equal<typeof fallbackOnlyResponse.data.value, string | undefined>
+  fallbackOnlyData: true as Expect<Equal<typeof fallbackOnlyResponse.data.value, string>>,
+  fallbackFetcherData: true as Expect<Equal<typeof fallbackFetcherResponse.data.value, string>>,
+  immutableFallbackData: true as Expect<Equal<typeof immutableFallbackResponse.data.value, string>>,
+  objectFallbackData: true as Expect<
+    Equal<typeof objectFallbackResponse.data.value, { value: string }>
   >,
   falseFetcherData: true as Expect<
     Equal<typeof falseFetcherResponse.data.value, string | undefined>

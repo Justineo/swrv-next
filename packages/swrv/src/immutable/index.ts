@@ -40,6 +40,58 @@ export default function useSWRVImmutable<
 >(
   key: KeySource<NullableKey<Key>>,
   fetcher: ((...args: [...Key]) => FetcherResponse<Data>) | null | undefined,
+  config: SWRVConfiguration<Data, Error, (...args: [...Key]) => FetcherResponse<Data>> & {
+    fallbackData: Data;
+  },
+): SWRVResponse<Data, Error, { fallbackData: Data }>;
+export default function useSWRVImmutable<
+  Data = unknown,
+  Error = unknown,
+  Key extends NonArrayKey = NonArrayKey,
+>(
+  key: KeySource<NullableKey<Key>>,
+  fetcher: ((arg: Key) => FetcherResponse<Data>) | null | undefined,
+  config: SWRVConfiguration<Data, Error, (arg: Key) => FetcherResponse<Data>> & {
+    fallbackData: Data;
+  },
+): SWRVResponse<Data, Error, { fallbackData: Data }>;
+export default function useSWRVImmutable<
+  Data = unknown,
+  Error = unknown,
+  Key extends readonly unknown[] = readonly unknown[],
+>(
+  key: KeySource<NullableKey<Key>>,
+  config: SWRVConfiguration<Data, Error, (...args: [...Key]) => FetcherResponse<Data>> & {
+    fallbackData: Data;
+  },
+): SWRVResponse<Data, Error, { fallbackData: Data }>;
+export default function useSWRVImmutable<
+  Data = unknown,
+  Error = unknown,
+  Key extends string = string,
+>(
+  key: KeySource<NullableKey<Key>>,
+  config: SWRVConfiguration<Data, Error, (arg: Key) => FetcherResponse<Data>> & {
+    fallbackData: Data;
+  },
+): SWRVResponse<Data, Error, { fallbackData: Data }>;
+export default function useSWRVImmutable<
+  Data = unknown,
+  Error = unknown,
+  Key extends Record<string, unknown> = Record<string, unknown>,
+>(
+  key: KeySource<NullableKey<Key>>,
+  config: SWRVConfiguration<Data, Error, (arg: Key) => FetcherResponse<Data>> & {
+    fallbackData: Data;
+  },
+): SWRVResponse<Data, Error, { fallbackData: Data }>;
+export default function useSWRVImmutable<
+  Data = unknown,
+  Error = unknown,
+  Key extends readonly unknown[] = readonly unknown[],
+>(
+  key: KeySource<NullableKey<Key>>,
+  fetcher: ((...args: [...Key]) => FetcherResponse<Data>) | null | undefined,
   config?: SWRVConfiguration<Data, Error>,
 ): SWRVResponse<Data, Error>;
 export default function useSWRVImmutable<
