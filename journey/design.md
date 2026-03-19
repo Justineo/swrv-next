@@ -123,7 +123,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
 - The same `core-ssr-hydration` domain file now also covers the internal server-environment helper, server-safe root `preload()` behavior, server-side hook non-fetching, immutable server behavior, and `strictServerPrefetchWarning` for missing SSR handoff data.
 - A dedicated `core-client-cleanup` domain file now covers listener and revalidator cleanup behavior for provider-scoped clients.
 - A dedicated `core-cache-provider` domain file now covers provider-scoped cache behavior, including isolated clients, seeded cache reads, scoped cache mutation through `useSWRVConfig`, nested provider boundaries, and parent-cache extension through `provider(parentCache)`.
-- The same `core-cache-provider` domain file now also covers default global helper exposure, fallback precedence inside custom providers, fallback hierarchy isolation across nested config boundaries, provider non-recreation on rerender, remount-safe cache reuse for stable providers, public `SWRVConfig.defaultValue` exposure, and custom `initFocus` and `initReconnect` hooks that own provider-scoped event listeners without replacing the inherited cache by default.
+- The same `core-cache-provider` domain file now also covers default global helper exposure, fallback precedence inside custom providers, fallback hierarchy isolation across nested config boundaries, provider non-recreation on rerender, remount-safe cache reuse for stable providers, public `SWRVConfig.defaultValue` exposure, custom `initFocus` and `initReconnect` hooks on inherited caches, and symmetric child-boundary coverage when a provider really returns a new cache.
 - A dedicated `core-web-preset` domain file now covers the default browser preset wiring for `SWRVConfig.defaultValue.initFocus` and `initReconnect`, including cleanup and no-op behavior when browser globals lack event APIs.
 - A dedicated `core-utils` domain file now covers upstream-inspired `stableHash` and `mergeConfiguration` behavior.
 - A dedicated `core-middleware` domain file now covers base and cross-API middleware behavior, including original-key forwarding, null fetchers, config-boundary `use` composition order, key rewriting, non-serialized key forwarding, and middleware passthrough for `infinite`, `mutation`, and `subscription`.
@@ -148,7 +148,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - nested `SWRVConfig` boundaries merge fallback maps in SWR-style order
   - `SWRVConfig` now also supports the SWR-style functional `value` form, which receives the parent config but replaces parent overrides with its returned object
   - `SWRVConfig.provider` now also receives the parent cache, so nested providers can extend rather than only replace the inherited cache view
-  - `SWRVConfig` now also exposes `defaultValue` and supports SWR-style `initFocus` and `initReconnect` config hooks, with custom event initializers owning provider-scoped revalidation listeners without replacing the inherited cache by default
+  - `SWRVConfig` now also exposes `defaultValue` and supports SWR-style `initFocus` and `initReconnect` config hooks, and `provider(parentCache) => parentCache` now reuses the parent client instead of creating a shadow boundary
   - SWR-style `use` middleware composition now works across `useSWRV`, `immutable`, `infinite`, `mutation`, and `subscription`
   - the published package includes explicit typed subpath exports, a package README, and an Apache-2.0 license file
   - root exports now also include `serializeSWRVSnapshot()` and `hydrateSWRVSnapshot()` for request-scoped SSR snapshot round-trips
@@ -195,9 +195,9 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - default compare now uses `dequal/lite`, browser online state is event-tracked, retry scheduling now follows SWR-style exponential backoff, and slow-connection timeout defaults now match SWR's model
   - base-hook mount logic now includes SWR's cached-error guard, so a second consumer does not eagerly revalidate a cached error on initial mount
   - `useSWRVInfinite` now refetches cached pages on mount when `revalidateOnMount: true`, matching SWR's page-level mount behavior
-  - mutation callback keys are now serialized strings, mutation fetcher generic order now matches SWR, and subscription push typing now accepts mutator callbacks
+  - mutation callback keys are now serialized strings, mutation fetcher generic order now matches SWR, and subscription push typing and updater semantics now match SWR's cached-state model
   - internal key prefixes are now centralized in `_internal/constants.ts`, and `immutable` is again a thin middleware wrapper instead of carrying a duplicated overload surface
-  - the remaining non-React-only implementation drift is now intentional: Vue reactive key sources and refs, explicit provider-scoped client state, provide/inject config flow, provider-scoped `initFocus` and `initReconnect` listener ownership over inherited cache objects, explicit SSR snapshot helpers, and the still-deferred React-only Suspense or RSC machinery
+  - after the final 2026-03-20 source audit, there are no remaining safe non-React, non-Vue-required alignment tasks left open; the remaining implementation drift is now intentional: Vue reactive key sources and refs, explicit provider-scoped client state, provide/inject config flow, explicit SSR snapshot helpers, and the still-deferred React-only Suspense or RSC machinery
 - The main reference materials for the rebuild remain:
   - `journey/research/swr-vs-swrv.md`
   - `journey/research/2026-03-18-swrv-next-vs-swr-and-swrv-current-state.md`
