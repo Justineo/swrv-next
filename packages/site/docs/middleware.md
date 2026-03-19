@@ -57,6 +57,9 @@ The wrapped call still receives the original public key shape. That matters for:
 - `useSWRVMutation`
 - `useSWRVSubscription`
 
+See [Arguments](/arguments), [Pagination](/pagination), [Mutation](/mutation), and
+[Subscription](/subscription) for those API surfaces.
+
 Middleware can inspect or replace the fetcher, inject options, or wrap the returned response.
 
 ## Extend
@@ -116,9 +119,9 @@ const noFocusRevalidate = (useSWRVNext) => (key, fetcher, config) => {
 
 SWR’s middleware examples sometimes demonstrate features that SWRV already supports directly:
 
-- use `keepPreviousData` instead of custom “laggy” middleware
-- rely on built-in key serialization for object keys
-- use `swrv/immutable` or the named `immutable` middleware for immutable resources
+- use `keepPreviousData` instead of custom “laggy” middleware [(details)](/advanced/understanding#return-previous-data-for-better-ux)
+- rely on built-in key serialization for object keys [(details)](/arguments#passing-objects)
+- use `swrv/immutable` or the named `immutable` middleware for immutable resources [(details)](/revalidation#disable-automatic-revalidations)
 
 That keeps middleware focused on cross-cutting concerns such as logging, auth, analytics, or
 debugging.

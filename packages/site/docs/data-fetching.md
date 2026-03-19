@@ -12,6 +12,9 @@ const { data, error } = useSWRV(key, fetcher);
 This is the core contract of SWRV. The fetcher receives the key and returns the data. If it throws,
 the error is exposed through `error`.
 
+For key shapes and fetcher arguments, see [Arguments](/arguments). For retry behavior and error
+payload patterns, see [Error handling](/error-handling).
+
 > [!TIP]
 > The fetcher can be omitted from the hook call if it is provided globally through
 > [`SWRVConfig`](/global-configuration).

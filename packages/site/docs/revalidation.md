@@ -23,6 +23,9 @@ useSWRV("/api/user", fetcher, {
 
 Disable it with `revalidateOnFocus: false` or throttle it with `focusThrottleInterval`.
 
+If you need to override how focus is detected, see [Global configuration](/global-configuration) for
+`initFocus()`.
+
 ## Revalidate on interval
 
 Polling is controlled by `refreshInterval`:
@@ -77,6 +80,8 @@ const { data } = useSWRVImmutable("/api/build-metadata", fetcher);
 
 This disables stale revalidation, focus revalidation, reconnect revalidation, and polling.
 
+See [API](/api#swrvimmutable) for the immutable entry point shape.
+
 You can also disable each behavior individually with `revalidateOnFocus`, `revalidateOnReconnect`,
 or `refreshInterval: 0`.
 
@@ -108,4 +113,4 @@ SWRV also supports lower-level gates for non-standard environments:
 - `initReconnect()`
 
 These are most useful when you need to adapt SWRV to a custom host environment rather than the
-default browser behavior.
+default browser behavior. They are configured through [SWRVConfig](/global-configuration).

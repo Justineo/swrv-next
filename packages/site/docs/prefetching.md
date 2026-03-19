@@ -79,6 +79,9 @@ const value = {
 </template>
 ```
 
+See [API](/api#options) for the hook-level option surface and [Global configuration](/global-configuration)
+for provider-level fallback setup.
+
 ## Prefetch on the server
 
 Unlike SWR’s React Server Component examples, SWRV’s SSR story is explicit:

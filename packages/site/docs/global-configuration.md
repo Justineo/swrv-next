@@ -7,6 +7,9 @@ description: Configure default options for all SWRV hooks.
 
 `SWRVConfig` provides shared configuration for every SWRV hook inside the boundary.
 
+For the full option list, see [API](/api). This page focuses on how those options are shared across
+cache boundaries and app subtrees.
+
 ```vue
 <script setup lang="ts">
 import { SWRVConfig } from "swrv";
@@ -80,6 +83,9 @@ local subtree.
 
 These options are useful when you need one cache per app, test, or SSR request.
 
+See [Cache](/advanced/cache) for provider semantics and [Server rendering and hydration](/server-rendering-and-hydration)
+for request-scoped SSR usage.
+
 ```vue
 <script setup lang="ts">
 import { SWRVConfig, createSWRVClient } from "swrv";
@@ -104,6 +110,9 @@ const { cache, client, config, mutate, preload } = useSWRVConfig();
 
 This is the correct way to reach the active cache boundary. If a custom provider is in use, the
 scoped `mutate` returned here stays aligned with that provider.
+
+See [Mutation](/mutation) and [Prefetching](/prefetching) for how those scoped helpers are used in
+practice.
 
 ## Middleware
 

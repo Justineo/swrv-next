@@ -44,7 +44,8 @@ const { data: user } = useSWRV(["/api/user", token] as const, async (url, authTo
 ```
 
 In SWRV, tuple keys are spread into the fetcher as positional arguments. That keeps the fetcher
-signature ergonomic in Vue code while still tying every argument to the cache key.
+signature ergonomic in Vue code while still tying every argument to the cache key. See
+[Data fetching](/data-fetching) for fetcher examples.
 
 ## Passing objects
 
@@ -65,7 +66,8 @@ const { data: orders } = useSWRV(
 ```
 
 SWRV serializes object keys internally, so two deeply equal object keys resolve to the same cache
-identity.
+identity. See [Performance](/advanced/performance#deep-comparison) for how `compare` interacts with
+resolved data identity.
 
 ## Refs and computed keys
 
@@ -97,3 +99,6 @@ Use `unstable_serialize` only when you need the internal serialized form, such a
 - config-level `fallback` maps
 - SSR snapshot handoff
 - advanced `useSWRVInfinite` coordination
+
+See [Global configuration](/global-configuration), [Server rendering and hydration](/server-rendering-and-hydration),
+and [Pagination](/pagination) for those cases.

@@ -7,6 +7,9 @@ description: Handle errors when fetching data with SWRV.
 
 If the fetcher throws, the error is exposed through `error`:
 
+For fetcher patterns, see [Data fetching](/data-fetching). For the full hook and option surface,
+see [API](/api).
+
 ```vue
 <script setup lang="ts">
 import useSWRV from "swrv";
@@ -47,6 +50,9 @@ const fetcher = async (url: string) => {
 
 This is useful because `data` and `error` can exist at the same time. A revalidation may fail while
 the last successful data value is still available in the UI.
+
+See [Understanding SWRV](/advanced/understanding#combining-isloading-and-isvalidating-for-better-ux)
+for how loading and validating state behave during those transitions.
 
 ## Error retry
 

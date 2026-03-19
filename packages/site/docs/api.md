@@ -16,12 +16,9 @@ const { data, error, isLoading, isValidating, mutate } = useSWRV(key, fetcher, o
 ## Parameters
 
 - `key`: a unique key for the request. It can be a string, tuple, object, ref, computed ref,
-  function, or a falsy value such as `null`.
-- `fetcher`: optional. A function that returns the data for the given key.
-- `options`: optional. A configuration object for this hook.
-
-See [Arguments](/arguments) and [Conditional fetching](/conditional-fetching) for key shapes and
-key functions.
+  function, or a falsy value such as `null` [(details)](/arguments), [(advanced usage)](/conditional-fetching)
+- `fetcher`: optional. A function that returns the data for the given key [(details)](/data-fetching)
+- `options`: optional. A configuration object for this hook [(global defaults)](/global-configuration)
 
 ## Return values
 
@@ -29,44 +26,46 @@ key functions.
 - `error`: a Vue ref containing the last error thrown by the fetcher
 - `isLoading`: a Vue ref that is `true` when a request is in flight and there is no loaded data yet
 - `isValidating`: a Vue ref that is `true` whenever a request or revalidation is in flight
-- `mutate(data?, options?)`: a bound mutation function for the current key
+- `mutate(data?, options?)`: a bound mutation function for the current key [(details)](/mutation)
 
 `fallbackData` and `keepPreviousData` can give you something to render while `isLoading` remains
 `true`. This matches SWR’s idea that “loaded data” means resolved data for the active key, not
 placeholder data.
 
+More information can be found in [Understanding SWRV](/advanced/understanding).
+
 ## Options
 
-- `fetcher(args)`: fetcher function for this hook
-- `revalidateIfStale = true`: revalidate on activation when cached data exists
-- `revalidateOnMount`: explicitly enable or disable the first activation revalidation
-- `revalidateOnFocus = true`: revalidate when the window regains focus
-- `revalidateOnReconnect = true`: revalidate when the browser comes back online
-- `refreshInterval = 0`: polling interval in milliseconds, or a function of the latest data
+- `fetcher(args)`: fetcher function for this hook [(details)](/data-fetching)
+- `revalidateIfStale = true`: revalidate on activation when cached data exists [(details)](/revalidation)
+- `revalidateOnMount`: explicitly enable or disable the first activation revalidation [(details)](/revalidation#revalidate-on-mount)
+- `revalidateOnFocus = true`: revalidate when the window regains focus [(details)](/revalidation#revalidate-on-focus)
+- `revalidateOnReconnect = true`: revalidate when the browser comes back online [(details)](/revalidation#revalidate-on-reconnect)
+- `refreshInterval = 0`: polling interval in milliseconds, or a function of the latest data [(details)](/revalidation#revalidate-on-interval)
 - `refreshWhenHidden = false`: keep polling when the document is hidden
 - `refreshWhenOffline = false`: keep polling when the browser is offline
-- `shouldRetryOnError = true`: retry after fetcher errors
+- `shouldRetryOnError = true`: retry after fetcher errors [(details)](/error-handling#error-retry)
 - `dedupingInterval = 2000`: dedupe requests for the same key during this window
 - `focusThrottleInterval = 5000`: throttle focus-triggered revalidation
 - `loadingTimeout = 3000`: timeout for `onLoadingSlow`
 - `errorRetryInterval = 5000`: delay between retries
 - `errorRetryCount`: maximum number of retries
-- `fallback`: key-value object for config-level fallback data
-- `fallbackData`: fallback data for this hook only
+- `fallback`: key-value object for config-level fallback data [(details)](/global-configuration), [(SSR)](/server-rendering-and-hydration#pre-rendering-with-default-data)
+- `fallbackData`: fallback data for this hook only [(details)](/prefetching#pre-fill-data)
 - `strictServerPrefetchWarning = false`: warn during SSR when a key is rendered without prefetched
-  data
-- `keepPreviousData = false`: keep the previous key’s data while the new key loads
+  data [(details)](/server-rendering-and-hydration#strict-warnings-for-missing-handoff-data)
+- `keepPreviousData = false`: keep the previous key’s data while the new key loads [(details)](/advanced/understanding#return-previous-data-for-better-ux)
 - `onLoadingSlow(key, config)`: callback when a request takes too long
 - `onSuccess(data, key, config)`: callback when a request succeeds
-- `onError(error, key, config)`: callback when a request fails
-- `onErrorRetry(error, key, config, revalidate, options)`: customize retry behavior
+- `onError(error, key, config)`: callback when a request fails [(details)](/error-handling#global-error-report)
+- `onErrorRetry(error, key, config, revalidate, options)`: customize retry behavior [(details)](/error-handling#error-retry)
 - `onDiscarded(key)`: callback when a stale response is discarded
-- `compare(a, b)`: comparison function used to preserve data identity
+- `compare(a, b)`: comparison function used to preserve data identity [(details)](/advanced/performance#deep-comparison)
 - `isPaused()`: pause revalidation and ignore incoming results while paused
 - `isVisible()`: custom visibility source
 - `isOnline()`: custom online-state source
-- `use`: middleware array
-- `ttl`: compatibility-oriented cache expiration extension
+- `use`: middleware array [(details)](/middleware)
+- `ttl`: compatibility-oriented cache expiration extension [(cache behavior)](/advanced/cache)
 
 Provider-level options such as `client`, `cache`, `provider`, `initFocus`, and `initReconnect`
 belong on [`SWRVConfig`](/global-configuration), not per-hook calls.
