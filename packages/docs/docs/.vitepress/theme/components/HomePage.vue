@@ -1,68 +1,120 @@
 <script setup lang="ts">
-const topicCards = [
+const homeNav = [
+  { href: "/getting-started", label: "Docs" },
+  { href: "/api", label: "API" },
+  { href: "/migrate-from-v1", label: "Migrate from v1" },
+  { href: "https://github.com/Kong/swrv", label: "GitHub" },
+];
+
+const guideColumns = [
   {
-    description: "Install the package, pick a fetcher shape, and get the first request on screen.",
-    href: "/getting-started",
-    label: "Get started",
+    links: [
+      {
+        description: "Install the package, define a fetcher, and render the first request.",
+        href: "/getting-started",
+        label: "Getting started",
+      },
+      {
+        description: "Understand the return shape, config surface, and core options.",
+        href: "/api",
+        label: "API",
+      },
+      {
+        description: "Model string, tuple, object, and function keys cleanly.",
+        href: "/arguments-and-keys",
+        label: "Arguments and keys",
+      },
+    ],
+    title: "Learn the model",
   },
   {
-    description:
-      "Understand keys, fetchers, refs, return values, and the main configuration surface.",
-    href: "/api",
-    label: "Read the API",
+    links: [
+      {
+        description: "Control focus, reconnect, mount, and polling revalidation.",
+        href: "/automatic-revalidation",
+        label: "Automatic revalidation",
+      },
+      {
+        description: "Handle optimistic updates, manual mutation, and shared cache writes.",
+        href: "/mutation-and-revalidation",
+        label: "Mutation and revalidation",
+      },
+      {
+        description: "Scale list and cursor-based data flows without leaving the cache model.",
+        href: "/pagination",
+        label: "Pagination",
+      },
+      {
+        description: "Attach push-based transports without colliding with normal SWRV state.",
+        href: "/subscription",
+        label: "Subscription",
+      },
+    ],
+    title: "Build data flows",
   },
   {
-    description:
-      "Tune focus, reconnect, dedupe, polling, and cache boundaries without leaving Vue patterns behind.",
-    href: "/global-configuration",
-    label: "Configure the runtime",
-  },
-  {
-    description:
-      "Handle optimistic updates, pagination, subscriptions, and preload flows with the SWR-shaped companion APIs.",
-    href: "/mutation-and-revalidation",
-    label: "Model data flows",
+    links: [
+      {
+        description: "Set provider boundaries, fallback data, and shared fetchers.",
+        href: "/global-configuration",
+        label: "Global configuration",
+      },
+      {
+        description: "Carry data across SSR with explicit Vue-first hydration helpers.",
+        href: "/server-rendering-and-hydration",
+        label: "Server rendering and hydration",
+      },
+      {
+        description: "Move cleanly from the legacy release line into the rewritten runtime.",
+        href: "/migrate-from-v1",
+        label: "Migrate from v1",
+      },
+    ],
+    title: "Operate the runtime",
   },
 ];
 
-const capabilityRows = [
+const productSignals = [
   {
-    body: "Use SWR as the behavioral reference, but keep Vue refs, setup ergonomics, and explicit cache boundaries.",
-    title: "Follow SWR, stay Vue-native",
+    body: "Follow SWR semantics closely while returning Vue refs and keeping setup ergonomics intact.",
+    title: "SWR-aligned",
   },
   {
-    body: "Provider-scoped state, pack and publish dry-runs, browser tests, and typed subpath exports are already built into the repo.",
-    title: "Ship a real library, not a port",
+    body: "Scope cache state, middleware, mutate, and preload helpers per provider instead of relying on globals.",
+    title: "Scoped by design",
   },
   {
-    body: "Document what is shipped, what is intentionally different, and what is still deferred before the stable release.",
-    title: "Keep the project legible for future work",
+    body: "Maintain the Vue library as an open source Kong project with release, test, and packaging discipline.",
+    title: "Built to ship",
   },
-];
-
-const shippedHighlights = [
-  "SWR-aligned base hook semantics for revalidation, dedupe, fallback data, and bound mutate",
-  "Companion APIs for immutable, infinite, mutation, and subscription flows",
-  "Provider-scoped cache boundaries, preload helpers, and SSR snapshot utilities",
-  "A Vite-era monorepo with tests, docs, CI, Renovate, and release automation",
 ];
 </script>
 
 <template>
   <main class="home-page">
+    <header class="home-header">
+      <a class="home-header__brand" href="/">
+        <img alt="SWRV" src="/mark.svg" />
+        <span>SWRV</span>
+      </a>
+      <nav aria-label="Home" class="home-header__nav">
+        <a v-for="item in homeNav" :key="item.href" :href="item.href">{{ item.label }}</a>
+      </nav>
+    </header>
+
     <section class="home-hero">
       <div class="home-hero__copy">
-        <p class="home-eyebrow">SWR for Vue, rebuilt with intent</p>
-        <h1>Data fetching that follows SWR and feels native in Vue.</h1>
+        <p class="home-kicker">An open source Kong project</p>
+        <h1>Stale-while-revalidate for Vue.</h1>
         <p class="home-lead">
-          SWRV brings stale-while-revalidate caching, mutation, pagination, and subscriptions into
-          Vue with explicit cache boundaries, modern tooling, and a docs model that mirrors SWR
-          instead of fighting it.
+          SWRV brings the SWR data model into Vue with provider-scoped cache boundaries, typed
+          companion APIs, and a runtime that feels native inside Vue applications instead of copied
+          from React.
         </p>
         <div class="home-actions">
           <a class="home-action home-action--primary" href="/getting-started">Get started</a>
           <a class="home-action" href="/api">Read the API</a>
-          <a class="home-action" href="/compatibility-and-status">See status</a>
+          <a class="home-action" href="/migrate-from-v1">Migrate from v1</a>
         </div>
         <div class="home-install">
           <span class="home-install__label">Install</span>
@@ -70,77 +122,71 @@ const shippedHighlights = [
         </div>
       </div>
 
-      <div class="home-hero__stack">
-        <section class="hero-panel hero-panel--code">
-          <div class="hero-panel__header">
-            <span class="hero-dot hero-dot--sea"></span>
-            <span class="hero-dot hero-dot--ember"></span>
-            <span class="hero-dot hero-dot--fog"></span>
-          </div>
+      <aside class="home-hero__panel">
+        <img alt="SWRV" class="home-mark" src="/mark.svg" />
+        <div class="home-code">
           <pre><code>import useSWRV from "swrv";
 
 const { data, error, isLoading } = useSWRV(
-  () =&gt; ["/api/user", token.value] as const,
+  () =&gt; token.value ? ["/api/user", token.value] as const : null,
   async (url, token) =&gt; {
     const response = await fetch(url, {
       headers: { Authorization: `Bearer ${token}` },
     });
+
     return response.json();
   },
 );</code></pre>
-        </section>
-
-        <section class="hero-panel hero-panel--list">
-          <p class="hero-panel__eyebrow">What this version optimizes for</p>
-          <ul>
-            <li>Predictable SWR behavior</li>
-            <li>Vue-native reactive returns</li>
-            <li>Explicit SSR and cache boundaries</li>
-            <li>Precise types and broad test coverage</li>
-          </ul>
-        </section>
-      </div>
-    </section>
-
-    <section class="home-section">
-      <div class="section-heading">
-        <p class="home-eyebrow">Why this rewrite exists</p>
-        <h2>The old project fell behind. This one is meant to last.</h2>
-      </div>
-      <div class="capability-grid">
-        <article v-for="item in capabilityRows" :key="item.title" class="capability-card">
-          <h3>{{ item.title }}</h3>
-          <p>{{ item.body }}</p>
-        </article>
-      </div>
-    </section>
-
-    <section class="home-section home-section--map">
-      <div class="section-heading">
-        <p class="home-eyebrow">Start by task</p>
-        <h2>Use the docs the same way a SWR user would.</h2>
-      </div>
-      <div class="topic-grid">
-        <a v-for="item in topicCards" :key="item.href" :href="item.href" class="topic-card">
-          <span class="topic-card__label">{{ item.label }}</span>
-          <p>{{ item.description }}</p>
-        </a>
-      </div>
-    </section>
-
-    <section class="home-section home-section--status">
-      <div class="section-heading">
-        <p class="home-eyebrow">Current shape</p>
-        <h2>The library is already broad. Stable release work is about refinement, not rescue.</h2>
-      </div>
-      <div class="status-panel">
-        <ul>
-          <li v-for="item in shippedHighlights" :key="item">{{ item }}</li>
+        </div>
+        <ul class="home-panel-list">
+          <li>Vue refs, not React render state</li>
+          <li>Scoped cache providers and helpers</li>
+          <li>Mutation, infinite, immutable, and subscription APIs</li>
         </ul>
+      </aside>
+    </section>
+
+    <section class="home-signals" aria-label="Project signals">
+      <article v-for="item in productSignals" :key="item.title" class="home-signal">
+        <h2>{{ item.title }}</h2>
+        <p>{{ item.body }}</p>
+      </article>
+    </section>
+
+    <section class="home-guides">
+      <div class="home-section-heading">
+        <p class="home-kicker">Documentation</p>
+        <h2>Read the docs with the same mental model as SWR.</h2>
         <p>
-          The remaining pre-stable work is focused on tighter types, one more simplification pass,
-          and a full docs and design refresh. Suspense remains intentionally out of the active lane
-          until its product scope changes.
+          The structure follows the upstream SWR docs, while the examples and platform guidance stay
+          specific to Vue and the current SWRV runtime.
+        </p>
+      </div>
+      <div class="home-guide-grid">
+        <section v-for="column in guideColumns" :key="column.title" class="home-guide-column">
+          <h3>{{ column.title }}</h3>
+          <div class="home-guide-list">
+            <a
+              v-for="link in column.links"
+              :key="link.href"
+              :href="link.href"
+              class="home-guide-link"
+            >
+              <span class="home-guide-link__label">{{ link.label }}</span>
+              <span class="home-guide-link__description">{{ link.description }}</span>
+            </a>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section class="home-closing">
+      <div class="home-closing__note">
+        <p class="home-kicker">Maintained by Kong</p>
+        <p>
+          SWRV is maintained as an open source Kong project. The design here stays restrained on
+          purpose: minimal chrome, compact code examples, and a documentation rhythm that gets out
+          of the way when you are trying to ship.
         </p>
       </div>
     </section>

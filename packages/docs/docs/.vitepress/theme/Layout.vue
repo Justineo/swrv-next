@@ -6,10 +6,9 @@ const { Layout } = DefaultTheme;
 
 <template>
   <div class="swrv-layout">
-    <div aria-hidden="true" class="swrv-layout__ambient">
-      <div class="swrv-layout__orb swrv-layout__orb--sea"></div>
-      <div class="swrv-layout__orb swrv-layout__orb--ember"></div>
-      <div class="swrv-layout__grid"></div>
+    <div aria-hidden="true" class="swrv-layout__frame">
+      <div class="swrv-layout__line swrv-layout__line--top"></div>
+      <div class="swrv-layout__line swrv-layout__line--left"></div>
     </div>
     <Layout />
   </div>

@@ -89,7 +89,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - compile-time coverage now also exercises `useSWRVConfig()` accessors, filtered mutate callback typing, readonly tuple keys, nullable-key fetcher narrowing, config-bound provider hook typing, and bound-mutate composition with mutation triggers
   - the package export map now points at the emitted `.d.mts` declaration files and is checked by a package-export smoke test
   - the remaining non-suspense partial row in the upstream SWR and legacy SWRV test matrix is now closed; only the explicitly deferred suspense lane remains open
-- The docs package now builds with VitePress and includes a first guide, API overview, and migration page.
+- The docs package now builds with VitePress and includes a guide, API overview, and a dedicated `Migrate from v1` page.
 - The docs package now also includes examples, a current-scope page, and an explicit SSR guide built around provider-scoped clients plus config-level fallback data.
 - The docs package now also documents snapshot-based SSR handoff through `serializeSWRVSnapshot()` and `hydrateSWRVSnapshot()`, so the SSR story is no longer limited to manually wiring config-level `fallback`.
 - The docs package now targets the VitePress 2 prerelease line (`2.0.0-alpha.16`) instead of the VitePress 1 stable line so the docs stack stays on the intended forward-looking baseline.
@@ -145,11 +145,11 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - root contributor and security guidance now exist for repository users and maintainers
   - the current release path has been revalidated after the latest parity hardening through package and publish dry-runs
   - the workspace and published package manifests are now aligned to the intended prerelease line at `2.0.0-next.0`
-  - the docs site now also has an explicit status page that classifies shipped, deferred, and intentionally different behavior for the current release line
+  - the docs site no longer carries a separate status page; the launch surface is documented inline through the main docs and `Migrate from v1`
   - the repo now contains a concrete stable-release checklist under `journey/logs/2026-03-19-stable-release-checklist.md`
   - the remaining non-suspense release work is now mostly outside the repo: Trusted Publisher production verification, stable release-note preparation, and the actual stable tag decision
   - the pre-stable refinement lane is now complete for the current scope: the runtime types and middleware boundaries have been simplified, the remaining code-level naming rough edges have been cleaned up, and the docs site has been rewritten and redesigned around the SWR docs source structure
-  - the docs site now uses a custom VitePress theme layer, a new product-style home page, a SWR-shaped information architecture, and sentence case across the site chrome and rewritten prose
+  - the docs site now uses a custom VitePress theme layer, a SWR-shaped information architecture, sentence case across the site chrome and rewritten prose, and a restrained Kong-flavored visual system built around a black canvas, lime accents, compact code blocks, and the ribbon-style SWRV mark
   - the remaining non-suspense work has returned to stable-release execution rather than more in-repo feature or docs churn
 - Internal simplification work has now started after parity closure:
   - web-preset defaults and event initializers now live in a dedicated `_internal/web-preset.ts` module instead of being mixed into `config.ts` and `client.ts`
