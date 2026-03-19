@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Space+Grotesk:wght@500;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500;700&family=Space+Grotesk:wght@500;700&display=swap");
 
 * {
   scrollbar-width: thin;
@@ -6,6 +6,7 @@
 
 :root {
   --font-family-roboto: "Roboto", "roboto Fallback";
+  --font-family-roboto-mono: "Roboto Mono", "robotoMono Fallback";
   --font-family-space-grotesk: "Space Grotesk", "spaceGrotesk Fallback";
   --theme-font-family: var(--font-family-roboto);
 
@@ -26,6 +27,7 @@
   --theme-error: #da5f69;
 
   --vp-font-family-base: var(--theme-font-family), sans-serif;
+  --vp-font-family-mono: var(--font-family-roboto-mono), monospace;
 
   --vp-c-bg: var(--theme-bg);
   --vp-c-bg-alt: color-mix(in srgb, var(--theme-bg) 95%, var(--theme-title) 5%);
@@ -147,4 +149,8 @@
   .vp-doc h6
 ) {
   font-family: var(--font-family-space-grotesk), sans-serif;
+}
+
+:root:not(.dark) .plugin-tabs--content div[class*="language-"] {
+  background: color-mix(in srgb, var(--vp-code-block-bg) 50%, transparent) !important;
 }
