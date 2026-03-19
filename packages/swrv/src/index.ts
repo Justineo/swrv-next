@@ -2,19 +2,13 @@ import useSWRV, { unstable_serialize } from "./use-swrv";
 
 import { GLOBAL_SWRV_CLIENT, SWRVConfig, createCacheProvider, useSWRVConfig } from "./config";
 import {
-  createScopedMutator,
+  getScopedMutator,
+  getScopedPreload,
   hydrateSWRVSnapshot,
-  preloadKey,
   serializeSWRVSnapshot,
 } from "./_internal";
 
-import type {
-  Fetcher,
-  FetcherResponse,
-  KeySource,
-  PreloadResponse,
-  RawKey,
-} from "./_internal/types";
+import type { PreloadFunction } from "./_internal/types";
 
 export { SWRVConfig, createCacheProvider, useSWRVConfig };
 export { createCache, createScopedMutator, createSWRVClient } from "./_internal";
@@ -23,23 +17,8 @@ export { default as useSWRVInfinite } from "./infinite";
 export { default as useSWRVMutation } from "./mutation";
 export { default as useSWRVSubscription } from "./subscription";
 
-export const mutate = createScopedMutator(GLOBAL_SWRV_CLIENT);
-type NonArrayKey = Exclude<RawKey, readonly unknown[] | null | undefined | false>;
-
-export function preload<Data = unknown, Key extends readonly unknown[] = readonly unknown[]>(
-  key: KeySource<Key>,
-  fetcher: (...args: Key) => FetcherResponse<Data>,
-): PreloadResponse<Data>;
-export function preload<Data = unknown, Key extends NonArrayKey = NonArrayKey>(
-  key: KeySource<Key>,
-  fetcher: (arg: Key) => FetcherResponse<Data>,
-): PreloadResponse<Data>;
-export function preload<Data = unknown, Key extends RawKey = RawKey>(
-  key: KeySource<Key>,
-  fetcher: Fetcher<Data, Key>,
-) {
-  return preloadKey(GLOBAL_SWRV_CLIENT, key, fetcher);
-}
+export const mutate = getScopedMutator(GLOBAL_SWRV_CLIENT);
+export const preload: PreloadFunction = getScopedPreload(GLOBAL_SWRV_CLIENT);
 export { hydrateSWRVSnapshot, serializeSWRVSnapshot };
 
 export default useSWRV;
@@ -56,6 +35,7 @@ export type {
   KeySource,
   MutatorCallback,
   MutatorOptions,
+  PreloadFunction,
   RawKey,
   RevalidateOptions,
   ScopedMutator,

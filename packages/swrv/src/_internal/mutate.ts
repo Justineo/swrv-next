@@ -12,6 +12,7 @@ import type {
 } from "./types";
 
 const INTERNAL_FILTERED_KEY = /^\$(inf|sub)\$/;
+const scopedMutatorStore = new WeakMap<SWRVClient, ScopedMutator>();
 
 function isFunction(value: unknown): value is (...args: readonly unknown[]) => unknown {
   return typeof value === "function";
@@ -218,4 +219,15 @@ export function createScopedMutator(client: SWRVClient): ScopedMutator {
 
     return result as MutationData | undefined;
   } as ScopedMutator;
+}
+
+export function getScopedMutator(client: SWRVClient): ScopedMutator {
+  const current = scopedMutatorStore.get(client);
+  if (current) {
+    return current;
+  }
+
+  const next = createScopedMutator(client);
+  scopedMutatorStore.set(client, next);
+  return next;
 }

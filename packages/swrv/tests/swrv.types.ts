@@ -360,12 +360,8 @@ const typeAssertions = {
     Equal<Awaited<typeof filteredMutateResult>, Array<string | undefined>>
   >,
   literalPreload: true as Expect<Equal<typeof literalPreload, Promise<"value"> | undefined>>,
-  syncLiteralPreload: true as Expect<
-    Equal<typeof syncLiteralPreload, Promise<"value"> | undefined>
-  >,
-  explicitLiteralPreload: true as Expect<
-    Equal<typeof explicitLiteralPreload, Promise<"value"> | undefined>
-  >,
+  syncLiteralPreload: true as Expect<Equal<typeof syncLiteralPreload, "value" | undefined>>,
+  explicitLiteralPreload: true as Expect<Equal<typeof explicitLiteralPreload, "value" | undefined>>,
   preloadedTuple: true as Expect<Equal<Awaited<typeof preloadedTuple>, string | undefined>>,
   preloadedFunctionKey: true as Expect<
     Equal<Awaited<typeof preloadedFunctionKey>, string | undefined>

@@ -68,6 +68,26 @@ describe("swrv preload and context behavior", () => {
     expect(fetcher).toHaveBeenCalledTimes(2);
   });
 
+  it("returns sync preload values immediately while still seeding the first hook fetch", async () => {
+    const key = `preload-sync-${Date.now()}`;
+    let calls = 0;
+    const fetcher = (_key: string) => {
+      calls += 1;
+      return "sync-value" as const;
+    };
+
+    const preloaded = preload(key, fetcher);
+    const state = mountWithConfig(() => useSWRV(key, fetcher, { dedupingInterval: 0 }), undefined);
+
+    expect(preloaded).toBe("sync-value");
+    expect(calls).toBe(1);
+
+    await settle();
+
+    expect(state().data.value).toBe("sync-value");
+    expect(calls).toBe(1);
+  });
+
   it("passes resolved function keys through preload fetchers", async () => {
     const key = `preload-function-${Date.now()}`;
     const fetcher = vi.fn(async (resource: string, id: number) => `${resource}:${id}`);

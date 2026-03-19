@@ -11,11 +11,20 @@ import {
   useSWRV,
   useSWRVImmutable,
 } from "../src";
+import { isServerEnvironment } from "../src/_internal/env";
 import { flush, mountWithConfig, settle } from "./test-utils";
 
 describe("swrv core ssr and hydration helpers", () => {
   afterEach(() => {
     Reflect.deleteProperty(window as Window & { Deno?: string }, "Deno");
+  });
+
+  it("exposes the environment helper for server detection", () => {
+    expect(isServerEnvironment()).toBe(false);
+
+    (window as Window & { Deno?: string }).Deno = "1";
+
+    expect(isServerEnvironment()).toBe(true);
   });
 
   it("serializes only populated cache data into a fallback snapshot", () => {

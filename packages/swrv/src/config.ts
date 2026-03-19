@@ -10,15 +10,12 @@ import {
 } from "vue";
 
 import { createSWRVClient, defaultInitFocus, defaultInitReconnect } from "./_internal/client";
-import { createScopedMutator } from "./_internal/mutate";
-import { preloadKey } from "./_internal/preload";
+import { getScopedMutator } from "./_internal/mutate";
+import { getScopedPreload } from "./_internal/preload";
 
 import type {
   CacheAdapter,
   Compare,
-  Fetcher,
-  KeySource,
-  RawKey,
   ResolvedSWRVConfiguration,
   SWRVClient,
   SWRVConfigAccessor,
@@ -184,9 +181,8 @@ export function useSWRVConfig(): SWRVConfigAccessor {
   const context = useSWRVContext();
   const client = context.client;
   const config = context.config.value;
-  const mutate = createScopedMutator(client);
-  const scopedPreload = ((key: KeySource<RawKey>, fetcher: Fetcher<unknown, RawKey>) =>
-    preloadKey(client, key, fetcher)) as SWRVConfigAccessor["preload"];
+  const mutate = getScopedMutator(client);
+  const scopedPreload = getScopedPreload(client);
 
   return {
     cache: client.cache,

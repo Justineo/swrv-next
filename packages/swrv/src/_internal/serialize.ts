@@ -2,7 +2,7 @@ import { isRef, unref } from "vue";
 
 import { stableHash } from "./hash";
 
-import type { BareFetcher, KeySource, RawKey } from "./types";
+import type { BareFetcher, FetcherResponse, KeySource, RawKey } from "./types";
 
 export function resolveKeyValue<Key extends RawKey>(key: KeySource<Key>): Key {
   if (typeof key === "function") {
@@ -37,13 +37,20 @@ export function serialize<Key extends RawKey>(key: KeySource<Key>): [string, Key
 }
 
 export function callFetcher<Data>(fetcher: BareFetcher<Data>, args: RawKey): Promise<Data> {
+  return Promise.resolve(invokeFetcher(fetcher, args));
+}
+
+export function invokeFetcher<Data>(
+  fetcher: BareFetcher<Data>,
+  args: RawKey,
+): FetcherResponse<Data> {
   try {
     if (Array.isArray(args)) {
-      return Promise.resolve(fetcher(...args));
+      return fetcher(...args);
     }
 
-    return Promise.resolve(fetcher(args));
+    return fetcher(args);
   } catch (error) {
-    return Promise.reject(error);
+    return Promise.reject(error) as Promise<Data>;
   }
 }

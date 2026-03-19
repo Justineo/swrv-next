@@ -1,7 +1,14 @@
-import { createApp, defineComponent, h } from "vue";
+import { createApp, defineComponent, h, ref } from "vue";
 import { describe, expect, it, vi } from "vite-plus/test";
 
-import { SWRVConfig, createSWRVClient, useSWRV, useSWRVConfig } from "../src";
+import {
+  SWRVConfig,
+  createSWRVClient,
+  mutate as globalMutate,
+  preload as globalPreload,
+  useSWRV,
+  useSWRVConfig,
+} from "../src";
 import { serialize } from "../src/_internal";
 import { GLOBAL_SWRV_CLIENT } from "../src/config";
 import type { CacheAdapter, CacheState } from "../src/_internal/types";
@@ -83,6 +90,34 @@ describe("swrv core cache provider behavior", () => {
     expect(state().data.value).toBe("updated");
   });
 
+  it("returns the global cache and shared helpers by default", async () => {
+    let captured!: ReturnType<typeof useSWRVConfig>;
+
+    const Child = defineComponent({
+      setup() {
+        captured = useSWRVConfig();
+        return () => h("div");
+      },
+    });
+
+    const container = registerContainer(document.createElement("div"));
+    document.body.appendChild(container);
+
+    const app = registerApp(
+      createApp({
+        render: () => h(Child),
+      }),
+    );
+
+    app.mount(container);
+    await flush();
+
+    expect(captured.cache).toBe(GLOBAL_SWRV_CLIENT.cache);
+    expect(captured.client).toBe(GLOBAL_SWRV_CLIENT);
+    expect(captured.mutate).toBe(globalMutate);
+    expect(captured.preload).toBe(globalPreload);
+  });
+
   it("returns the provider cache from useSWRVConfig and scoped mutate updates it", async () => {
     const key = `provider-config-${Date.now()}`;
     const cache = new Map([
@@ -124,6 +159,73 @@ describe("swrv core cache provider behavior", () => {
 
     expect(state().swrv.data.value).toBe("mutated");
     expect(cache.get(key)?.data).toBe("mutated");
+  });
+
+  it("supports fallback values with a custom provider", async () => {
+    const key = `provider-fallback-${Date.now()}`;
+    const state = mountWithConfig(
+      () =>
+        useSWRV<string>(
+          key,
+          async () => {
+            await Promise.resolve();
+            return "data";
+          },
+          {
+            dedupingInterval: 0,
+          },
+        ),
+      {
+        fallback: { [key]: "fallback" },
+        provider: () => new Map(),
+      },
+    );
+
+    expect(state().data.value).toBe("fallback");
+    expect(state().isLoading.value).toBe(true);
+
+    await settle();
+    expect(state().data.value).toBe("data");
+    expect(state().isLoading.value).toBe(false);
+  });
+
+  it("prefers provider cache data over fallback values", async () => {
+    const key = `provider-fallback-cache-${Date.now()}`;
+    const state = mountWithConfig(
+      () =>
+        useSWRV<string>(
+          key,
+          async () => {
+            await Promise.resolve();
+            return "data";
+          },
+          {
+            dedupingInterval: 0,
+          },
+        ),
+      {
+        fallback: { [key]: "fallback" },
+        provider: () =>
+          new Map([
+            [
+              key,
+              {
+                data: "cache",
+                error: undefined,
+                expiresAt: Number.POSITIVE_INFINITY,
+                isLoading: false,
+                isValidating: false,
+                updatedAt: Date.now(),
+              },
+            ],
+          ]),
+      },
+    );
+
+    expect(state().data.value).toBe("cache");
+
+    await settle();
+    expect(state().data.value).toBe("data");
   });
 
   it("supports nested provider boundaries with isolated values", async () => {
@@ -213,6 +315,89 @@ describe("swrv core cache provider behavior", () => {
     expect(inner.data.value).toBe("inner");
   });
 
+  it("retains the correct fallback hierarchy across config boundaries", async () => {
+    vi.useFakeTimers();
+
+    const key = `provider-hierarchy-${Date.now()}`;
+    const fetcher = vi.fn(
+      async () =>
+        await new Promise<string>((resolve) => {
+          setTimeout(() => {
+            resolve("data");
+          }, 10);
+        }),
+    );
+
+    const Root = defineComponent({
+      setup() {
+        const outer = useSWRV<string>(key, fetcher, {
+          dedupingInterval: 0,
+        });
+
+        return () =>
+          h("div", [
+            h("span", { id: "outer" }, outer.data.value ?? "undefined"),
+            h(
+              SWRVConfig,
+              {
+                value: {
+                  fallback: {
+                    [key]: "fallback",
+                  },
+                },
+              },
+              {
+                default: () =>
+                  h(
+                    defineComponent({
+                      setup() {
+                        const inner = useSWRV<string>(key, fetcher, {
+                          dedupingInterval: 0,
+                        });
+                        return () => h("span", { id: "inner" }, inner.data.value ?? "undefined");
+                      },
+                    }),
+                  ),
+              },
+            ),
+            h(
+              defineComponent({
+                setup() {
+                  const sibling = useSWRV<string>(key, fetcher, {
+                    dedupingInterval: 0,
+                  });
+                  return () => h("span", { id: "sibling" }, sibling.data.value ?? "undefined");
+                },
+              }),
+            ),
+          ]);
+      },
+    });
+
+    const container = registerContainer(document.createElement("div"));
+    document.body.appendChild(container);
+
+    const app = registerApp(
+      createApp({
+        render: () => h(Root),
+      }),
+    );
+
+    app.mount(container);
+    await flush();
+
+    expect(container.querySelector("#outer")?.textContent).toBe("undefined");
+    expect(container.querySelector("#inner")?.textContent).toBe("fallback");
+    expect(container.querySelector("#sibling")?.textContent).toBe("undefined");
+
+    await vi.advanceTimersByTimeAsync(10);
+    await settle();
+
+    expect(container.querySelector("#outer")?.textContent).toBe("data");
+    expect(container.querySelector("#inner")?.textContent).toBe("data");
+    expect(container.querySelector("#sibling")?.textContent).toBe("data");
+  });
+
   it("can extend the parent cache through provider(parentCache)", async () => {
     const key = `provider-extend-${Date.now()}`;
     let capturedParentCache: CacheAdapter<CacheState<string, unknown>> | undefined;
@@ -264,6 +449,135 @@ describe("swrv core cache provider behavior", () => {
 
     await settle();
     expect(state().data.value).toBe("data-extended");
+  });
+
+  it("does not recreate the cache provider when the parent rerenders", async () => {
+    const createProvider = vi.fn(() => new Map());
+
+    const Child = defineComponent({
+      setup() {
+        const count = ref(0);
+
+        return () => h("button", { onClick: () => (count.value += 1) }, String(count.value));
+      },
+    });
+
+    const container = registerContainer(document.createElement("div"));
+    document.body.appendChild(container);
+
+    const app = registerApp(
+      createApp({
+        render: () =>
+          h(
+            SWRVConfig,
+            {
+              value: {
+                provider: () => createProvider(),
+              },
+            },
+            {
+              default: () => h(Child),
+            },
+          ),
+      }),
+    );
+
+    app.mount(container);
+    await flush();
+
+    expect(createProvider).toHaveBeenCalledTimes(1);
+
+    const button = container.querySelector("button");
+    button?.click();
+    await flush();
+
+    expect(createProvider).toHaveBeenCalledTimes(1);
+  });
+
+  it("reuses the same cache instance after remounting SWRVConfig", async () => {
+    const cacheSingleton = new Map([
+      [
+        "key",
+        {
+          data: "value",
+          error: undefined,
+          expiresAt: Number.POSITIVE_INFINITY,
+          isLoading: false,
+          isValidating: false,
+          updatedAt: Date.now(),
+        },
+      ],
+    ]);
+    let focusRegistered = false;
+
+    const Content = defineComponent({
+      setup() {
+        const config = useSWRVConfig();
+        return () => h("div", String(config.cache.get("key")?.data ?? ""));
+      },
+    });
+
+    const Wrapper = defineComponent({
+      setup() {
+        const mounted = ref(true);
+
+        return () =>
+          h("div", [
+            h(
+              "button",
+              {
+                onClick: () => {
+                  mounted.value = !mounted.value;
+                },
+              },
+              "toggle",
+            ),
+            mounted.value
+              ? h(
+                  SWRVConfig,
+                  {
+                    value: {
+                      provider: () => cacheSingleton,
+                      initFocus: () => {
+                        focusRegistered = true;
+                        return () => {
+                          focusRegistered = false;
+                        };
+                      },
+                    },
+                  },
+                  {
+                    default: () => h(Content),
+                  },
+                )
+              : null,
+          ]);
+      },
+    });
+
+    const container = registerContainer(document.createElement("div"));
+    document.body.appendChild(container);
+
+    const app = registerApp(
+      createApp({
+        render: () => h(Wrapper),
+      }),
+    );
+
+    app.mount(container);
+    await flush();
+
+    expect(container.textContent).toContain("value");
+    expect(focusRegistered).toBe(true);
+
+    const button = container.querySelector("button");
+    button?.click();
+    await flush();
+    button?.click();
+    await flush();
+
+    expect(container.textContent).toContain("value");
+    expect(focusRegistered).toBe(true);
   });
 
   it("uses custom focus and reconnect initializers without replacing the parent cache", async () => {

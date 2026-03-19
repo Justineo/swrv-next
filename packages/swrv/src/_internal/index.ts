@@ -2,8 +2,8 @@ export { createCache } from "./cache";
 export { createSWRVClient } from "./client";
 export { hydrateSWRVSnapshot, serializeSWRVSnapshot } from "./ssr";
 export { stableHash } from "./hash";
-export { createScopedMutator } from "./mutate";
-export { preloadKey } from "./preload";
+export { createScopedMutator, getScopedMutator } from "./mutate";
+export { getScopedPreload, preloadKey } from "./preload";
 export { callFetcher, resolveKeyValue, serialize } from "./serialize";
 export { getTimestamp } from "./timestamp";
 export { withMiddleware } from "./with-middleware";
@@ -19,6 +19,7 @@ export type {
   KeySource,
   MutatorCallback,
   MutatorOptions,
+  PreloadFunction,
   RawKey,
   RevalidateEvent,
   RevalidateEventOptions,

@@ -11,7 +11,7 @@ export type RawKey =
 export type KeySource<Key = RawKey> = Key | Ref<Key> | ComputedRef<Key> | (() => Key);
 
 export type FetcherResponse<Data = unknown> = Data | Promise<Data>;
-export type PreloadResponse<Data = unknown> = Promise<Data> | undefined;
+export type PreloadResponse<Data = unknown> = FetcherResponse<Data> | undefined;
 
 export type BareFetcher<Data = unknown> = (...args: readonly unknown[]) => FetcherResponse<Data>;
 export type HookFetcher<Data = unknown> = BareFetcher<Data> | null | undefined | false;
@@ -21,6 +21,31 @@ export type Fetcher<Data = unknown, Key extends RawKey = RawKey> = Key extends r
   : Key extends null | undefined | false
     ? never
     : (arg: Key) => FetcherResponse<Data>;
+
+type PreloadNonArrayKey = Exclude<RawKey, readonly unknown[] | null | undefined | false>;
+
+export interface PreloadFunction {
+  <Result = unknown, Key extends readonly unknown[] = readonly unknown[]>(
+    key: KeySource<Key>,
+    fetcher: (...args: Key) => Promise<Result>,
+  ): Promise<Result> | undefined;
+  <Result = unknown, Key extends PreloadNonArrayKey = PreloadNonArrayKey>(
+    key: KeySource<Key>,
+    fetcher: (arg: Key) => Promise<Result>,
+  ): Promise<Result> | undefined;
+  <Result = unknown, Key extends readonly unknown[] = readonly unknown[]>(
+    key: KeySource<Key>,
+    fetcher: (...args: Key) => Result,
+  ): Result | undefined;
+  <Result = unknown, Key extends PreloadNonArrayKey = PreloadNonArrayKey>(
+    key: KeySource<Key>,
+    fetcher: (arg: Key) => Result,
+  ): Result | undefined;
+  <Data = unknown, Key extends RawKey = RawKey>(
+    key: KeySource<Key>,
+    fetcher: Fetcher<Data, Key>,
+  ): PreloadResponse<Data>;
+}
 
 export interface CacheAdapter<Value = unknown> {
   get(key: string): Value | undefined;
@@ -296,26 +321,7 @@ export interface SWRVConfigAccessor {
   client: SWRVClient;
   config: ResolvedSWRVConfiguration<any, any>;
   mutate: ScopedMutator;
-  preload: {
-    <Data = unknown, Key extends readonly unknown[] = readonly unknown[]>(
-      key: KeySource<Key>,
-      fetcher: (...args: Key) => FetcherResponse<Data>,
-    ): PreloadResponse<Data>;
-    <
-      Data = unknown,
-      Key extends Exclude<RawKey, readonly unknown[] | null | undefined | false> = Exclude<
-        RawKey,
-        readonly unknown[] | null | undefined | false
-      >,
-    >(
-      key: KeySource<Key>,
-      fetcher: (arg: Key) => FetcherResponse<Data>,
-    ): PreloadResponse<Data>;
-    <Data = unknown, Key extends RawKey = RawKey>(
-      key: KeySource<Key>,
-      fetcher: Fetcher<Data, Key>,
-    ): PreloadResponse<Data>;
-  };
+  preload: PreloadFunction;
 }
 
 export type SWRVConfigComponent = DefineComponent<{
