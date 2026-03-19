@@ -157,6 +157,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - the remaining non-suspense release work is now mostly outside the repo: Trusted Publisher production verification, stable release-note preparation, and the actual stable tag decision
 - the pre-stable refinement lane is now complete for the current scope: the runtime types and middleware boundaries have been simplified, the remaining code-level naming rough edges have been cleaned up, and the docs site has now completed its from-scratch SWR-structured rebuild
 - the docs site now uses default VitePress layout primitives, keeps the built-in code block treatment and highlighting, and themes the site through separate light and dark `--theme-*` token sets bridged through a shared VitePress `--vp-*` mapping layer plus the SWRV logo
+- the docs site now uses Shiki's `night-owl-light` and `night-owl` themes for code blocks, so syntax highlighting follows a dual light/dark Night Owl pairing instead of the VitePress default
 - the docs site now explicitly loads Roboto and Space Grotesk for the theme font tokens, so base copy and heading typography no longer rely on unresolved font-family names
 - the docs site now renders install snippets through `vitepress-plugin-npm-commands`, with a local markdown extension that adds a `vp` tab beside the standard package-manager commands
 - the rebuilt docs now use Vue-correct composable examples and treat `useSWRV` usage as `setup()` or `<script setup>`-only across the narrative docs

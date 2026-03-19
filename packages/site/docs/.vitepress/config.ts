@@ -14,6 +14,10 @@ export default defineConfig({
   cleanUrls: true,
   lastUpdated: true,
   markdown: {
+    theme: {
+      light: "night-owl-light",
+      dark: "night-owl",
+    },
     config(md) {
       md.use(tabsMarkdownPlugin);
       md.use(npmCommandsMarkdownPlugin);
