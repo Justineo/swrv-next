@@ -18,7 +18,7 @@ vp run build -r
 Useful package-local commands:
 
 ```bash
-vp run docs#dev
+vp run site#dev
 cd packages/swrv
 vp pm pack -- --json --dry-run
 vp pm publish -- --dry-run --access public --provenance --no-git-checks --tag next
@@ -27,7 +27,7 @@ vp pm publish -- --dry-run --access public --provenance --no-git-checks --tag ne
 ## Repository Structure
 
 - `packages/swrv`: published library package
-- `packages/docs`: VitePress documentation site
+- `packages/site`: VitePress documentation site
 - `journey/design.md`: canonical design snapshot and current project decisions
 - `journey/logs`: dated execution notes for completed phases or significant work
 - `journey/plans`: only for roadmap, architecture, or implementation planning

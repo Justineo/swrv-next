@@ -86,5 +86,5 @@ vp run test:e2e
 vp run build -r
 ```
 
-The docs site lives in `packages/docs`. For project strategy and migration
+The docs site lives in `packages/site`. For project strategy and migration
 context, see the repository docs and journey records.

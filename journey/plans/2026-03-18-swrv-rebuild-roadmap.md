@@ -19,7 +19,7 @@ This plan is grounded in four current facts:
 | Workstream                                             | Objective                                                                                                                    | Main outputs                                                                                                                                                        | Depends on                                               |
 | ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
 | Compatibility spec and product direction               | Define what "aligned with SWR" means, what remains intentionally Vue-native, and what is out of scope for v1 of the rewrite. | Compatibility matrix, API target list, decision notes for Vue-native divergences, release/versioning policy draft.                                                  | None                                                     |
-| Monorepo foundation and workspace reshape              | Convert the starter scaffold into the intended repository shape and modern toolchain baseline.                               | `packages/swrv`, `packages/docs`, shared TS/Vite/Vitest config, scripts, package boundaries, clean workspace commands.                                              | Compatibility spec for package shape and release targets |
+| Monorepo foundation and workspace reshape              | Convert the starter scaffold into the intended repository shape and modern toolchain baseline.                               | `packages/swrv`, `packages/site`, shared TS/Vite/Vitest config, scripts, package boundaries, clean workspace commands.                                              | Compatibility spec for package shape and release targets |
 | Core runtime architecture                              | Build the provider-scoped cache/runtime domain that SWR-style APIs depend on.                                                | Cache/provider model, serialization, listener graph, dedupe, revalidation events, mutation coordination, preload support, SSR-safe boundaries.                      | Foundation                                               |
 | Public API parity                                      | Recreate the SWR family of public entry points in Vue-native form.                                                           | `useSWRV`, config/provider API, global/bound `mutate`, `preload`, `immutable`, `infinite`, `mutation`, `subscription`, middleware/extensibility plan.               | Core runtime                                             |
 | Type system redesign                                   | Make type inference and published declarations a first-class deliverable.                                                    | Strong key/fetcher inference, precise mutate and config types, conditional response types, exported helper types, type regression tests, package typing validation. | Compatibility spec, then each API module                 |
@@ -56,7 +56,7 @@ Why first:
 
 Do second:
 
-- Replace the starter workspace shape with `packages/swrv` and `packages/docs`.
+- Replace the starter workspace shape with `packages/swrv` and `packages/site`.
 - Remove placeholder starter assets and packages.
 - Establish the shared Vite+/TypeScript/Vitest baseline.
 - Define lint, format, typecheck, build, and test entry points that match the final repo shape.
@@ -141,7 +141,7 @@ Why last:
 | Milestone                    | Objective                                                                         | Expected outcome                                                                                                                                    |
 | ---------------------------- | --------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
 | M1: Project charter locked   | Freeze the rebuild goals, support envelope, and compatibility principles.         | The repo has a current `journey/design.md`, a compatibility matrix, and a decision on the intended release line and support floor.                  |
-| M2: Monorepo shape corrected | Convert the starter scaffold into the actual SWRV workspace.                      | `packages/swrv` and `packages/docs` exist, placeholder starter packages are gone, and the workspace builds/tests through Vite+ commands.            |
+| M2: Monorepo shape corrected | Convert the starter scaffold into the actual SWRV workspace.                      | `packages/swrv` and `packages/site` exist, placeholder starter packages are gone, and the workspace builds/tests through Vite+ commands.            |
 | M3: Runtime alpha            | Land the provider-scoped runtime model and the minimal cache/revalidation system. | There is a stable internal runtime contract with unit coverage for serialization, dedupe, listeners, and SSR-safe isolation.                        |
 | M4: Core API alpha           | Deliver a usable base library aligned with SWR core behavior.                     | `useSWRV`, config/provider, mutate, preload, and immutable behavior are implemented and documented at a draft level.                                |
 | M5: Advanced API beta        | Reach parity on the major SWR entry points beyond the base hook.                  | Infinite loading, mutation, subscription, and middleware/extensibility are implemented with behavior tests and type coverage.                       |
@@ -234,7 +234,7 @@ The following should be validated early, not discovered late:
    - Decide what is mandatory for first release parity and what is explicitly deferred.
 
 2. Correct the repository shape.
-   - Move to `packages/swrv` and `packages/docs`.
+   - Move to `packages/swrv` and `packages/site`.
    - Remove starter scaffolding and make the workspace commands reflect the real project.
 
 3. Build the runtime first, not the hook surface first.

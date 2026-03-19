@@ -6,7 +6,7 @@
   "scripts": {
     "build": "vp run build -r",
     "check": "vp check",
-    "dev": "vp run docs#dev",
+    "dev": "vp run site#dev",
     "ready": "vp check && vp run test -r && vp run build -r && vp exec playwright test",
     "release:major": "vp exec bumpp --all --recursive --commit --tag --push --yes --release major",
     "release:minor": "vp exec bumpp --all --recursive --commit --tag --push --yes --release minor",

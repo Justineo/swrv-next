@@ -9,7 +9,7 @@ stable line is tagged, prereleases stay on the `next` dist-tag.
 ## Workspace
 
 - [`packages/swrv`](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/packages/swrv): the published library package
-- [`packages/docs`](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/packages/docs): the VitePress documentation site
+- [`packages/site`](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/packages/site): the VitePress documentation site
 - [`journey/`](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/journey): project memory, plans, and implementation logs
 
 ## Development
@@ -25,7 +25,7 @@ vp run build -r
 Start the docs site:
 
 ```bash
-vp run docs#dev
+vp run site#dev
 ```
 
 Package dry-run checks:

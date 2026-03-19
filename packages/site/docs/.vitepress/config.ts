@@ -4,6 +4,8 @@ import { tabsMarkdownPlugin } from "vitepress-plugin-tabs";
 
 import { vpInstallCommandsMarkdownPlugin } from "./plugins/vp-install-tabs";
 
+const logoUrl = "https://docs-swrv.netlify.app/logo_45.png";
+
 export default defineConfig({
   appearance: true,
   title: "SWRV",
@@ -21,12 +23,12 @@ export default defineConfig({
   head: [
     ["meta", { content: "#ffffff", media: "(prefers-color-scheme: light)", name: "theme-color" }],
     ["meta", { content: "#000000", media: "(prefers-color-scheme: dark)", name: "theme-color" }],
-    ["link", { href: "/mark.svg", rel: "icon", type: "image/svg+xml" }],
+    ["link", { href: logoUrl, rel: "icon", type: "image/png" }],
   ],
   themeConfig: {
     logo: {
       alt: "SWRV logo",
-      src: "/mark.svg",
+      src: logoUrl,
     },
     search: {
       provider: "local",

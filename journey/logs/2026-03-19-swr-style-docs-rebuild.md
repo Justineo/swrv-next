@@ -4,7 +4,7 @@ Date: 2026-03-19
 
 ## Goal
 
-Rebuild `packages/docs` from scratch so the docs tree, navigation, and content depth track the
+Rebuild `packages/site` from scratch so the docs tree, navigation, and content depth track the
 upstream SWR docs structure while staying Vue-native and accurate for the current SWRV `2.x` scope.
 
 ## Completed work

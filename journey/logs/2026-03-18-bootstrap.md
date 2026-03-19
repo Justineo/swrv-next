@@ -41,7 +41,7 @@ The new version of SWRV should aim for the following:
 6. **Restructure the repo as a monorepo**
    - The repo should be organized as:
      - `packages/swrv`
-     - `packages/docs`
+     - `packages/site`
    - These should correspond to the library itself and the documentation site.
 
 7. **Set up automated dependency maintenance**

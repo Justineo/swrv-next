@@ -14,7 +14,7 @@ dist-ssr
 playwright-report
 test-results
 .vitepress-cache
-packages/docs/docs/.vitepress/cache
+packages/site/docs/.vitepress/cache
 
 # Editor directories and files
 .vscode/*

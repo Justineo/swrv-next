@@ -11,7 +11,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
 
 - The repository now uses the intended monorepo shape:
   - `packages/swrv`
-  - `packages/docs`
+  - `packages/site`
 - The root workspace is validated through `vp check`, `vp test`, `vp exec playwright test`, `vp run build -r`, `vp run ready`, `vp pm pack -- --json --dry-run`, and `vp pm publish -- --dry-run --access public --provenance --no-git-checks --tag next`.
 - The `swrv` package now contains an initial provider-scoped runtime with:
   - `useSWRV`
@@ -89,7 +89,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - compile-time coverage now also exercises `useSWRVConfig()` accessors, filtered mutate callback typing, readonly tuple keys, nullable-key fetcher narrowing, config-bound provider hook typing, and bound-mutate composition with mutation triggers
   - the package export map now points at the emitted `.d.mts` declaration files and is checked by a package-export smoke test
   - the remaining non-suspense partial row in the upstream SWR and legacy SWRV test matrix is now closed; only the explicitly deferred suspense lane remains open
-- The docs package now builds with VitePress and has been rebuilt from scratch around the SWR docs source structure.
+- The site package now builds with VitePress and has been rebuilt from scratch around the SWR docs source structure.
 - The docs tree and nav now use SWR-shaped filenames and ordering, including:
   - `arguments.md`
   - `revalidation.md`
@@ -97,10 +97,10 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - `mutation.md`
   - `prefetching.md`
   - `advanced/understanding.md`
-- The docs package now uses the default VitePress home layout, a SWR-shaped guide and advanced nav, a dedicated `Migrate from v1` page, and a Vue-first SSR and hydration guide built around provider-scoped clients, config-level `fallback`, and snapshot helpers.
-- The docs package now documents snapshot-based SSR handoff through `serializeSWRVSnapshot()` and `hydrateSWRVSnapshot()`, so the SSR story is no longer limited to manually wiring config-level `fallback`.
-- The docs package now targets the VitePress 2 prerelease line (`2.0.0-alpha.16`) instead of the VitePress 1 stable line so the docs stack stays on the intended forward-looking baseline.
-- Under the VitePress 2 plus Rolldown path used here, the docs package now also carries `oxc-minify` explicitly because VitePress requires it for production builds on that toolchain.
+- The site package now uses the default VitePress home layout, a SWR-shaped guide and advanced nav, a dedicated `Migrate from v1` page, and a Vue-first SSR and hydration guide built around provider-scoped clients, config-level `fallback`, and snapshot helpers.
+- The site package now documents snapshot-based SSR handoff through `serializeSWRVSnapshot()` and `hydrateSWRVSnapshot()`, so the SSR story is no longer limited to manually wiring config-level `fallback`.
+- The site package now targets the VitePress 2 prerelease line (`2.0.0-alpha.16`) instead of the VitePress 1 stable line so the docs stack stays on the intended forward-looking baseline.
+- Under the VitePress 2 plus Rolldown path used here, the site package now also carries `oxc-minify` explicitly because VitePress requires it for production builds on that toolchain.
 - Browser-facing end-to-end coverage now exists through a Playwright fixture app under `packages/swrv/e2e`, covering focus revalidation, reconnect revalidation, optimistic mutation UI, and subscription pushes in a real browser runtime.
 - A first built-in devtools hook now exists through `window.__SWRV_DEVTOOLS_USE__`, which injects global middleware across `useSWRV` and middleware-based APIs, and exposes `window.__SWRV_DEVTOOLS_VUE__` for Vue-aware tooling.
 - The test suite has now started splitting into domain files instead of a single monolith, with the first extracted `core-config-revalidate` coverage file carrying config fallback, focus, reconnect, retry, callback, and immutable revalidation behavior plus an upstream-inspired reactive `SWRVConfig` focus test.
@@ -194,7 +194,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
 - Keep the public API as close to SWR as practical, but preserve a Vue-native reactive contract for returned state and composition.
 - Treat types, automated tests, docs, CI/CD, release automation, and dependency maintenance as first-class project scope, not cleanup work after the runtime is complete.
 - Keep project memory current in `journey/design.md`, use `journey/plans/` for milestone or phase plans, and use `journey/logs/` for implementation notes and dead ends.
-- Use plain VitePress scripts for docs builds inside `packages/docs`, but continue to drive workspace orchestration through `vp run ...`.
+- Use plain VitePress scripts for docs builds inside `packages/site`, but continue to drive workspace orchestration through `vp run ...`.
 - Keep the library build on stable declaration generation for now instead of the experimental `tsgo` path.
 - Expand the `2.0` SSR scope beyond the first launch-ready cut to include first-party Vue SSR and hydration helpers, server-safe preload and fallback behavior, and dedicated SSR behavior tests. Nuxt-specific adapters or framework modules remain follow-up work, not `2.0` blockers.
 - Do not port SWR's getter-based dependency-collection mechanism into Vue. `swrv-next` already exposes separate refs, so Vue's native dependency tracking is the right model. Performance follow-up should focus on narrower issues such as redundant cache-to-ref sync and unstable watch sources instead.
@@ -211,7 +211,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
 ## Planned Repository Shape
 
 - `packages/swrv`: published library package
-- `packages/docs`: VitePress docs site
+- `packages/site`: VitePress docs site
 - `journey/`: project memory and planning artifacts
 
 ## Follow-up Questions

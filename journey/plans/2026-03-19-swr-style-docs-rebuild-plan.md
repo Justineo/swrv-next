@@ -5,7 +5,7 @@ Status: Completed
 
 ## Objective
 
-Rebuild the entire `packages/docs` documentation site from scratch so it follows the same page
+Rebuild the entire `packages/site` documentation site from scratch so it follows the same page
 structure, navigation model, and content depth as the upstream SWR docs, while still adapting the
 content to Vue, SWRV-specific APIs, and the current `2.x` product scope.
 

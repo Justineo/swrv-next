@@ -10,7 +10,7 @@ to a new runtime model rather than a minor dependency bump.
 
 ## What changed structurally
 
-- the repo is now a modern monorepo with separate library and docs packages
+- the repo is now a modern monorepo with separate library and site packages
 - cache state is scoped through `SWRVConfig` boundaries instead of leaning on one implicit global
   cache
 - the public surface follows SWR’s capability groups more closely: base hook, immutable, infinite,

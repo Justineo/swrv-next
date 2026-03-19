@@ -217,7 +217,7 @@ This is another area where `swrv-next` has already crossed the old gap.
 Compared with legacy `swrv`, the rebuild has already modernized almost everything:
 
 - Vite+ workspace instead of Yarn 1 plus Vue CLI era tooling
-- modern docs site in `packages/docs`
+- modern docs site in `packages/site`
 - CI and release workflows
 - Renovate
 - contributor and security docs

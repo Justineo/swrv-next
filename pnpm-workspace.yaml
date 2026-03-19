@@ -1,6 +1,6 @@
 packages:
   - packages/swrv
-  - packages/docs
+  - packages/site
 
 catalog:
   "@playwright/test": ^1.58.2

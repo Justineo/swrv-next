@@ -3,11 +3,11 @@ layout: home
 
 hero:
   name: SWRV
-  text: Stale-while-revalidate for Vue
-  tagline: A Vue-native counterpart to SWR maintained by Kong.
+  text: A Vue library for data fetching
+  tagline: With swrv, components will get a stream of data updates constantly and automatically. The UI will always be fast and reactive.
   image:
     alt: SWRV logo
-    src: /mark.svg
+    src: https://docs-swrv.netlify.app/logo_45.png
   actions:
     - theme: brand
       text: Get started
