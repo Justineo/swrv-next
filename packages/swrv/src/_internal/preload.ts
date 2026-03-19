@@ -38,14 +38,18 @@ export function preloadKey<Key extends RawKey = RawKey, Data = unknown>(
     return invokeFetcher(typedFetcher, rawKey) as PreloadResponse<Data>;
   }
 
-  const existing = client.state.preloads.get(serializedKey) as Promise<Data> | undefined;
-  if (existing) {
-    return existing;
+  let invoked = false;
+  let response: FetcherResponse<Data> | undefined;
+  const tracked = client.preload<Data>(serializedKey, () => {
+    invoked = true;
+    response = invokeFetcher(typedFetcher, rawKey) as FetcherResponse<Data>;
+    return Promise.resolve(response);
+  });
+
+  if (!invoked) {
+    return tracked;
   }
 
-  const response = invokeFetcher(typedFetcher, rawKey) as FetcherResponse<Data>;
-  const promise: Promise<Data> = Promise.resolve(response);
-  const tracked = client.preload<Data>(serializedKey, promise);
   return isPromiseLike(response) ? tracked : (response as Data);
 }
 

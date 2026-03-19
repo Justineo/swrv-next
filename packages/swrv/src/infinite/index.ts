@@ -2,6 +2,7 @@ import { ref, watch } from "vue";
 
 import { useSWRVConfig } from "../config";
 import { withMiddleware } from "../_internal";
+import { createInfiniteCacheKey } from "../_internal/key-prefix";
 import { normalizeHookArgs } from "../_internal/normalize";
 import useSWRV from "../use-swrv";
 import { callFetcher, serialize } from "../_internal/serialize";
@@ -19,7 +20,6 @@ import type {
   SWRVResponse,
 } from "../_internal/types";
 
-const INFINITE_PREFIX = "$inf$";
 const sizeStorage = new WeakMap<object, Map<string, number>>();
 const revalidationStorage = new WeakMap<object, Map<string, InfiniteRevalidationState<any>>>();
 
@@ -115,7 +115,7 @@ export function unstable_serialize<Data = unknown, Key extends RawKey = RawKey>(
   getKey: SWRVInfiniteKeyLoader<Data, Key>,
 ) {
   const [serializedKey] = serializePage(getKey, 0, null);
-  return serializedKey ? `${INFINITE_PREFIX}${serializedKey}` : "";
+  return serializedKey ? createInfiniteCacheKey(serializedKey) : "";
 }
 
 const infinite = (<Data = unknown, Error = unknown>(useSWRVNext: SWRVHook) =>

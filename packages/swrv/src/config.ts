@@ -9,13 +9,21 @@ import {
   type PropType,
 } from "vue";
 
-import { createSWRVClient, defaultInitFocus, defaultInitReconnect } from "./_internal/client";
 import { getScopedMutator } from "./_internal/mutate";
 import { getScopedPreload } from "./_internal/preload";
+import { createSWRVClient } from "./_internal/client";
+import {
+  INTERNAL_DEFAULT_CONFIGURATION,
+  defaultCompare,
+  defaultInitFocus,
+  defaultInitReconnect,
+  defaultIsOnline,
+  defaultIsVisible,
+  defaultOnErrorRetry,
+} from "./_internal/web-preset";
 
 import type {
   CacheAdapter,
-  Compare,
   ResolvedSWRVConfiguration,
   SWRVClient,
   SWRVConfigAccessor,
@@ -25,70 +33,11 @@ import type {
   SWRVContextValue,
 } from "./_internal/types";
 
-const defaultCompare: Compare<unknown> = (left, right) => Object.is(left, right);
 const noop = () => {};
-const defaultIsOnline = () => typeof navigator === "undefined" || navigator.onLine !== false;
-const defaultIsVisible = () =>
-  typeof document === "undefined" || document.visibilityState !== "hidden";
-const defaultOnErrorRetry = <Data = unknown, Error = unknown>(
-  _error: Error,
-  _key: string,
-  config: Readonly<ResolvedSWRVConfiguration<Data, Error>>,
-  revalidate: (options?: {
-    dedupe: boolean;
-    retryCount: number;
-    throwOnError: boolean;
-  }) => Promise<Data | undefined>,
-  options: {
-    dedupe: boolean;
-    retryCount: number;
-    throwOnError: boolean;
-  },
-) => {
-  if (options.retryCount > config.errorRetryCount) {
-    return;
-  }
-
-  setTimeout(() => {
-    void revalidate(options);
-  }, config.errorRetryInterval);
-};
-
-const DEFAULT_CONFIGURATION: ResolvedSWRVConfiguration<any, any> = {
-  compare: defaultCompare,
-  dedupingInterval: 2000,
-  errorRetryCount: 5,
-  errorRetryInterval: 5000,
-  fallback: {},
-  focusThrottleInterval: 5000,
-  initFocus: defaultInitFocus,
-  initReconnect: defaultInitReconnect,
-  isOnline: defaultIsOnline,
-  isPaused: () => false,
-  isVisible: defaultIsVisible,
-  keepPreviousData: false,
-  loadingTimeout: 3000,
-  onDiscarded: noop,
-  onError: noop,
-  onErrorRetry: defaultOnErrorRetry,
-  onLoadingSlow: noop,
-  onSuccess: noop,
-  refreshInterval: 0,
-  refreshWhenHidden: false,
-  refreshWhenOffline: false,
-  revalidateIfStale: true,
-  revalidateOnFocus: true,
-  revalidateOnReconnect: true,
-  shouldRetryOnError: true,
-  strictServerPrefetchWarning: false,
-  ttl: 0,
-  use: [],
-};
-
 const defaultClient = createSWRVClient();
 const defaultContext = {
   client: defaultClient,
-  config: ref(DEFAULT_CONFIGURATION),
+  config: ref(INTERNAL_DEFAULT_CONFIGURATION),
 } satisfies SWRVContextValue;
 
 const contextKey = Symbol("swrv-config");
@@ -233,7 +182,6 @@ export function createCacheProvider<Value = unknown>(): CacheAdapter<Value> {
   return new Map<string, Value>();
 }
 
-export const INTERNAL_DEFAULT_CONFIGURATION = DEFAULT_CONFIGURATION;
 export const GLOBAL_SWRV_CLIENT = defaultClient;
 
 SWRVConfig.defaultValue = INTERNAL_DEFAULT_CONFIGURATION;

@@ -1,3 +1,4 @@
+import { isInternalCacheKey } from "./key-prefix";
 import { serialize } from "./serialize";
 import { getTimestamp } from "./timestamp";
 
@@ -11,7 +12,6 @@ import type {
   SWRVClient,
 } from "./types";
 
-const INTERNAL_FILTERED_KEY = /^\$(inf|sub)\$/;
 const scopedMutatorStore = new WeakMap<SWRVClient, ScopedMutator>();
 
 function isFunction(value: unknown): value is (...args: readonly unknown[]) => unknown {
@@ -48,7 +48,7 @@ export function createScopedMutator(client: SWRVClient): ScopedMutator {
       const results: Array<MutationData | undefined> = [];
 
       for (const key of client.cache.keys()) {
-        if (INTERNAL_FILTERED_KEY.test(key)) {
+        if (isInternalCacheKey(key)) {
           continue;
         }
 

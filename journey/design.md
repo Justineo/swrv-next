@@ -145,10 +145,17 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - root contributor and security guidance now exist for repository users and maintainers
   - the current release path has been revalidated after the latest parity hardening through package and publish dry-runs
   - the workspace and published package manifests are now aligned to the intended prerelease line at `2.0.0-next.0`
+- Internal simplification work has now started after parity closure:
+  - web-preset defaults and event initializers now live in a dedicated `_internal/web-preset.ts` module instead of being mixed into `config.ts` and `client.ts`
+  - provider-scoped runtime maps now live behind `_internal/provider-state.ts`, and cache read/write concerns now live behind `_internal/cache-helper.ts`
+  - shared internal key prefixes for `infinite` and `subscription` now live in `_internal/key-prefix.ts`
+  - `createSWRVClient()` is now a much thinner facade over provider-state, cache-helper, and event binding helpers
+  - the public `useSWRV` entrypoint is now a thin overload plus middleware wrapper, and the heavy runtime logic now lives in `use-swrv-handler.ts`
 - The main reference materials for the rebuild remain:
   - `journey/research/swr-vs-swrv.md`
   - `journey/research/2026-03-18-swrv-next-vs-swr-and-swrv-current-state.md`
   - `journey/research/2026-03-19-fallback-data-typing-gap.md`
+  - `journey/research/2026-03-19-swrv-next-complexity-and-simplification.md`
   - `/Users/yiling.gu@konghq.com/Developer/Justineo/swr` (local SWR source, version 2.4.1)
   - `/Users/yiling.gu@konghq.com/Developer/Kong/swrv` (local legacy SWRV source, version 1.1.0)
 
@@ -188,3 +195,4 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
 - Whether `2.0` should ship limited initial-mount `suspense: true` support, or defer fuller SWR suspense parity because later key-change fallback behavior is not cleanly achievable with Vue's current mechanics
 - Whether any remaining advanced edge semantics in `infinite`, `mutation`, and `subscription` are worth tightening further before or after the first stable `2.0` release
 - How much additional type-level precision is worth adding beyond the current public overloads once the API surface is exercised by real consumers
+- Whether the next simplification phase should fully remove the remaining `SWRVClient` facade from advanced APIs, or stop at the current helper-backed client boundary for the `2.0` line
