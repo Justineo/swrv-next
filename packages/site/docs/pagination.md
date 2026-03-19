@@ -216,6 +216,9 @@ useSWRVInfinite(getKey, fetcher, {
 });
 ```
 
+When `parallel` is enabled, `previousPageData` is always `undefined` because pages are no longer
+loaded sequentially.
+
 ### Revalidate specific pages
 
 `mutate` can revalidate selectively:
@@ -225,6 +228,9 @@ await response.mutate(response.data.value, {
   revalidate: (_pageData, [_url, page]) => page === 1,
 });
 ```
+
+The `revalidate` callback runs for each loaded page, so it is the right place to decide whether one
+specific page should refetch.
 
 ### Global mutate with `useSWRVInfinite`
 
@@ -236,6 +242,9 @@ import { unstable_serialize } from "swrv/infinite";
 
 await mutate(unstable_serialize(getKey));
 ```
+
+That targets the aggregate infinite key. If you need to revalidate or mutate individual pages,
+prefer the bound `mutate` returned from `useSWRVInfinite`.
 
 ### Advanced features
 

@@ -14,6 +14,8 @@ Reduce the remaining content drift after the first SWR copy-alignment pass.
 - Tightened `advanced/cache` with a cache-clearing mutate example closer to the upstream cache docs.
 - Added more detail to `mutation`, `pagination`, and `server-rendering-and-hydration` so the guide
   flow and explanation depth are closer to the SWR docs.
+- Followed up on the drift audit by adding missing mutation option semantics, infinite-pagination
+  caveats, and fuller state-machine explanation in `advanced/understanding`.
 
 ## Validation
 

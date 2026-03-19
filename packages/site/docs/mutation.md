@@ -84,6 +84,10 @@ function logout() {
 This is useful after auth changes, remote invalidations, or any action where the cache should be
 refetched rather than directly replaced.
 
+It broadcasts to hooks under the same [cache provider](/advanced/cache) scope. If you are using a
+custom provider boundary, prefer the scoped `mutate` from `useSWRVConfig()` so you mutate the cache
+that the current hooks are actually using.
+
 ### API
 
 ```ts
@@ -95,11 +99,14 @@ await mutate(key, data?, options?);
 - `key`: same as `useSWRV`'s `key`, but a function behaves as a filter function
 - `data`: data to update the client cache, or an async function for the remote mutation
 - `options`: accepts the following options:
-  - `optimisticData`
-  - `revalidate = true`
-  - `populateCache = true`
-  - `rollbackOnError = true`
-  - `throwOnError = true`
+  - `optimisticData`: data to write immediately, or a function that derives optimistic data from
+    the current cached value
+  - `revalidate = true`: whether SWRV should revalidate after the mutation resolves
+  - `populateCache = true`: whether the resolved mutation result should be written to the cache, or
+    a function that merges the mutation result with the current cached value
+  - `rollbackOnError = true`: whether optimistic data should be rolled back when the remote
+    mutation fails
+  - `throwOnError = true`: whether the mutate call should rethrow the error
 
 #### Return values
 
@@ -125,11 +132,11 @@ const { data, error, isMutating, reset, trigger } = useSWRVMutation(key, fetcher
 - `key`: same as `mutate`'s `key`
 - `fetcher(key, { arg })`: an async function for remote mutation
 - `options`: an optional object with properties such as:
-  - `optimisticData`
-  - `revalidate = true`
-  - `populateCache = false`
-  - `rollbackOnError = true`
-  - `throwOnError = true`
+  - `optimisticData`: same as `mutate`'s `optimisticData`
+  - `revalidate = true`: same as `mutate`'s `revalidate`
+  - `populateCache = false`: same as `mutate`'s `populateCache`, but defaulting to `false`
+  - `rollbackOnError = true`: same as `mutate`'s `rollbackOnError`
+  - `throwOnError = true`: same as `mutate`'s `throwOnError`
   - `onSuccess(data, key, config)`
   - `onError(error, key, config)`
 
@@ -247,6 +254,18 @@ await mutate("/api/user", patchUser(), {
 
 Set `populateCache: false` when the mutation response should not replace the cache.
 
+The same pattern works with `useSWRVMutation`:
+
+```ts
+useSWRVMutation("/api/todos", updateTodo, {
+  populateCache: (updatedTodo, todos) => {
+    const filteredTodos = todos.filter((todo) => todo.id !== "1");
+    return [...filteredTodos, updatedTodo];
+  },
+  revalidate: false,
+});
+```
+
 ## Avoid race conditions
 
 Both `mutate` and `useSWRVMutation` coordinate with `useSWRV` so late request responses do not
@@ -275,5 +294,13 @@ await mutate((key) => typeof key === "string" && key.startsWith("/api/todos?"), 
 });
 ```
 
-Use this sparingly. It is powerful, but broad mutation filters are harder to reason about than
-targeting one specific key.
+This also works with other key shapes:
+
+```ts
+await mutate((key) => Array.isArray(key) && key[0] === "item", undefined, {
+  revalidate: false,
+});
+```
+
+Use this sparingly. The filter runs against every existing cache key, so the safest filters guard
+the key shape before reading from it.

@@ -36,20 +36,32 @@ Later revalidations keep `data` in place while `isValidating` flips back to `tru
 When the key changes, SWRV resolves the new key, reads any cached or fallback data for it, and then
 decides whether the new key should revalidate.
 
+If the new key has no cached value, `data` drops back to `undefined` and the hook enters an initial
+loading state for that key. If the new key already has cached data, SWRV can render it immediately
+and revalidate in the background.
+
 ### Key change + previous data
 
 When `keepPreviousData` is enabled, SWRV can keep the previous key’s data visible while the new key
 loads.
+
+This avoids a jarring empty state during frequent key changes such as live search, tab switches, or
+filter updates.
 
 ### Fallback
 
 When `fallbackData` or config-level `fallback` exists, the hook can render with that data
 immediately before any revalidation finishes.
 
+This is especially helpful for SSR, static pre-rendering, or any workflow where the server already
+knows the first payload.
+
 ### Key change + fallback
 
 If the new key has fallback data, SWRV switches directly to that fallback value instead of dropping
 to `undefined`.
+
+That means fallback tied to the new key takes precedence over unrelated previous-key data.
 
 ### Key change + previous data + fallback
 
@@ -58,6 +70,9 @@ When both features are enabled, SWRV chooses the most useful value for the curre
 - current-key fallback when it exists
 - otherwise previous data if `keepPreviousData` is enabled
 - otherwise `undefined`
+
+This is one of the main reasons `fallbackData` and `keepPreviousData` work well together: fallback
+can serve the known initial value, while previous data smooths over the rest of the transition.
 
 ## Combining `isLoading` and `isValidating` for better UX
 
