@@ -245,12 +245,6 @@ export type SWRVHook = <Data = unknown, Error = unknown, Key extends RawKey = Ra
   config?: SWRVConfiguration<Data, Error>,
 ) => SWRVResponse<Data, Error>;
 
-export type SWRVHookWithArgs = <Data = unknown, Error = unknown, Key extends RawKey = RawKey>(
-  key: KeySource<Key>,
-  fetcherOrConfig?: HookFetcher<Data> | SWRVConfiguration<Data, Error> | null | false,
-  config?: SWRVConfiguration<Data, Error>,
-) => SWRVResponse<Data, Error>;
-
 export type SWRVMiddleware = (useSWRNext: SWRVHook) => SWRVHook;
 
 export type RevalidateEvent = "focus" | "reconnect" | "mutate" | "error-revalidate";

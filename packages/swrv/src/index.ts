@@ -1,4 +1,4 @@
-import useSWRV, { unstable_serialize } from "./index/index";
+import useSWRV, { unstable_serialize } from "./index/use-swrv";
 
 import { GLOBAL_SWRV_CLIENT, SWRVConfig, createCacheProvider, useSWRVConfig } from "./config";
 import {

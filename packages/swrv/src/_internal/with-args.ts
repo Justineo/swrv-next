@@ -9,10 +9,16 @@ import type {
   RawKey,
   SWRVConfiguration,
   SWRVHook,
-  SWRVHookWithArgs,
+  SWRVResponse,
 } from "./types";
 
-export function withArgs(hook: SWRVHook): SWRVHookWithArgs {
+type HookWithArgs = <Data = unknown, Error = unknown, Key extends RawKey = RawKey>(
+  key: KeySource<Key>,
+  fetcherOrConfig?: HookFetcher<Data> | SWRVConfiguration<Data, Error> | null | false,
+  config?: SWRVConfiguration<Data, Error>,
+) => SWRVResponse<Data, Error>;
+
+export function withArgs(hook: SWRVHook): HookWithArgs {
   return function useSWRVWithArgs<Data = unknown, Error = unknown>(
     key: KeySource<RawKey>,
     fetcherOrConfig?: HookFetcher<Data> | SWRVConfiguration<Data, Error> | null | false,

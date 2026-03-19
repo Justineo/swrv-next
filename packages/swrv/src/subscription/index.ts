@@ -2,17 +2,11 @@ import { watch } from "vue";
 
 import { useSWRVConfig } from "../config";
 import { resolveKeyValue, serialize } from "../_internal/serialize";
-import { withMiddleware } from "../_internal/with-middleware";
-import useSWRV from "../use-swrv";
+import { type HookWithArgs, withMiddleware } from "../_internal/with-middleware";
+import useSWRV from "../index/use-swrv";
 import { getSubscriptionStorage } from "./state";
 
-import type {
-  KeySource,
-  RawKey,
-  SWRVConfiguration,
-  SWRVHookWithArgs,
-  SWRVMiddleware,
-} from "../_internal/types";
+import type { KeySource, RawKey, SWRVConfiguration, SWRVMiddleware } from "../_internal/types";
 import type { SWRVSubscription, SWRVSubscriptionHook, SWRVSubscriptionResponse } from "./types";
 
 export const SUBSCRIPTION_PREFIX = "$sub$";
@@ -21,9 +15,7 @@ export function createSubscriptionCacheKey(serializedKey: string): string {
   return `${SUBSCRIPTION_PREFIX}${serializedKey}`;
 }
 
-export const subscription = function subscription(
-  useSWRVNext: SWRVHookWithArgs,
-): SWRVSubscriptionHook {
+export const subscription = function subscription(useSWRVNext: HookWithArgs): SWRVSubscriptionHook {
   return function useSWRVSubscription<Data = unknown, Error = unknown, Key extends RawKey = RawKey>(
     key: KeySource<Key>,
     subscribe: SWRVSubscription<Data, Error, Key>,
@@ -110,7 +102,7 @@ export const subscription = function subscription(
 };
 
 const useSWRVSubscriptionBase = withMiddleware(
-  useSWRV as SWRVHookWithArgs,
+  useSWRV as HookWithArgs,
   subscription as unknown as SWRVMiddleware,
 ) as unknown as SWRVSubscriptionHook;
 

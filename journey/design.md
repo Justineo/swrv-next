@@ -178,8 +178,9 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - repeated WeakMap store initialization for the base hook, `infinite`, and `subscription` now lives behind a shared `_internal/scoped-storage.ts` helper
   - stable scoped helper identities for `mutate` and `preload` now live in provider state instead of separate module-level helper caches
   - `createSWRVClient()` is now a much thinner facade over provider-state, cache-helper, and event binding helpers
-  - the public base-hook family now lives under `src/index/`, with `index/use-swrv.ts`, `index/use-swrv-handler.ts`, `index/serialize.ts`, and `index/index.ts` plus thin top-level forwarding files
+  - the public base-hook family now lives under `src/index/`, with `index/use-swrv.ts`, `index/use-swrv-handler.ts`, and `index/serialize.ts`; the temporary top-level forwarding files and `src/index/index.ts` shim have now been removed
   - base-hook argument normalization and middleware composition now flow through `_internal/normalize-args.ts`, `_internal/with-args.ts`, and `_internal/with-middleware.ts`, replacing the older `normalizeHookArgs` and `middleware-stack` split
+  - helper-only hook signatures no longer live in shared core types or the `_internal` barrel; the shim-only `SWRVHookWithArgs` export is removed and the helper signature now stays local to `_internal/with-args.ts` and `_internal/with-middleware.ts`
   - `immutable`, `infinite`, `mutation`, and `subscription` now follow the same SWR-shaped `withMiddleware(useSWRV, feature)` wrapper pattern instead of each hand-assembling context, config, and middleware resolution
   - feature-local type ownership now lives in `infinite/types.ts`, `mutation/types.ts`, and `subscription/types.ts` instead of being mixed into larger entry modules
   - feature-local side stores now live beside their owning features in `infinite/state.ts` and `subscription/state.ts` instead of generic `_internal` modules
@@ -212,6 +213,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
 - Rebuild the runtime around cache/provider-scoped state instead of module singletons so cache isolation, deduplication, listeners, and SSR request boundaries are explicit.
 - Keep the public API as close to SWR as practical, but preserve a Vue-native reactive contract for returned state and composition.
 - Align implementation structure with SWR where it reduces complexity: shared entry wrappers, feature-local types and state, and SWR-like naming are preferred; React-specific runtime machinery is not.
+- Until the first public release, pre-release module paths, internal contracts, provisional exports, and temporary interfaces are not compatibility constraints. Prefer removing or renaming them when that simplifies the design.
 - Treat types, automated tests, docs, CI/CD, release automation, and dependency maintenance as first-class project scope, not cleanup work after the runtime is complete.
 - Keep project memory current in `journey/design.md`, use `journey/plans/` for milestone or phase plans, and use `journey/logs/` for implementation notes and dead ends.
 - Use plain VitePress scripts for docs builds inside `packages/site`, but continue to drive workspace orchestration through `vp run ...`.

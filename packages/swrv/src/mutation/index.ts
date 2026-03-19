@@ -2,10 +2,10 @@ import { ref } from "vue";
 
 import { useSWRVConfig } from "../config";
 import { resolveKeyValue, serialize } from "../_internal/serialize";
-import { withMiddleware } from "../_internal/with-middleware";
-import useSWRV from "../use-swrv";
+import { type HookWithArgs, withMiddleware } from "../_internal/with-middleware";
+import useSWRV from "../index/use-swrv";
 
-import type { KeySource, RawKey, SWRVHookWithArgs, SWRVMiddleware } from "../_internal/types";
+import type { KeySource, RawKey, SWRVMiddleware } from "../_internal/types";
 import type {
   MutationFetcher,
   SWRVMutationConfiguration,
@@ -13,7 +13,7 @@ import type {
   SWRVMutationResponse,
 } from "./types";
 
-export const mutation = function mutation(_useSWRVNext: SWRVHookWithArgs): SWRVMutationHook {
+export const mutation = function mutation(_useSWRVNext: HookWithArgs): SWRVMutationHook {
   return function useSWRVMutation<
     Data = unknown,
     Error = unknown,
@@ -106,7 +106,7 @@ export const mutation = function mutation(_useSWRVNext: SWRVHookWithArgs): SWRVM
 };
 
 const useSWRVMutationBase = withMiddleware(
-  useSWRV as SWRVHookWithArgs,
+  useSWRV as HookWithArgs,
   mutation as unknown as SWRVMiddleware,
 ) as unknown as SWRVMutationHook;
 

@@ -3,12 +3,12 @@ import { ref, watch } from "vue";
 import { useSWRVConfig } from "../config";
 import { normalizeArgs } from "../_internal/normalize-args";
 import { callFetcher, serialize } from "../_internal/serialize";
-import { withMiddleware } from "../_internal/with-middleware";
-import useSWRV from "../use-swrv";
+import { type HookWithArgs, withMiddleware } from "../_internal/with-middleware";
+import useSWRV from "../index/use-swrv";
 import { getInfiniteRevalidationStore, getInfiniteSizeStore } from "./state";
 import { getInfinitePage, unstable_serialize } from "./serialize";
 
-import type { BareFetcher, RawKey, SWRVHookWithArgs, SWRVMiddleware } from "../_internal/types";
+import type { BareFetcher, RawKey, SWRVMiddleware } from "../_internal/types";
 import type {
   SWRVInfiniteConfiguration,
   SWRVInfiniteHook,
@@ -18,7 +18,7 @@ import type {
 
 export { unstable_serialize };
 
-export const infinite = function infinite(useSWRVNext: SWRVHookWithArgs): SWRVInfiniteHook {
+export const infinite = function infinite(useSWRVNext: HookWithArgs): SWRVInfiniteHook {
   return function useSWRVInfinite<Data = unknown, Error = unknown, Key extends RawKey = RawKey>(
     getKey: SWRVInfiniteKeyLoader<Data, Key>,
     fetcher: BareFetcher<Data> | null | undefined | false,
@@ -246,7 +246,7 @@ export const infinite = function infinite(useSWRVNext: SWRVHookWithArgs): SWRVIn
 };
 
 const useSWRVInfiniteBase = withMiddleware(
-  useSWRV as SWRVHookWithArgs,
+  useSWRV as HookWithArgs,
   infinite as unknown as SWRVMiddleware,
 ) as unknown as SWRVInfiniteHook;
 

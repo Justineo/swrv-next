@@ -3,12 +3,9 @@ export { createSWRVClient } from "./client";
 export { hydrateSWRVSnapshot, serializeSWRVSnapshot } from "./ssr";
 export { stableHash } from "./hash";
 export { createScopedMutator, getScopedMutator } from "./mutate";
-export { normalizeArgs } from "./normalize-args";
 export { getScopedPreload, preloadKey } from "./preload";
 export { callFetcher, resolveKeyValue, serialize } from "./serialize";
 export { getTimestamp } from "./timestamp";
-export { withArgs } from "./with-args";
-export { applyMiddleware, withMiddleware } from "./with-middleware";
 
 export type {
   BareFetcher,

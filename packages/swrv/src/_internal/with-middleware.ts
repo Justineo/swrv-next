@@ -6,9 +6,15 @@ import type {
   RawKey,
   SWRVConfiguration,
   SWRVHook,
-  SWRVHookWithArgs,
+  SWRVResponse,
   SWRVMiddleware,
 } from "./types";
+
+export type HookWithArgs = <Data = unknown, Error = unknown, Key extends RawKey = RawKey>(
+  key: KeySource<Key>,
+  fetcherOrConfig?: HookFetcher<Data> | SWRVConfiguration<Data, Error> | null | false,
+  config?: SWRVConfiguration<Data, Error>,
+) => SWRVResponse<Data, Error>;
 
 export function applyMiddleware(hook: SWRVHook, middlewares: readonly SWRVMiddleware[]): SWRVHook {
   let next = hook;
@@ -20,10 +26,7 @@ export function applyMiddleware(hook: SWRVHook, middlewares: readonly SWRVMiddle
   return next;
 }
 
-export function withMiddleware(
-  useSWRV: SWRVHookWithArgs,
-  middleware: SWRVMiddleware,
-): SWRVHookWithArgs {
+export function withMiddleware(useSWRV: HookWithArgs, middleware: SWRVMiddleware): HookWithArgs {
   return function useSWRVMiddleware<Data = unknown, Error = unknown>(
     key: KeySource<RawKey>,
     fetcherOrConfig?: HookFetcher<Data> | SWRVConfiguration<Data, Error> | null | false,
