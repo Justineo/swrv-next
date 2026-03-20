@@ -8,6 +8,6 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     include: ["packages/swrv/tests/**/*.test.ts"],
-    exclude: ["apps/**", "packages/utils/**"],
+    exclude: ["packages/utils/**"],
   },
 });
