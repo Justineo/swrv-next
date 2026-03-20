@@ -40,5 +40,4 @@ jobs:
         run: vp run build -r
 
       - name: Package dry-run
-        working-directory: packages/swrv
-        run: vp pm pack -- --json --dry-run
+        run: vp pm pack --filter ./packages/swrv --json -- --dry-run
