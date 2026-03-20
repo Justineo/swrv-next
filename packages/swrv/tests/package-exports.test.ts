@@ -1,8 +1,9 @@
 import { existsSync, readFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { describe, expect, it } from "vite-plus/test";
+import { beforeAll, describe, expect, it } from "vite-plus/test";
 
 type ExportTarget = {
   import?: string;
@@ -18,7 +19,23 @@ const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8")) as {
   types: string;
 };
 
+function ensureBuiltPackage() {
+  const rootTypesTarget = resolve(packageRoot, packageJson.types.slice(2));
+  if (existsSync(rootTypesTarget)) {
+    return;
+  }
+
+  execFileSync("vp", ["run", "build"], {
+    cwd: packageRoot,
+    stdio: "inherit",
+  });
+}
+
 describe("package exports", () => {
+  beforeAll(() => {
+    ensureBuiltPackage();
+  });
+
   it("points the root types field at an emitted declaration file", () => {
     const target = resolve(packageRoot, packageJson.types.slice(2));
     expect(existsSync(target)).toBe(true);
