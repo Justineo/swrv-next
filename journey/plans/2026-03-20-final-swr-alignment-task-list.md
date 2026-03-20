@@ -69,7 +69,6 @@ Status: completed
 - `Ref`-based response objects
 - explicit `SWRVClient` and provider-state storage
 - provide/inject config flow
-- provider-scoped `initFocus` and `initReconnect` listener ownership over an inherited cache object
 - explicit snapshot SSR helpers
 - deferred React-only Suspense, RSC, and dependency-collection machinery
 

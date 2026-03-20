@@ -1,7 +1,7 @@
 # Upstream Test Matrix
 
 Date: 2026-03-19
-Status: Active
+Status: Completed
 
 ## Purpose
 
@@ -75,10 +75,10 @@ Status legend:
 
 ## Immediate Execution Order
 
-1. Keep suspense deferred unless the product decision changes.
+1. Keep suspense deferred from the first stable `2.0` release unless product scope changes.
 2. Reopen the matrix only if new runtime or public-type surface is added beyond the current `2.0.0-next.0` cut.
 
 ## Notes
 
-- Suspense remains explicitly deferred.
+- Suspense remains explicitly deferred from the first stable `2.0` release.
 - Tuple-key fetcher typing is still an intentional Vue-native divergence from SWR. Any upstream type cases that assume tuple keys are passed as one value should be marked adapted rather than blindly ported.

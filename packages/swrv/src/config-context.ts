@@ -21,9 +21,9 @@ import {
 import { INTERNAL_DEFAULT_CONFIGURATION } from "./config-utils";
 
 import type {
+  AnyConfigurationValue,
   SWRVConfigAccessor,
   SWRVConfigComponent,
-  SWRVConfigurationValue,
   SWRVContextValue,
 } from "./_internal/types";
 
@@ -61,7 +61,7 @@ export const SWRVConfig = defineComponent({
   name: "SWRVConfig",
   props: {
     value: {
-      type: [Object, Function] as PropType<SWRVConfigurationValue<any, any>>,
+      type: [Object, Function] as PropType<AnyConfigurationValue>,
       default: undefined,
     },
   },

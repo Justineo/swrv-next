@@ -575,7 +575,7 @@ describe("swrv core cache provider behavior", () => {
     const initFocus = vi.fn();
     const initReconnect = vi.fn();
     const fetcher = vi.fn(async () => "value");
-    let cache!: CacheAdapter<CacheState<any, any>>;
+    let cache!: CacheAdapter<CacheState<unknown, unknown>>;
 
     mountWithConfig(
       () => {
@@ -627,7 +627,7 @@ describe("swrv core cache provider behavior", () => {
     const fetcher = vi.fn(async () => `value:${fetcher.mock.calls.length}`);
 
     let state!: ReturnType<typeof useSWRV<string>>;
-    let cache!: CacheAdapter<CacheState<any, any>>;
+    let cache!: CacheAdapter<CacheState<unknown, unknown>>;
     let childClient!: ReturnType<typeof useSWRVConfig>["client"];
 
     const Child = defineComponent({
@@ -654,7 +654,7 @@ describe("swrv core cache provider behavior", () => {
             SWRVConfig,
             {
               value: {
-                provider: (parentCache: CacheAdapter<CacheState<any, any>>) => parentCache,
+                provider: (parentCache: CacheAdapter<CacheState<unknown, unknown>>) => parentCache,
                 initFocus,
                 initReconnect,
               },
@@ -721,7 +721,7 @@ describe("swrv core cache provider behavior", () => {
     });
     const fetcher = vi.fn(async () => `value:${fetcher.mock.calls.length}`);
 
-    let cache!: CacheAdapter<CacheState<any, any>>;
+    let cache!: CacheAdapter<CacheState<unknown, unknown>>;
     let childClient!: ReturnType<typeof useSWRVConfig>["client"];
 
     const Child = defineComponent({

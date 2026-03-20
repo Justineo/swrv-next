@@ -144,7 +144,8 @@ export type SWRVConfigurationValue<Data = unknown, Error = unknown, Fn = BareFet
   | SWRVConfiguration<Data, Error, Fn>
   | ((parent: ResolvedSWRVConfiguration<Data, Error, Fn>) => SWRVConfiguration<Data, Error, Fn>);
 
-export type AnyConfiguration = SWRVConfiguration<unknown, unknown>;
+export type AnyConfiguration = SWRVConfiguration<any, any>;
+export type AnyConfigurationValue = SWRVConfigurationValue<any, any>;
 
 export interface ResolvedSWRVConfiguration<
   Data = unknown,
@@ -348,5 +349,5 @@ export interface SWRVConfigAccessor {
 export type SWRVConfigComponent = DefineComponent<{
   value?: SWRVConfigurationValue<any, any>;
 }> & {
-  defaultValue: ResolvedSWRVConfiguration<any, any>;
+  defaultValue: AnyResolvedConfiguration;
 };

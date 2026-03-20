@@ -1,12 +1,15 @@
 # SWRV Next Remaining Work Without Suspense
 
 Date: 2026-03-19
-Status: Active
+Status: Historical
 
 Status note:
 
-- This file described the release-closure lane before the pre-stable refinement pass reopened in-repo work.
-- The refinement pass in `journey/plans/2026-03-19-pre-stable-refinement-plan.md` is now complete, so this file once again reflects the active non-suspense remaining work.
+- This file is now a historical snapshot.
+- It was superseded first by the pre-stable refinement lane, then by the later
+  SWR-alignment and production-hardening passes.
+- Use `journey/design.md`, `journey/logs/2026-03-19-stable-release-checklist.md`, and
+  `journey/plans/2026-03-20-final-production-hardening-plan.md` for the current state instead.
 
 ## Context
 
@@ -39,7 +42,7 @@ Remaining tasks:
 Closed in the current repo state:
 
 - the API page now documents the main exported hooks and helpers
-- the docs site now has an explicit status page
+- the docs site now carries status inline instead of through a separate status page
 - the parity page now clarifies the SWR, Vue-native, and legacy SWRV relationships
 - the migration page now includes concrete migration guidance
 
@@ -53,6 +56,8 @@ Remaining tasks:
 
 - create a concrete stable-release checklist in `journey/logs/`
   Closed in `journey/logs/2026-03-19-stable-release-checklist.md`.
+- expose a repeatable repo-side release verification command
+  Closed through `RELEASING.md`, root `vp run release:verify`, and package-local `vp run swrv#release:verify`.
 - run final packed-artifact audits
   Closed for the repo-side dry-run path.
 - verify trusted publisher production settings, not only dry-runs

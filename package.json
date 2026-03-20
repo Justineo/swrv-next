@@ -8,6 +8,7 @@
     "check": "vp check",
     "dev": "vp run site#dev",
     "ready": "vp check && vp run test -r && vp run build -r && vp exec playwright test",
+    "release:verify": "vp run ready && vp run swrv#release:verify",
     "release:major": "vp exec bumpp --all --recursive --commit --tag --push --yes --release major",
     "release:minor": "vp exec bumpp --all --recursive --commit --tag --push --yes --release minor",
     "release:patch": "vp exec bumpp --all --recursive --commit --tag --push --yes --release patch",

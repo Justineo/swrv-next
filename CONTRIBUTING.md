@@ -19,9 +19,7 @@ Useful package-local commands:
 
 ```bash
 vp run site#dev
-cd packages/swrv
-vp pm pack -- --json --dry-run
-vp pm publish -- --dry-run --access public --provenance --no-git-checks --tag next
+vp run release:verify
 ```
 
 ## Repository Structure
@@ -49,6 +47,9 @@ Publisher-compatible npm publishing. Until the final versioning line is locked,
 the repo is configured for prerelease-style publishing under the `next` dist
 tag.
 
+Use [RELEASING.md](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/RELEASING.md) as the
+canonical repo-side release guide.
+
 Version bumps use the root release scripts:
 
 ```bash
@@ -57,30 +58,5 @@ vp run release:minor
 vp run release:major
 ```
 
-Recommended release flow:
-
-1. run `vp run ready`
-2. from `packages/swrv`, run:
-   `vp pm pack -- --json --dry-run`
-3. from `packages/swrv`, run:
-   `vp pm publish -- --dry-run --access public --provenance --no-git-checks --tag next`
-4. prepare release notes from the current roadmap log, design snapshot, and the merged commits for the release window
-5. create the release tag through the version-bump flow or the release workflow
-
-External setup still matters:
-
-- GitHub Actions must have npm Trusted Publisher configured for the target
-  package.
-- The npm package record must be linked to the GitHub repository.
-- Maintainers should verify the package dry-run before creating or approving a
-  release tag.
-- Actual publishing should continue to go through `vp pm publish ...`, not a
-  raw `npm publish`, so the workspace package manager and `catalog:` manifests
-  stay in the supported path.
-
-Release notes should focus on:
-
-- public API additions or changes
-- SWR parity changes
-- intentional Vue-native differences
-- migration-impacting changes for legacy SWRV users
+For the actual validation, dry-run, note-preparation, and external verification
+steps, follow `RELEASING.md`.

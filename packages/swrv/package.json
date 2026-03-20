@@ -28,12 +28,30 @@
   "sideEffects": false,
   "types": "./dist/index.d.mts",
   "exports": {
-    ".": "./dist/index.mjs",
-    "./_internal": "./dist/_internal/index.mjs",
-    "./immutable": "./dist/immutable/index.mjs",
-    "./infinite": "./dist/infinite/index.mjs",
-    "./mutation": "./dist/mutation/index.mjs",
-    "./subscription": "./dist/subscription/index.mjs",
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs"
+    },
+    "./_internal": {
+      "types": "./dist/_internal/index.d.mts",
+      "import": "./dist/_internal/index.mjs"
+    },
+    "./immutable": {
+      "types": "./dist/immutable/index.d.mts",
+      "import": "./dist/immutable/index.mjs"
+    },
+    "./infinite": {
+      "types": "./dist/infinite/index.d.mts",
+      "import": "./dist/infinite/index.mjs"
+    },
+    "./mutation": {
+      "types": "./dist/mutation/index.d.mts",
+      "import": "./dist/mutation/index.mjs"
+    },
+    "./subscription": {
+      "types": "./dist/subscription/index.d.mts",
+      "import": "./dist/subscription/index.mjs"
+    },
     "./package.json": "./package.json"
   },
   "publishConfig": {
@@ -43,6 +61,7 @@
     "build": "vp pack src/index.ts src/infinite/index.ts src/mutation/index.ts src/subscription/index.ts src/immutable/index.ts src/_internal/index.ts",
     "check": "vp check",
     "dev": "vp pack src/index.ts src/infinite/index.ts src/mutation/index.ts src/subscription/index.ts src/immutable/index.ts src/_internal/index.ts --watch",
+    "release:verify": "vp exec node ./scripts/release-smoke.mjs",
     "test": "vp test"
   },
   "dependencies": {

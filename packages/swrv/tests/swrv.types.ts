@@ -168,7 +168,7 @@ const fallbackConfig = {
   },
 } satisfies SWRVConfiguration<string>;
 const providerConfig = {
-  provider: () => new Map(),
+  provider: () => new Map<string, { isLoading: boolean; isValidating: boolean }>(),
   isOnline: () => true,
   isVisible: () => true,
   initFocus: (_callback: () => void) => undefined,
@@ -586,7 +586,10 @@ const typeAssertions = {
     Equal<typeof typedInitFocus, NonNullable<SWRVConfiguration<string>["initFocus"]>>
   >,
   providerConfigProvider: true as Expect<
-    Equal<typeof providerConfig.provider, () => Map<any, any>>
+    Equal<
+      typeof providerConfig.provider,
+      () => Map<string, { isLoading: boolean; isValidating: boolean }>
+    >
   >,
   boundMutateCallbackResult: true as Expect<
     Equal<Awaited<typeof boundMutateCallbackResult>, string[] | string | undefined>

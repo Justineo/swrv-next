@@ -43,7 +43,11 @@ export function withMiddleware<BaseHook extends HookWithArgs, NextHook>(
       Data,
       SWRVConfiguration<Data, Error>
     >([key, fetcherOrConfig, config]);
-    const use = [...(localConfig?.use ?? []), middleware as unknown as SWRVMiddleware];
+    // This bridge keeps SWR-style middleware composition across feature wrappers
+    // while preserving each wrapper's more specific hook signature.
+    const middlewareEntry: SWRVMiddleware = (useSWRVNext) =>
+      middleware(useSWRVNext as BaseHook) as InternalSWRVHook;
+    const use = [...(localConfig?.use ?? []), middlewareEntry];
 
     return useSWRV<Data, Error>(resolvedKey, fetcher, {
       ...localConfig,

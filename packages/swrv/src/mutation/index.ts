@@ -9,6 +9,7 @@ import type { KeySource, RawKey } from "../_internal/types";
 import type {
   InternalSWRVMutationHook,
   MutationFetcher,
+  MutationKey,
   SWRVMutationConfiguration,
   SWRVMutationResponse,
 } from "./types";
@@ -60,7 +61,7 @@ export const mutation = function mutation(_useSWRVNext: HookWithArgs): InternalS
       try {
         const result = (await mutate<SWRData, Data>(
           resolvedKey,
-          fetcher(resolvedKey, { arg: arg as ExtraArg }),
+          fetcher(resolvedKey as MutationKey<Key>, { arg: arg as ExtraArg }),
           {
             ...mergedOptions,
             throwOnError: true,

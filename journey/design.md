@@ -1,6 +1,6 @@
 # SWRV Next Design Snapshot
 
-Status: Post-docs-reset prerelease, ready for stable-release execution
+Status: Post-hardening prerelease, repo-side release verification complete
 Last updated: 2026-03-20
 
 ## Mission
@@ -12,7 +12,14 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
 - The repository now uses the intended monorepo shape:
   - `packages/swrv`
   - `packages/site`
-- The root workspace is validated through `vp check`, `vp test`, `vp exec playwright test`, `vp run build -r`, `vp run ready`, `vp pm pack -- --json --dry-run`, and `vp pm publish -- --dry-run --access public --provenance --no-git-checks --tag next`.
+- The repo-owned validation path is now validated through:
+  - `vp run swrv#check -- --fix`
+  - `vp test packages/swrv/tests`
+  - `vp exec playwright test`
+  - `vp run build -r`
+  - `vp run swrv#release:verify`
+- The root `vp run release:verify` command now exists and chains `vp run ready` with the package-local tarball smoke lane.
+- In the current worktree, root-wide `vp check` and `vp run release:verify` are blocked only by untouched edits in `packages/site/docs/.vitepress/theme/index.css`, which this pass intentionally did not modify.
 - The `swrv` package now contains an initial provider-scoped runtime with:
   - `useSWRV`
   - `SWRVConfig`
@@ -142,10 +149,10 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
 - A dedicated `core-error-state` domain file now covers upstream-inspired error semantics, including synchronous and asynchronous fetcher failures, deduped `onError`, preserved error state during manual revalidation, `shouldRetryOnError` gating, and stale-key error callback suppression.
 - Repository maintenance scaffolding now exists for CI, Renovate, and release publishing.
 - Release publishing is now routed through `vp pm publish` in GitHub Actions so the workspace package manager remains responsible for `catalog:` dependency resolution and Trusted Publisher provenance.
-- The remaining `2.0` scope has now been narrowed further:
-  - Vue Suspense-compatible parity is in scope for `2.0`
-  - a lightweight built-in debug or devtools middleware story is in scope for `2.0`
-  - first-party Vue SSR and hydration helpers plus behavior tests are in scope for `2.0`, while Nuxt-specific adapters remain follow-up work
+- The remaining first-stable `2.0` scope is now frozen more tightly:
+  - Vue Suspense parity is explicitly deferred from the first stable `2.0` release
+  - a lightweight built-in debug or devtools middleware story is in scope for the first stable `2.0` release
+  - first-party Vue SSR and hydration helpers plus behavior tests are in scope for the first stable `2.0` release, while Nuxt-specific adapters remain follow-up work
 - The package publish surface is now materially closer to launch-ready:
   - config-level `fallback` data is supported and stays visible during initial revalidation
   - nested `SWRVConfig` boundaries merge fallback maps in SWR-style order
@@ -154,6 +161,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - `SWRVConfig` now also exposes `defaultValue` and supports SWR-style `initFocus` and `initReconnect` config hooks, and `provider(parentCache) => parentCache` now reuses the parent client instead of creating a shadow boundary
   - SWR-style `use` middleware composition now works across `useSWRV`, `immutable`, `infinite`, `mutation`, and `subscription`
   - the published package includes explicit typed subpath exports, a package README, and an Apache-2.0 license file
+  - the release smoke lane now validates the packed tarball in a clean temporary consumer project, covering install, root and subpath imports, TypeScript resolution, and runtime loading
   - root exports now also include `serializeSWRVSnapshot()` and `hydrateSWRVSnapshot()` for request-scoped SSR snapshot round-trips
   - root `preload()` is now a no-op on the server, and config `strictServerPrefetchWarning` can warn when server renders reach keys without fallback or hydrated snapshot data
   - root contributor and security guidance now exist for repository users and maintainers
@@ -161,6 +169,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - the workspace and published package manifests are now aligned to the intended prerelease line at `2.0.0-next.0`
   - the docs site no longer carries a separate status page; the launch surface is documented inline through the main docs and `Migrate from v1`
   - the repo now contains a concrete stable-release checklist under `journey/logs/2026-03-19-stable-release-checklist.md`
+  - the repo now also contains a first-class `RELEASING.md` guide plus root and package `release:verify` commands for repeatable repo-side release verification
   - the remaining non-suspense release work is now mostly outside the repo: Trusted Publisher production verification, stable release-note preparation, and the actual stable tag decision
 - the pre-stable refinement lane has materially reduced runtime and middleware drift, but a later 2026-03-20 source audit found a smaller remaining set of public-type and helper-boundary alignment tasks still open
 - the docs site now uses default VitePress layout primitives, keeps the built-in code block treatment and highlighting, and themes the site through separate light and dark `--theme-*` token sets bridged through a shared VitePress `--vp-*` mapping layer plus the SWRV logo
@@ -174,7 +183,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
 - the docs content now intentionally tracks the upstream SWR docs more closely at the copy and example level too: section ordering, guide flow, and example intent should follow SWR whenever the concept applies to SWRV, while code samples switch to Vue-correct `setup()` or `<script setup>` usage only where React component examples cannot map directly
 - a second docs-tightening pass has now expanded the remaining thinner pages, especially `advanced/performance`, `advanced/understanding`, `advanced/cache`, `mutation`, `pagination`, and `server-rendering-and-hydration`, so the docs are now materially closer to SWR not just in nav shape but in explanatory depth as well
 - a full Markdown-by-Markdown docs audit has now been completed against the local SWR docs source tree; the remaining docs differences are now intentional and limited to Vue composable semantics, SWRV-specific pages such as `migrate-from-v1`, the explicit SSR and hydration model in place of `with-nextjs`, the built-in devtools surface, and the Vue-specific explanation for not porting React-only dependency collection
-- the remaining non-suspense work has returned to stable-release execution rather than more in-repo feature or docs churn
+- the remaining repo-side work has returned to stable-release execution rather than more in-repo feature or docs churn
 - Internal simplification work has now started after parity closure:
   - web-preset defaults and event initializers now live in a dedicated `_internal/web-preset.ts` module instead of being mixed into `config.ts` and `client.ts`
   - provider-scoped runtime maps now live behind `_internal/provider-state.ts`, and cache read/write concerns now live behind `_internal/cache-helper.ts`
@@ -194,11 +203,10 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - SWRV is already aligned on provider-scoped runtime, thin public hook entry plus handler, shared runtime primitives, and base-hook-centered advanced APIs
   - the main remaining alignable drift is now mostly the heavier `SWRVClient` facade; the repeated per-feature middleware resolution, entry normalization, and feature-only generic `_internal` state have been removed
   - the main divergences that should remain are Vue-native refs and watchers, provide/inject context, effect-scope enforcement, and explicit Vue SSR handoff primitives instead of React server-component paths
-- the latest 2026-03-20 source audit shows the remaining safe drift is now concentrated in public types and helper boundaries rather than core runtime behavior:
-  - default compare, retry scheduling, online state tracking, slow-connection defaults, cached-error mount behavior, and `useSWRVInfinite` mount revalidation are already aligned with SWR
-  - the largest public-type drifts from that audit are now closed: hook aliases follow their real callable surfaces, root exports use SWR-shaped public names, immutable stays a thin middleware wrapper, infinite supports positional tuple fetchers, and mutation fetchers no longer expose falsy keys
-  - the main remaining alignable drift is now helper-boundary and file-layout cleanup rather than runtime behavior: preload ownership still differs from SWR's built-in middleware path, and SWRV still keeps its Vue-specific top-level `src/index.ts` and `src/config.ts` facades instead of mirroring SWR's exact React-oriented file placement
-  - the remaining intentional drift is still Vue reactive key sources and refs, explicit provider-scoped client state, provide/inject config flow, explicit SSR snapshot helpers, and the still-deferred React-only Suspense or RSC machinery
+- the latest 2026-03-20 source audit shows that no remaining safe, non-Vue-required SWR drift is still open inside the repo:
+  - default compare, retry scheduling, online state tracking, slow-connection defaults, cached-error mount behavior, and `useSWRVInfinite` mount revalidation are aligned with SWR
+  - the public-type and helper-boundary drifts from that audit are closed: hook aliases follow their real callable surfaces, root exports use SWR-shaped public names, immutable stays a thin middleware wrapper, provider reuse no longer creates a shadow boundary, and mutation or subscription typing matches the shipped behavior
+  - the remaining intentional drift is Vue reactive key sources and refs, explicit provider-scoped client state, provide/inject config flow, explicit SSR snapshot helpers, and the explicitly deferred React-only Suspense or RSC machinery
 - The main reference materials for the rebuild remain:
   - `journey/research/swr-vs-swrv.md`
   - `journey/research/2026-03-18-swrv-next-vs-swr-and-swrv-current-state.md`
@@ -230,13 +238,13 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
 - Keep the library build on stable declaration generation for now instead of the experimental `tsgo` path.
 - Expand the `2.0` SSR scope beyond the first launch-ready cut to include first-party Vue SSR and hydration helpers, server-safe preload and fallback behavior, and dedicated SSR behavior tests. Nuxt-specific adapters or framework modules remain follow-up work, not `2.0` blockers.
 - Do not port SWR's getter-based dependency-collection mechanism into Vue. `swrv-next` already exposes separate refs, so Vue's native dependency tracking is the right model. Performance follow-up should focus on narrower issues such as redundant cache-to-ref sync and unstable watch sources instead.
-- Include a Vue Suspense-compatible parity lane in `2.0`, covering applicable SWR suspense behavior and type semantics, while excluding React-specific rendering mechanics.
-- Vue Suspense feasibility is now narrower than the original goal: mount-time suspension is technically viable through Vue internals, but later key-change re-suspension does not follow the same path. Final `2.0` suspense scope needs an explicit product decision between limited initial-mount support and a riskier deeper-internals approach.
+- Defer Vue Suspense parity from the first stable `2.0` release. The feasibility work remains recorded, but stable release scope should not depend on a partial or deeper-internals-only Suspense model.
 - Include a lightweight built-in debug or devtools middleware story in `2.0` that provides first-party inspection hooks and middleware-preset parity. A dedicated browser extension or deep Vue Devtools integration is follow-up work.
 - Freeze the rebuilt release line as a breaking `2.x` track, and keep prerelease automation on the `next` dist-tag until the first stable cut is ready.
 - Freeze the published Vue support range at `>=3.2.26 <4`.
 - Freeze the typed-consumer and contributor TypeScript baseline at `>=5.5`.
 - Remove `ttl` from the rebuilt core API as well as `serverTTL`, and treat cache expiry as a provider-level extension rather than a hook-level option.
+- Keep the remaining source-level `any` localized to the Vue prop boundary for `SWRVConfig`, and keep the remaining middleware cast boundary localized to `_internal/with-middleware.ts`; both are currently the smallest practical trade-offs for framework interop and SWR-style wrapper composition.
 - Use sentence case throughout docs, site chrome, and non-code copy unless a proper noun or code literal requires otherwise.
 - Treat the docs tree, navigation, and page depth from the upstream SWR docs source as the active baseline for future documentation work. New docs changes should preserve that structure instead of drifting back toward one-off page naming or ad hoc navigation.
 - When SWR already has an applicable guide or example, prefer matching its section flow, narrative, and example intent instead of inventing new docs copy. Diverge only for Vue composable semantics, SWRV-specific SSR differences, or APIs that intentionally differ.
@@ -249,7 +257,6 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
 
 ## Follow-up Questions
 
-- Whether `2.0` should ship limited initial-mount `suspense: true` support, or defer fuller SWR suspense parity because later key-change fallback behavior is not cleanly achievable with Vue's current mechanics
 - Whether any remaining advanced edge semantics in `infinite`, `mutation`, and `subscription` are worth tightening further before or after the first stable `2.0` release
 - How much additional type-level precision is worth adding beyond the current public overloads once the API surface is exercised by real consumers
 - Whether any future simplification effort should go beyond the current helper-backed client boundary, given that the remaining complexity is now concentrated in the core hook runtime rather than in removable cross-module abstractions

@@ -28,13 +28,14 @@ Start the docs site:
 vp run site#dev
 ```
 
-Package dry-run checks:
+Release verification:
 
 ```bash
-cd packages/swrv
-vp pm pack -- --json --dry-run
-vp pm publish -- --dry-run --access public --provenance --no-git-checks --tag next
+vp run release:verify
 ```
+
+That command runs the repo validation suite, package dry-runs, and a packed
+consumer smoke test against the actual tarball.
 
 Contributor workflow and release notes live in
 [`CONTRIBUTING.md`](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/CONTRIBUTING.md). Security reporting guidance lives in

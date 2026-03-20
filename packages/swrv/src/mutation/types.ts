@@ -8,6 +8,11 @@ import type {
 
 type RemoveUndefined<T> = T extends undefined ? never : T;
 type IsUndefinedIncluded<T> = undefined extends T ? true : false;
+export type MutationKey<Key extends RawKey> = [Exclude<Key, null | undefined | false>] extends [
+  never,
+]
+  ? Key
+  : Exclude<Key, null | undefined | false>;
 
 export interface SWRVMutationConfiguration<
   Data = unknown,
@@ -31,13 +36,10 @@ export interface SWRVMutationConfiguration<
   ) => void;
 }
 
-export type MutationFetcher<
-  Data = unknown,
-  Key extends RawKey = RawKey,
-  ExtraArg = unknown,
-> = Key extends null | undefined | false
-  ? never
-  : (key: Key, options: { arg: ExtraArg }) => Data | Promise<Data>;
+export type MutationFetcher<Data = unknown, Key extends RawKey = RawKey, ExtraArg = unknown> = (
+  key: MutationKey<Key>,
+  options: { arg: ExtraArg },
+) => Data | Promise<Data>;
 
 export interface TriggerWithArgs<
   Data = unknown,

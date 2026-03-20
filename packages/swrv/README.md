@@ -23,12 +23,13 @@ first stable cut is tagged, prerelease publishes stay on the `next` dist-tag.
 ## Install
 
 ```bash
-vp add swrv vue
+vp add swrv
 ```
 
 ## Basic Usage
 
-```ts
+```vue
+<script setup lang="ts">
 import useSWRV from "swrv";
 
 const { data, error, isLoading, isValidating, mutate } = useSWRV("/api/user", async (key) => {
@@ -39,9 +40,11 @@ const { data, error, isLoading, isValidating, mutate } = useSWRV("/api/user", as
 
   return response.json();
 });
+</script>
 ```
 
-`data`, `error`, `isLoading`, and `isValidating` are Vue refs.
+Call `useSWRV` inside `setup()` or `<script setup>`. `data`, `error`,
+`isLoading`, and `isValidating` are Vue refs.
 
 ## Provider and Fallback
 
@@ -82,6 +85,7 @@ vp check
 vp run test -r
 vp run test:e2e
 vp run build -r
+vp run release:verify
 ```
 
 The docs site lives in `packages/site`. For project strategy and migration

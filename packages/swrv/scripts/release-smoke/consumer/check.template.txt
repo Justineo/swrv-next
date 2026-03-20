@@ -1,0 +1,84 @@
+import { defineComponent, h } from "vue";
+import useSWRV, {
+  SWRVConfig,
+  createSWRVClient,
+  mutate,
+  preload,
+  unstable_serialize,
+  useSWRVConfig,
+  useSWRVImmutable,
+} from "swrv";
+import useSWRVInfinite, { unstable_serialize as unstableSerializeInfinite } from "swrv/infinite";
+import useSWRVMutation from "swrv/mutation";
+import useSWRVSubscription from "swrv/subscription";
+import { serialize, stableHash } from "swrv/_internal";
+
+const client = createSWRVClient();
+
+const SmokeComponent = defineComponent({
+  setup() {
+    const response = useSWRV("/api/user", async (key) => key, {
+      fallbackData: "seed",
+    });
+    const immutable = useSWRVImmutable("/api/immutable", async (key) => key);
+    const config = useSWRVConfig();
+    const infinite = useSWRVInfinite<number, Error, string>(
+      (index, previousPageData) => {
+        if (index === 0) {
+          return "/api/page-0";
+        }
+
+        return previousPageData === null ? null : `/api/page-${index}`;
+      },
+      async (key) => Number.parseInt(key.slice(-1), 10),
+    );
+    const mutation = useSWRVMutation<string, Error, string, number>(
+      "/api/mutation",
+      async (key, { arg }) => `${key}:${arg}`,
+    );
+    const subscription = useSWRVSubscription<string, Error, string>(
+      "/api/subscription",
+      (_key, { next }) => {
+        next(null, "ready");
+        return () => {};
+      },
+    );
+
+    void mutate("/api/user");
+    void preload("/api/user", async (key) => key);
+    serialize("/api/user");
+    stableHash({
+      a: 1,
+    });
+
+    const serialized = unstable_serialize(["user", 1]);
+    const serializedInfinite = unstableSerializeInfinite((index) => {
+      return index === 0 ? "/api/page-0" : null;
+    });
+    const summary = [
+      response.data.value ?? "",
+      immutable.data.value ?? "",
+      String(config.cache.get("user")?.data ?? ""),
+      String(infinite.size.value),
+      mutation.data.value ?? "",
+      subscription.data.value ?? "",
+      serialized,
+      serializedInfinite,
+    ].join("|");
+
+    return () =>
+      h(
+        SWRVConfig,
+        {
+          value: {
+            client,
+          },
+        },
+        {
+          default: () => h("div", summary),
+        },
+      );
+  },
+});
+
+void SmokeComponent;

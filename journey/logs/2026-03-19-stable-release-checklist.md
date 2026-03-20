@@ -14,13 +14,15 @@ first stable `2.x` release.
 - [x] package build through `vp run build -r`
 - [x] package pack dry-run from `packages/swrv`
 - [x] package publish dry-run from `packages/swrv`
+- [x] packed tarball consumer smoke validation through `vp run swrv#release:verify`
+- [x] root release-verification command through `vp run release:verify`
 - [x] explicit release workflow wired through GitHub Actions
 - [x] contributor and security docs in place
 - [x] roadmap, design snapshot, and simplification logs updated to the current cut
 
 ## Docs And Product Checks
 
-- [x] status page classifying shipped, deferred, and intentionally different behavior
+- [x] docs now carry stable product-status information inline instead of through a separate status page
 - [x] parity page clarifying SWR, Vue-native, and legacy SWRV relationships
 - [x] migration page with concrete migration guidance
 - [x] API page documenting the exported hook and helper surface
@@ -44,7 +46,9 @@ Use these as the main inputs for the final stable release notes:
 
 ## Notes
 
-- Suspense remains explicitly deferred and should not block the current
-  non-suspense stable-release lane unless the product scope changes.
+- Suspense is explicitly deferred from the first stable `2.0` release and should not block the
+  current stable-release lane unless product scope changes.
+- In the current worktree, root `vp check` and `vp run release:verify` are blocked only by the
+  untouched formatting state of `packages/site/docs/.vitepress/theme/index.css`.
 - External publisher verification is the main remaining blocker that cannot be
   closed purely from inside the repository.

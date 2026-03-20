@@ -13,7 +13,7 @@ const currentDir = dirname(fileURLToPath(import.meta.url));
 const packageJsonPath = resolve(currentDir, "../package.json");
 const packageRoot = dirname(packageJsonPath);
 const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8")) as {
-  exports: Record<string, string | ExportTarget>;
+  exports: Record<string, ExportTarget | string>;
   files: string[];
   types: string;
 };
@@ -26,8 +26,12 @@ describe("package exports", () => {
 
   it("points every public subpath export at emitted runtime and type files", () => {
     for (const [subpath, target] of Object.entries(packageJson.exports)) {
-      if (subpath === "./package.json" || typeof target === "string") {
+      if (subpath === "./package.json") {
         continue;
+      }
+
+      if (typeof target === "string") {
+        throw new Error(`${subpath} export should expose explicit runtime and type targets.`);
       }
 
       expect(target.import, `${subpath} import target`).toBeTruthy();
