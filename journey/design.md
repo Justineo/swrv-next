@@ -22,7 +22,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
 - The root `vp run release:verify` command now exists and chains `vp run ready` with the package-local tarball smoke lane.
 - The GitHub Actions workflow now follows the official Vite+ CI path through `voidzero-dev/setup-vp@v1`, so Node.js, the package manager, dependency caching, and the `vp` CLI are provisioned by the recommended action instead of custom setup steps.
 - The GitHub Actions workflow now uses plain `vp` commands for every lane again, including the package dry-run through `vp pm pack -- --json --dry-run` in `packages/swrv`.
-- The GitHub Actions workflow now also sets `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true` at workflow scope, because GitHub's JavaScript-action runtime deprecation warning must be configured before job steps start.
+- GitHub still emits a Node 20 deprecation warning for `voidzero-dev/setup-vp@v1`; both job-level and workflow-level `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true` attempts were ineffective, so the remaining annotation is currently upstream in the published action rather than in this workflow.
 - The package-local tarball smoke lane now parses `vp pm pack -- --json`, cleans temp directories on success and handled interruption, and preserves temp artifacts only when `SWRV_KEEP_SMOKE_TMP=1` is set for debugging.
 - The `swrv` package now contains an initial provider-scoped runtime with:
   - `useSWRV`
