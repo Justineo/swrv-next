@@ -11,33 +11,32 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - name: Setup Vite+
+        uses: voidzero-dev/setup-vp@v1
         with:
           node-version: 22
-
-      - name: Install Vite+
-        run: npm install --global vite-plus pnpm
+          cache: true
 
       - name: Install dependencies
-        run: vp install
+        run: vp install --frozen-lockfile
 
       - name: Install Playwright browsers
-        run: ./node_modules/.bin/vp exec playwright install --with-deps chromium
+        run: vp exec playwright install --with-deps chromium
 
       - name: Check
-        run: ./node_modules/.bin/vp check
+        run: vp check
 
       - name: Test
-        run: ./node_modules/.bin/vp run test -r
+        run: vp run test -r
 
       - name: Browser E2E
-        run: ./node_modules/.bin/vp exec playwright test
+        run: vp exec playwright test
 
       - name: Build
-        run: ./node_modules/.bin/vp run build -r
+        run: vp run build -r
 
       - name: Package dry-run
-        run: pnpm --filter ./packages/swrv pack --json --dry-run
+        working-directory: packages/swrv
+        run: vp pm pack -- --json --dry-run
