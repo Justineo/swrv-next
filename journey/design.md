@@ -19,7 +19,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - `vp run build -r`
   - `vp run swrv#release:verify`
 - The root `vp run release:verify` command now exists and chains `vp run ready` with the package-local tarball smoke lane.
-- In the current worktree, root-wide `vp check` and `vp run release:verify` are blocked only by untouched edits in `packages/site/docs/.vitepress/theme/index.css`, which this pass intentionally did not modify.
+- The GitHub Actions workspace test lane now also depends on a root-level `jsdom` devDependency because the Vite+ test runtime resolves `jsdom` from a root or global execution context in CI, not only from `packages/swrv`.
 - The package-local tarball smoke lane now parses `vp pm pack -- --json`, cleans temp directories on success and handled interruption, and preserves temp artifacts only when `SWRV_KEEP_SMOKE_TMP=1` is set for debugging.
 - The `swrv` package now contains an initial provider-scoped runtime with:
   - `useSWRV`

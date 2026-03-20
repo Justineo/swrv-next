@@ -19,6 +19,7 @@
   "devDependencies": {
     "@playwright/test": "catalog:",
     "bumpp": "catalog:",
+    "jsdom": "catalog:",
     "vite-plus": "catalog:"
   },
   "engines": {
