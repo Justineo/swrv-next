@@ -117,6 +117,8 @@
   --vp-local-search-result-selected-border: var(--theme-primary);
   --vp-local-search-highlight-bg: var(--theme-primary);
   --vp-local-search-highlight-text: var(--theme-primary-text);
+
+  --vp-code-font-size: 0.8em;
 }
 
 .dark {
@@ -158,4 +160,13 @@
 .vp-doc a {
   font-weight: 400 !important;
   text-decoration-thickness: 0.5px;
+}
+
+.vp-doc [class*="language-"] > span.lang {
+  top: 0;
+  right: 0;
+  padding: 3px 6px;
+  border-bottom-left-radius: inherit;
+  background-color: color-mix(in srgb, currentColor 15%, transparent);
+  line-height: 1;
 }
