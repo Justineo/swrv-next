@@ -51,6 +51,13 @@ From `packages/swrv`:
 vp run release:verify
 ```
 
+If you need to inspect the generated consumer workspace or packed tarball after
+the smoke test, run:
+
+```bash
+SWRV_KEEP_SMOKE_TMP=1 vp run release:verify
+```
+
 Check:
 
 - built `dist` files are present
@@ -110,7 +117,7 @@ Use these sources when preparing release notes:
 - `journey/logs/2026-03-18-swrv-rebuild-roadmap.md`
 - `journey/logs/2026-03-19-simplification-phase-1-3.md`
 - `journey/logs/2026-03-19-simplification-phase-4-5.md`
-- `journey/logs/2026-03-20-final-production-readiness-improvements.md`
+- `journey/logs/2026-03-20-final-production-hardening.md`
 - merged commits since the previous published prerelease
 
 Focus release notes on:

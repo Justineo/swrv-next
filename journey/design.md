@@ -20,6 +20,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - `vp run swrv#release:verify`
 - The root `vp run release:verify` command now exists and chains `vp run ready` with the package-local tarball smoke lane.
 - In the current worktree, root-wide `vp check` and `vp run release:verify` are blocked only by untouched edits in `packages/site/docs/.vitepress/theme/index.css`, which this pass intentionally did not modify.
+- The package-local tarball smoke lane now parses `vp pm pack -- --json`, cleans temp directories on success and handled interruption, and preserves temp artifacts only when `SWRV_KEEP_SMOKE_TMP=1` is set for debugging.
 - The `swrv` package now contains an initial provider-scoped runtime with:
   - `useSWRV`
   - `SWRVConfig`
@@ -162,6 +163,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - SWR-style `use` middleware composition now works across `useSWRV`, `immutable`, `infinite`, `mutation`, and `subscription`
   - the published package includes explicit typed subpath exports, a package README, and an Apache-2.0 license file
   - the release smoke lane now validates the packed tarball in a clean temporary consumer project, covering install, root and subpath imports, TypeScript resolution, and runtime loading
+  - the release smoke lane now also documents and supports explicit temp-artifact retention for debugging instead of retaining temp directories by default
   - root exports now also include `serializeSWRVSnapshot()` and `hydrateSWRVSnapshot()` for request-scoped SSR snapshot round-trips
   - root `preload()` is now a no-op on the server, and config `strictServerPrefetchWarning` can warn when server renders reach keys without fallback or hydrated snapshot data
   - root contributor and security guidance now exist for repository users and maintainers

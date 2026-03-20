@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { cpSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -8,6 +8,10 @@ const scriptDir = dirname(fileURLToPath(import.meta.url));
 const packageRoot = resolve(scriptDir, "..");
 const repoRoot = resolve(packageRoot, "../..");
 const consumerTemplateDir = resolve(scriptDir, "release-smoke/consumer");
+const keepTemporaryFiles = process.env.SWRV_KEEP_SMOKE_TMP === "1";
+
+let cleanupPaths = [];
+let cleanupCompleted = false;
 
 function run(command, args, cwd) {
   execFileSync("/bin/zsh", ["-lc", [command, ...args.map(shellQuote)].join(" ")], {
@@ -16,8 +20,22 @@ function run(command, args, cwd) {
   });
 }
 
+function runAndCapture(command, args, cwd) {
+  return execFileSync("/bin/zsh", ["-lc", [command, ...args.map(shellQuote)].join(" ")], {
+    cwd,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "inherit"],
+  });
+}
+
 function shellQuote(value) {
   return `'${value.replaceAll("'", "'\\''")}'`;
+}
+
+function createTemporaryDirectory(prefix) {
+  const directory = mkdtempSync(join(tmpdir(), prefix));
+  cleanupPaths.push(directory);
+  return directory;
 }
 
 function createConsumerPackageJson(tarballPath) {
@@ -39,26 +57,74 @@ function createConsumerPackageJson(tarballPath) {
   };
 }
 
-function findTarball(artifactsDir) {
-  const tarballs = readdirSync(artifactsDir)
-    .filter((entry) => entry.endsWith(".tgz"))
-    .map((entry) => join(artifactsDir, entry));
+function parsePackResult(packOutput) {
+  const result = JSON.parse(packOutput);
 
-  if (tarballs.length !== 1) {
-    throw new Error(`Expected exactly one tarball in ${artifactsDir}, found ${tarballs.length}.`);
+  if (typeof result.filename !== "string" || result.filename.length === 0) {
+    throw new Error("Expected `vp pm pack -- --json` to return a tarball filename.");
   }
 
-  return tarballs[0];
+  return result.filename;
+}
+
+function cleanupTemporaryDirectories(reason) {
+  if (cleanupCompleted) {
+    return;
+  }
+
+  cleanupCompleted = true;
+
+  if (keepTemporaryFiles) {
+    console.error(`Keeping release smoke temp directories (${reason}).`);
+    for (const directory of cleanupPaths) {
+      console.error(`- ${directory}`);
+    }
+    return;
+  }
+
+  for (const directory of cleanupPaths.reverse()) {
+    rmSync(directory, {
+      force: true,
+      recursive: true,
+    });
+  }
+}
+
+function registerSignalHandlers() {
+  for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"]) {
+    process.on(signal, () => {
+      cleanupTemporaryDirectories(`received ${signal}`);
+      process.exit(128 + signalNumber(signal));
+    });
+  }
+}
+
+function signalNumber(signal) {
+  switch (signal) {
+    case "SIGINT":
+      return 2;
+    case "SIGTERM":
+      return 15;
+    case "SIGHUP":
+      return 1;
+    default:
+      return 1;
+  }
 }
 
 function main() {
-  const artifactsDir = mkdtempSync(join(tmpdir(), "swrv-release-artifacts-"));
-  const consumerDir = mkdtempSync(join(tmpdir(), "swrv-packed-consumer-"));
-  let cleanup = true;
+  const artifactsDir = createTemporaryDirectory("swrv-release-artifacts-");
+  const consumerDir = createTemporaryDirectory("swrv-packed-consumer-");
+
+  registerSignalHandlers();
 
   try {
     run("vp", ["run", "build"], packageRoot);
-    run("vp", ["pm", "pack", "--", "--pack-destination", artifactsDir], packageRoot);
+    const packOutput = runAndCapture(
+      "vp",
+      ["pm", "pack", "--", "--json", "--pack-destination", artifactsDir],
+      packageRoot,
+    );
     run(
       "vp",
       [
@@ -76,7 +142,7 @@ function main() {
       packageRoot,
     );
 
-    const tarballPath = findTarball(artifactsDir);
+    const tarballPath = parsePackResult(packOutput);
 
     cpSync(consumerTemplateDir, consumerDir, {
       recursive: true,
@@ -95,21 +161,15 @@ function main() {
     run("vp", ["exec", "tsc", "--project", "tsconfig.json"], consumerDir);
     run(process.execPath, ["./runtime.mjs"], consumerDir);
   } catch (error) {
-    cleanup = false;
-    console.error(`Release verification artifacts retained at ${artifactsDir}`);
-    console.error(`Packed-consumer smoke workspace retained at ${consumerDir}`);
+    if (!keepTemporaryFiles) {
+      console.error(
+        "Release smoke failed. Set SWRV_KEEP_SMOKE_TMP=1 to retain temporary artifacts for debugging.",
+      );
+    }
+    cleanupTemporaryDirectories("failure");
     throw error;
   } finally {
-    if (cleanup && !process.env.SWRV_KEEP_SMOKE_TMP) {
-      rmSync(artifactsDir, {
-        force: true,
-        recursive: true,
-      });
-      rmSync(consumerDir, {
-        force: true,
-        recursive: true,
-      });
-    }
+    cleanupTemporaryDirectories("success");
   }
 }
 
