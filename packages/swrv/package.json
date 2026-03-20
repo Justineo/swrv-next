@@ -10,14 +10,14 @@
     "swrv",
     "vue"
   ],
-  "homepage": "https://github.com/Kong/swrv",
+  "homepage": "https://github.com/Justineo/swrv-next",
   "bugs": {
-    "url": "https://github.com/Kong/swrv/issues"
+    "url": "https://github.com/Justineo/swrv-next/issues"
   },
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Kong/swrv.git"
+    "url": "https://github.com/Justineo/swrv-next.git"
   },
   "files": [
     "dist",

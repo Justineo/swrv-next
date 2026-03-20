@@ -12,6 +12,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
 - The repository now uses the intended monorepo shape:
   - `packages/swrv`
   - `packages/site`
+- The current public GitHub home for the rebuilt project is `https://github.com/Justineo/swrv-next`; package metadata should point there until a different canonical repository is chosen.
 - The repo-owned validation path is now validated through:
   - `vp run swrv#check -- --fix`
   - `vp test packages/swrv/tests`
