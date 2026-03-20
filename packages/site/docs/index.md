@@ -18,6 +18,13 @@ hero:
     - theme: alt
       text: Migrate from v1
       link: /migrate-from-v1
+features:
+  - title: Feature-rich Data Fetching
+    details: Transport and protocol agnostic data fetching, revalidation on focus, polling, in-flight de-duplication.
+  - title: Vue Composition API
+    details: Start developing with power of Vue 3, using the reactivity system of the Vue Composition API.
+  - title: Stale-while-revalidate
+    details: Uses cache to serve pages fast, while revalidating data sources producing an eventually consistent UI.
 ---
 
 ## Installation
@@ -32,8 +39,6 @@ npm i swrv // [!=npm auto]
 <script setup lang="ts">
 import useSWRV from "swrv";
 
-const fetcher = (url: string) => fetch(url).then((response) => response.json());
-
 const { data, error, isLoading } = useSWRV("/api/user", fetcher);
 </script>
 
@@ -43,3 +48,20 @@ const { data, error, isLoading } = useSWRV("/api/user", fetcher);
   <p v-else>Hello {{ data?.name }}</p>
 </template>
 ```
+
+<section class="home-credit">
+  <p class="credit-kicker">Based on</p>
+  <div class="credit-logos">
+    <a class="credit-link credit-link-swr" href="https://swr.vercel.app/">
+      <img alt="SWR" height="69" src="/swr-logo.svg" width="291" />
+      <span>SWR</span>
+    </a>
+    <span class="credit-separator">from</span>
+    <a aria-label="Vercel" class="credit-link credit-link-vercel" href="https://vercel.com/">
+      <img alt="Vercel" height="52" src="/vercel-wordmark.svg" width="262" />
+    </a>
+  </div>
+  <p class="credit-copy">
+    Built to match SWR closely while staying idiomatic to Vue.
+  </p>
+</section>

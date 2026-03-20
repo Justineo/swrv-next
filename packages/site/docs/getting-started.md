@@ -5,9 +5,6 @@ description: Install SWRV and start fetching data in Vue.
 
 # Getting started
 
-SWRV is a Vue library for data fetching. It follows SWR closely, but it returns Vue refs and is
-meant to be used inside `setup()` or `<script setup>`.
-
 ## Installation
 
 Inside your Vue project directory, run the following:
