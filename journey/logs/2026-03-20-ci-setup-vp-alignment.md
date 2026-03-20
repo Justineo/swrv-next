@@ -9,6 +9,7 @@ Changes:
 - Moved the package dry-run to `packages/swrv` and now use `vp pm pack -- --json --dry-run` instead of direct `pnpm`.
 - Removed the root `jsdom` devDependency that had only been added to support the earlier CI workaround.
 - Kept the lockfile change minimal by removing only the root importer entry for `jsdom`.
+- Opted GitHub JavaScript actions into Node 24 with `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true` so the workflow stays warning-free while `setup-vp` still ships with `runs.using: node20`.
 
 Validation:
 
