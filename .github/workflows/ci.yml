@@ -19,7 +19,7 @@ jobs:
           node-version: 22
 
       - name: Install Vite+
-        run: npm install --global vite-plus
+        run: npm install --global vite-plus pnpm
 
       - name: Install dependencies
         run: vp install
