@@ -21,6 +21,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - `vp run swrv#release:verify`
 - The root `vp run release:verify` command now exists and chains `vp run ready` with the package-local tarball smoke lane.
 - The GitHub Actions workflow uses a globally installed `vite-plus` binary, and its optional runtime peers are resolved from that global path during CI. In practice, the workflow must install `jsdom` for the test lane and `typescript` for the pack or build lane alongside the global `vite-plus` binary, while the workspace still keeps those dependencies declared for local and package-level validation.
+- The GitHub Actions workflow now uses the global `vp` binary only for the initial `vp install`, then switches to the workspace-local `./node_modules/.bin/vp` for validation lanes. The package dry-run step uses `pnpm --filter ./packages/swrv pack --json --dry-run` because the installed CLI paths available in CI do not expose a working `vp pm` command.
 - The package-local tarball smoke lane now parses `vp pm pack -- --json`, cleans temp directories on success and handled interruption, and preserves temp artifacts only when `SWRV_KEEP_SMOKE_TMP=1` is set for debugging.
 - The `swrv` package now contains an initial provider-scoped runtime with:
   - `useSWRV`

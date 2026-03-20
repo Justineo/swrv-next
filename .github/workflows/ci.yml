@@ -19,25 +19,25 @@ jobs:
           node-version: 22
 
       - name: Install Vite+
-        run: npm install --global vite-plus jsdom typescript
+        run: npm install --global vite-plus
 
       - name: Install dependencies
         run: vp install
 
       - name: Install Playwright browsers
-        run: vp exec playwright install --with-deps chromium
+        run: ./node_modules/.bin/vp exec playwright install --with-deps chromium
 
       - name: Check
-        run: vp check
+        run: ./node_modules/.bin/vp check
 
       - name: Test
-        run: vp run test -r
+        run: ./node_modules/.bin/vp run test -r
 
       - name: Browser E2E
-        run: vp exec playwright test
+        run: ./node_modules/.bin/vp exec playwright test
 
       - name: Build
-        run: vp run build -r
+        run: ./node_modules/.bin/vp run build -r
 
       - name: Package dry-run
-        run: vp pm pack --filter ./packages/swrv --json -- --dry-run
+        run: pnpm --filter ./packages/swrv pack --json --dry-run
