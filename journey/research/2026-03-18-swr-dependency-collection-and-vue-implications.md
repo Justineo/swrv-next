@@ -18,11 +18,11 @@ Primary references:
   - `https://github.com/vercel/swr/blob/5fa29522f196db2ad9d2083193c3b63214256c19/src/index/use-swr.ts#L812-L832`
 - Local source mirrors used for close reading:
   - [use-swr.ts](/Users/yiling.gu@konghq.com/Developer/Justineo/swr/src/index/use-swr.ts)
-  - [use-swrv.ts](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/packages/swrv/src/use-swrv.ts)
-  - [client.ts](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/packages/swrv/src/_internal/client.ts)
+  - [use-swrv.ts](../../packages/swrv/src/use-swrv.ts)
+  - [client.ts](../../packages/swrv/src/_internal/client.ts)
   - Vue reactivity internals:
-    - [reactivity.esm-bundler.js](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/node_modules/.pnpm/@vue+reactivity@3.5.30/node_modules/@vue/reactivity/dist/reactivity.esm-bundler.js)
-    - [shared.esm-bundler.js](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/node_modules/.pnpm/@vue+shared@3.5.30/node_modules/@vue/shared/dist/shared.esm-bundler.js)
+    - [reactivity.esm-bundler.js](../../node_modules/.pnpm/@vue+reactivity@3.5.30/node_modules/@vue/reactivity/dist/reactivity.esm-bundler.js)
+    - [shared.esm-bundler.js](../../node_modules/.pnpm/@vue+shared@3.5.30/node_modules/@vue/shared/dist/shared.esm-bundler.js)
 
 ## Short Answer
 
@@ -68,7 +68,7 @@ This is clever, but it exists because React components re-render from hook state
 - `isLoading: Ref<boolean>`
 - `isValidating: Ref<boolean>`
 
-Source: [types.ts](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/packages/swrv/src/_internal/types.ts#L196-L202)
+Source: [types.ts](../../packages/swrv/src/_internal/types.ts#L196-L202)
 
 In `useSWRV`, those refs are created independently:
 
@@ -77,7 +77,7 @@ In `useSWRV`, those refs are created independently:
 - `const isLoading = ref(false)`
 - `const isValidating = ref(false)`
 
-Source: [use-swrv.ts](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/packages/swrv/src/use-swrv.ts#L121-L124)
+Source: [use-swrv.ts](../../packages/swrv/src/use-swrv.ts#L121-L124)
 
 That means Vue already tracks dependency usage at the ref level.
 
@@ -86,9 +86,9 @@ If a component only reads `data.value`, then changes to `error.value` do not inv
 There is another helpful detail in Vue's reactivity implementation: ref assignments only trigger when the value actually changes by `Object.is`.
 
 - Vue shared `hasChanged`: `!Object.is(value, oldValue)`
-  Source: [shared.esm-bundler.js](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/node_modules/.pnpm/@vue+shared@3.5.30/node_modules/@vue/shared/dist/shared.esm-bundler.js#L82)
+  Source: [shared.esm-bundler.js](../../node_modules/.pnpm/@vue+shared@3.5.30/node_modules/@vue/shared/dist/shared.esm-bundler.js#L82)
 - ref setter checks `hasChanged(newValue, oldValue)` before triggering
-  Source: [reactivity.esm-bundler.js](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/node_modules/.pnpm/@vue+reactivity@3.5.30/node_modules/@vue/reactivity/dist/reactivity.esm-bundler.js#L1513-L1519)
+  Source: [reactivity.esm-bundler.js](../../node_modules/.pnpm/@vue+reactivity@3.5.30/node_modules/@vue/reactivity/dist/reactivity.esm-bundler.js#L1513-L1519)
 
 So even though `useSWRV` writes all four refs in `applyState()`, unchanged primitive values and preserved object identities do not trigger Vue updates.
 
@@ -112,7 +112,7 @@ On successful fetch completion, `swrv-next` uses `config.compare` to keep the pr
 
 - `data: configValue.compare(latestData, resolvedData) ? latestData : resolvedData`
 
-Source: [use-swrv.ts](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/packages/swrv/src/use-swrv.ts#L347-L358)
+Source: [use-swrv.ts](../../packages/swrv/src/use-swrv.ts#L347-L358)
 
 This is still useful in Vue. If a fetcher returns a new object that is semantically equal, preserving the old reference avoids unnecessary invalidation of `data` consumers.
 
@@ -132,13 +132,13 @@ These are the real cleanup candidates.
 - `cache.set(key, next);`
 - `notifyListeners(key, next, previous);`
 
-Source: [client.ts](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/packages/swrv/src/_internal/client.ts#L69-L91)
+Source: [client.ts](../../packages/swrv/src/_internal/client.ts#L69-L91)
 
 `useSWRV` subscribes like this:
 
 - `client.subscribe(serializedKey, () => { applyState(); })`
 
-Source: [use-swrv.ts](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/packages/swrv/src/use-swrv.ts#L512-L514)
+Source: [use-swrv.ts](../../packages/swrv/src/use-swrv.ts#L512-L514)
 
 But in several places, `useSWRV` also calls `applyState()` immediately after `client.setState(...)`:
 
@@ -148,11 +148,11 @@ But in several places, `useSWRV` also calls `applyState()` immediately after `cl
 - paused error completion
 - error completion
 
-Source: [use-swrv.ts](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/packages/swrv/src/use-swrv.ts#L286-L287)
-Source: [use-swrv.ts](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/packages/swrv/src/use-swrv.ts#L327-L329)
-Source: [use-swrv.ts](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/packages/swrv/src/use-swrv.ts#L359-L364)
-Source: [use-swrv.ts](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/packages/swrv/src/use-swrv.ts#L379-L381)
-Source: [use-swrv.ts](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/packages/swrv/src/use-swrv.ts#L394-L395)
+Source: [use-swrv.ts](../../packages/swrv/src/use-swrv.ts#L286-L287)
+Source: [use-swrv.ts](../../packages/swrv/src/use-swrv.ts#L327-L329)
+Source: [use-swrv.ts](../../packages/swrv/src/use-swrv.ts#L359-L364)
+Source: [use-swrv.ts](../../packages/swrv/src/use-swrv.ts#L379-L381)
+Source: [use-swrv.ts](../../packages/swrv/src/use-swrv.ts#L394-L395)
 
 Once the hook is subscribed for the active key, those direct calls duplicate the listener-driven sync path:
 
@@ -176,13 +176,13 @@ The current code mixes both approaches.
 
 - `() => serialize(key as RawKey | (() => RawKey))`
 
-Source: [use-swrv.ts](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/packages/swrv/src/use-swrv.ts#L489-L490)
+Source: [use-swrv.ts](../../packages/swrv/src/use-swrv.ts#L489-L490)
 
 `useSWRVSubscription` watches:
 
 - `() => serialize(key as KeySource<Key>)`
 
-Source: [subscription/index.ts](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/packages/swrv/src/subscription/index.ts#L67-L68)
+Source: [subscription/index.ts](../../packages/swrv/src/subscription/index.ts#L67-L68)
 
 Vue watch compares the getter result with `hasChanged(...)` when it is not in multi-source mode.
 That means a freshly allocated array is always considered changed by identity, even if the serialized key string is the same.
@@ -191,7 +191,7 @@ Relevant Vue watch comparison path:
 
 - `hasChanged(newValue, oldValue)`
 
-Source: [reactivity.esm-bundler.js](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/node_modules/.pnpm/@vue+reactivity@3.5.30/node_modules/@vue/reactivity/dist/reactivity.esm-bundler.js#L1892-L1894)
+Source: [reactivity.esm-bundler.js](../../node_modules/.pnpm/@vue+reactivity@3.5.30/node_modules/@vue/reactivity/dist/reactivity.esm-bundler.js#L1892-L1894)
 
 Implication:
 
@@ -212,13 +212,13 @@ Recommendation:
 
 - `listener(current, previous)`
 
-Source: [client.ts](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/packages/swrv/src/_internal/client.ts#L35-L49)
+Source: [client.ts](../../packages/swrv/src/_internal/client.ts#L35-L49)
 
 But `useSWRV` subscribes with:
 
 - `() => { applyState(); }`
 
-Source: [use-swrv.ts](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/packages/swrv/src/use-swrv.ts#L512-L514)
+Source: [use-swrv.ts](../../packages/swrv/src/use-swrv.ts#L512-L514)
 
 So every state notification triggers another `client.getState(...)` lookup inside `applyState()`.
 

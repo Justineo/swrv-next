@@ -142,7 +142,10 @@
 .VPHome .vp-doc > div > div {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  grid-template-rows: auto min-content auto;
+  grid-template-areas:
+    "installation-title example-title"
+    "installation-code example-code"
+    "credit example-code";
   gap: 0 clamp(1.5rem, 2vw, 2.25rem);
   margin-top: clamp(0.5rem, 1vw, 1rem);
   align-items: start;
@@ -152,34 +155,26 @@
   min-width: 0;
 }
 
-.VPHome .vp-doc > div > div > :nth-child(1) {
-  grid-column: 1;
-  grid-row: 1;
+.VPHome .vp-doc h2#installation {
+  grid-area: installation-title;
 }
 
-.VPHome .vp-doc > div > div > :nth-child(2) {
-  grid-column: 1;
-  grid-row: 2;
+.VPHome .vp-doc h2#installation + div[class*="language-"] {
+  grid-area: installation-code;
 }
 
-.VPHome .vp-doc > div > div > :nth-child(3) {
-  grid-column: 2;
-  grid-row: 1;
+.VPHome .vp-doc h2#quick-example {
+  grid-area: example-title;
 }
 
-.VPHome .vp-doc > div > div > :nth-child(4) {
-  grid-column: 2;
-  grid-row: 2 / span 2;
+.VPHome .vp-doc h2#quick-example + div[class*="language-"] {
+  grid-area: example-code;
   align-self: start;
   margin-bottom: 0;
 }
 
-.VPHome .vp-doc > div > div > :nth-child(5) {
-  grid-column: 1;
-  grid-row: 3;
-}
-
 .VPHome .home-credit {
+  grid-area: credit;
   display: grid;
   gap: 0.35rem;
   margin-top: 0.1rem;
@@ -256,12 +251,12 @@
 @media (max-width: 860px) {
   .VPHome .vp-doc > div > div {
     grid-template-columns: 1fr;
-    grid-template-rows: auto;
+    grid-template-areas:
+      "installation-title"
+      "installation-code"
+      "example-title"
+      "example-code"
+      "credit";
     gap: 0;
-  }
-
-  .VPHome .vp-doc > div > div > :nth-child(n) {
-    grid-column: auto;
-    grid-row: auto;
   }
 }

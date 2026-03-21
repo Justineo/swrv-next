@@ -4,7 +4,7 @@ Date: 2026-03-18
 
 ## Purpose
 
-This document answers a narrower question than the earlier baseline study in [journey/research/swr-vs-swrv.md](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/journey/research/swr-vs-swrv.md): after the rebuild work already completed in `swrv-next`, where does the project stand now relative to upstream `swr` and legacy `swrv`?
+This document answers a narrower question than the earlier baseline study in [journey/research/swr-vs-swrv.md](swr-vs-swrv.md): after the rebuild work already completed in `swrv-next`, where does the project stand now relative to upstream `swr` and legacy `swrv`?
 
 The goal is not to restate the original gap analysis. The goal is to measure how much of that gap has already been closed, what remains materially different, and what those differences mean for release readiness.
 
@@ -12,7 +12,7 @@ The goal is not to restate the original gap analysis. The goal is to measure how
 
 The analysis below is based on these local sources:
 
-- `swrv-next`: `/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next`
+- `swrv-next`: current repository checkout
 - `swr`: `/Users/yiling.gu@konghq.com/Developer/Justineo/swr`
 - legacy `swrv`: `/Users/yiling.gu@konghq.com/Developer/Kong/swrv`
 

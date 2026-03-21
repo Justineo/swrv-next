@@ -47,7 +47,7 @@ Publisher-compatible npm publishing. Until the final versioning line is locked,
 the repo is configured for prerelease-style publishing under the `next` dist
 tag.
 
-Use [RELEASING.md](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/RELEASING.md) as the
+Use [RELEASING.md](RELEASING.md) as the
 canonical repo-side release guide.
 
 Version bumps use the root release scripts:

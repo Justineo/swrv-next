@@ -8,9 +8,9 @@ stable line is tagged, prereleases stay on the `next` dist-tag.
 
 ## Workspace
 
-- [`packages/swrv`](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/packages/swrv): the published library package
-- [`packages/site`](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/packages/site): the VitePress documentation site
-- [`journey/`](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/journey): project memory, plans, and implementation logs
+- [`packages/swrv`](packages/swrv): the published library package
+- [`packages/site`](packages/site): the VitePress documentation site
+- [`journey/`](journey/): project memory, plans, and implementation logs
 
 ## Development
 
@@ -38,5 +38,5 @@ That command runs the repo validation suite, package dry-runs, and a packed
 consumer smoke test against the actual tarball.
 
 Contributor workflow and release notes live in
-[`CONTRIBUTING.md`](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/CONTRIBUTING.md). Security reporting guidance lives in
-[`SECURITY.md`](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/SECURITY.md).
+[`CONTRIBUTING.md`](CONTRIBUTING.md). Security reporting guidance lives in
+[`SECURITY.md`](SECURITY.md).

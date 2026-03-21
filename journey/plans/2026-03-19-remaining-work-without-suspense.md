@@ -25,7 +25,7 @@ Status note:
 For the moment, `suspense` is intentionally left out of the active execution lane.
 Its feasibility and constraints are recorded in:
 
-- [journey/research/2026-03-19-vue-suspense-feasibility.md](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/journey/research/2026-03-19-vue-suspense-feasibility.md)
+- [journey/research/2026-03-19-vue-suspense-feasibility.md](../research/2026-03-19-vue-suspense-feasibility.md)
 
 ## Remaining Active Work
 

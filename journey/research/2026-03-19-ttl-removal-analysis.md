@@ -72,13 +72,13 @@ obviously unnecessary.
 
 `ttl` is currently present in:
 
-- [`packages/swrv/src/_internal/types.ts`](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/packages/swrv/src/_internal/types.ts)
+- [`packages/swrv/src/_internal/types.ts`](../../packages/swrv/src/_internal/types.ts)
   - `SWRVConfiguration.ttl`
   - `ResolvedSWRVConfiguration.ttl`
-- [`packages/site/docs/api.md`](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/packages/site/docs/api.md)
-- [`packages/site/docs/migrate-from-v1.md`](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/packages/site/docs/migrate-from-v1.md)
-- [`packages/swrv/README.md`](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/packages/swrv/README.md)
-- [`journey/design.md`](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/journey/design.md)
+- [`packages/site/docs/api.md`](../../packages/site/docs/api.md)
+- [`packages/site/docs/migrate-from-v1.md`](../../packages/site/docs/migrate-from-v1.md)
+- [`packages/swrv/README.md`](../../packages/swrv/README.md)
+- [`journey/design.md`](../design.md)
 
 `serverTTL` is already gone from the core API. That makes `ttl` the only remaining legacy expiry
 surface.
@@ -87,7 +87,7 @@ surface.
 
 ### Cache state
 
-[`packages/swrv/src/_internal/types.ts`](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/packages/swrv/src/_internal/types.ts)
+[`packages/swrv/src/_internal/types.ts`](../../packages/swrv/src/_internal/types.ts)
 defines:
 
 - `expiresAt`
@@ -99,7 +99,7 @@ defines:
 
 ### Cache helper
 
-[`packages/swrv/src/_internal/cache-helper.ts`](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/packages/swrv/src/_internal/cache-helper.ts)
+[`packages/swrv/src/_internal/cache-helper.ts`](../../packages/swrv/src/_internal/cache-helper.ts)
 currently does two non-obvious things:
 
 1. `get()` is not a pure read.
@@ -119,7 +119,7 @@ That means even the most basic cache read and write path is carrying expiry logi
 
 ### Client write signature
 
-[`packages/swrv/src/_internal/client.ts`](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/packages/swrv/src/_internal/client.ts)
+[`packages/swrv/src/_internal/client.ts`](../../packages/swrv/src/_internal/client.ts)
 exposes:
 
 ```ts
@@ -132,7 +132,7 @@ This is a smell. The client state write path should accept state data, not stora
 
 ### Base hook
 
-[`packages/swrv/src/use-swrv-handler.ts`](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/packages/swrv/src/use-swrv-handler.ts)
+[`packages/swrv/src/use-swrv-handler.ts`](../../packages/swrv/src/use-swrv-handler.ts)
 passes `configValue.ttl` into every major write:
 
 - loading state
@@ -145,12 +145,12 @@ That means a fetch lifecycle now carries cache expiry policy on every write bran
 
 ### Infinite
 
-[`packages/swrv/src/infinite/index.ts`](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/packages/swrv/src/infinite/index.ts)
+[`packages/swrv/src/infinite/index.ts`](../../packages/swrv/src/infinite/index.ts)
 passes `config.ttl ?? 0` when it writes individual page results.
 
 ### Mutation
 
-[`packages/swrv/src/_internal/mutate.ts`](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/packages/swrv/src/_internal/mutate.ts)
+[`packages/swrv/src/_internal/mutate.ts`](../../packages/swrv/src/_internal/mutate.ts)
 is the most coupled piece after the cache helper:
 
 - it synthesizes a fallback `currentState` with `expiresAt`
@@ -163,13 +163,13 @@ This is the one place where cache expiry is mixed directly into remote-write orc
 
 TTL is directly tested in:
 
-- [`packages/swrv/tests/core-ttl-lifecycle.test.ts`](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/packages/swrv/tests/core-ttl-lifecycle.test.ts)
+- [`packages/swrv/tests/core-ttl-lifecycle.test.ts`](../../packages/swrv/tests/core-ttl-lifecycle.test.ts)
 
 But expiry metadata also leaks into non-TTL tests because they seed raw cache records with
 `expiresAt` and `updatedAt`:
 
-- [`packages/swrv/tests/core-local-mutate.test.ts`](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/packages/swrv/tests/core-local-mutate.test.ts)
-- [`packages/swrv/tests/core-cache-provider.test.ts`](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/packages/swrv/tests/core-cache-provider.test.ts)
+- [`packages/swrv/tests/core-local-mutate.test.ts`](../../packages/swrv/tests/core-local-mutate.test.ts)
+- [`packages/swrv/tests/core-cache-provider.test.ts`](../../packages/swrv/tests/core-cache-provider.test.ts)
 
 ## Behavioral implications of removal
 

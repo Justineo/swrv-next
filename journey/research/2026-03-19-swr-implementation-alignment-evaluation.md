@@ -33,8 +33,8 @@ SWRV now does the same conceptually:
   - provider-bound global state
   - cache, mutate, subscribe, revalidators, fetch/preload tracking
 - SWRV:
-  - [`_internal/provider-state.ts`](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/packages/swrv/src/_internal/provider-state.ts)
-  - [`_internal/client.ts`](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/packages/swrv/src/_internal/client.ts)
+  - [`_internal/provider-state.ts`](../../packages/swrv/src/_internal/provider-state.ts)
+  - [`_internal/client.ts`](../../packages/swrv/src/_internal/client.ts)
   - provider-bound fetches, mutations, listeners, revalidators, preloads
 
 That alignment is substantive, not cosmetic.
@@ -48,8 +48,8 @@ SWR has:
 
 SWRV has:
 
-- [`use-swrv.ts`](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/packages/swrv/src/use-swrv.ts)
-- [`use-swrv-handler.ts`](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/packages/swrv/src/use-swrv-handler.ts)
+- [`use-swrv.ts`](../../packages/swrv/src/use-swrv.ts)
+- [`use-swrv-handler.ts`](../../packages/swrv/src/use-swrv-handler.ts)
 
 This is already the right direction.
 
@@ -74,9 +74,9 @@ SWR’s internal config structure is split across:
 
 SWRV now has the same general shape:
 
-- [`config-context.ts`](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/packages/swrv/src/config-context.ts)
-- [`config-utils.ts`](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/packages/swrv/src/config-utils.ts)
-- [`_internal/web-preset.ts`](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/packages/swrv/src/_internal/web-preset.ts)
+- [`config-context.ts`](../../packages/swrv/src/config-context.ts)
+- [`config-utils.ts`](../../packages/swrv/src/config-utils.ts)
+- [`_internal/web-preset.ts`](../../packages/swrv/src/_internal/web-preset.ts)
 
 ## Divergences that are necessary because of Vue
 
@@ -166,8 +166,8 @@ SWR has a very clear flow:
 
 SWRV has the same pieces, but in a more custom arrangement:
 
-- [`_internal/normalize.ts`](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/packages/swrv/src/_internal/normalize.ts)
-- [`_internal/middleware-stack.ts`](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/packages/swrv/src/_internal/middleware-stack.ts)
+- [`_internal/normalize.ts`](../../packages/swrv/src/_internal/normalize.ts)
+- [`_internal/middleware-stack.ts`](../../packages/swrv/src/_internal/middleware-stack.ts)
 - `useSWRVContext()` + manual resolution in the hook entry
 
 This is a good candidate for closer SWR-style shaping.

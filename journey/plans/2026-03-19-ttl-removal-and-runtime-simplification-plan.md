@@ -31,28 +31,28 @@ remaining cache and mutation paths as far as possible in the same pass.
 
 ## Runtime and types
 
-- [`packages/swrv/src/_internal/types.ts`](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/packages/swrv/src/_internal/types.ts)
-- [`packages/swrv/src/_internal/cache-helper.ts`](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/packages/swrv/src/_internal/cache-helper.ts)
-- [`packages/swrv/src/_internal/client.ts`](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/packages/swrv/src/_internal/client.ts)
-- [`packages/swrv/src/_internal/mutate.ts`](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/packages/swrv/src/_internal/mutate.ts)
-- [`packages/swrv/src/_internal/web-preset.ts`](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/packages/swrv/src/_internal/web-preset.ts)
-- [`packages/swrv/src/_internal/ssr.ts`](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/packages/swrv/src/_internal/ssr.ts)
-- [`packages/swrv/src/use-swrv-handler.ts`](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/packages/swrv/src/use-swrv-handler.ts)
-- [`packages/swrv/src/infinite/index.ts`](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/packages/swrv/src/infinite/index.ts)
+- [`packages/swrv/src/_internal/types.ts`](../../packages/swrv/src/_internal/types.ts)
+- [`packages/swrv/src/_internal/cache-helper.ts`](../../packages/swrv/src/_internal/cache-helper.ts)
+- [`packages/swrv/src/_internal/client.ts`](../../packages/swrv/src/_internal/client.ts)
+- [`packages/swrv/src/_internal/mutate.ts`](../../packages/swrv/src/_internal/mutate.ts)
+- [`packages/swrv/src/_internal/web-preset.ts`](../../packages/swrv/src/_internal/web-preset.ts)
+- [`packages/swrv/src/_internal/ssr.ts`](../../packages/swrv/src/_internal/ssr.ts)
+- [`packages/swrv/src/use-swrv-handler.ts`](../../packages/swrv/src/use-swrv-handler.ts)
+- [`packages/swrv/src/infinite/index.ts`](../../packages/swrv/src/infinite/index.ts)
 
 ## Tests
 
-- [`packages/swrv/tests/core-ttl-lifecycle.test.ts`](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/packages/swrv/tests/core-ttl-lifecycle.test.ts)
-- [`packages/swrv/tests/core-local-mutate.test.ts`](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/packages/swrv/tests/core-local-mutate.test.ts)
-- [`packages/swrv/tests/core-cache-provider.test.ts`](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/packages/swrv/tests/core-cache-provider.test.ts)
+- [`packages/swrv/tests/core-ttl-lifecycle.test.ts`](../../packages/swrv/tests/core-ttl-lifecycle.test.ts)
+- [`packages/swrv/tests/core-local-mutate.test.ts`](../../packages/swrv/tests/core-local-mutate.test.ts)
+- [`packages/swrv/tests/core-cache-provider.test.ts`](../../packages/swrv/tests/core-cache-provider.test.ts)
 - any other tests that seed raw cache state with `expiresAt` or `updatedAt`
 
 ## Docs and package metadata
 
-- [`packages/site/docs/api.md`](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/packages/site/docs/api.md)
-- [`packages/site/docs/migrate-from-v1.md`](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/packages/site/docs/migrate-from-v1.md)
-- [`packages/swrv/README.md`](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/packages/swrv/README.md)
-- [`journey/design.md`](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/journey/design.md)
+- [`packages/site/docs/api.md`](../../packages/site/docs/api.md)
+- [`packages/site/docs/migrate-from-v1.md`](../../packages/site/docs/migrate-from-v1.md)
+- [`packages/swrv/README.md`](../../packages/swrv/README.md)
+- [`journey/design.md`](../design.md)
 
 ## Execution plan
 

@@ -12,7 +12,7 @@ This plan defines the remaining work required to move `swrv-next` from the curre
 3. explicitly addresses the areas where `swr` still leads
 4. ports or adapts every upstream `swr` and legacy `swrv` test case that is applicable to `swrv-next`
 
-This is a completion plan, not a greenfield roadmap. It starts from the current state recorded in [journey/design.md](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/journey/design.md).
+This is a completion plan, not a greenfield roadmap. It starts from the current state recorded in [journey/design.md](../design.md).
 
 ## End State
 
@@ -39,7 +39,7 @@ Objective:
 Required outputs:
 
 - stable `2.0` closure checklist
-- explicit resolution of follow-up questions in [journey/design.md](/Users/yiling.gu@konghq.com/Developer/Kong/swrv-next/journey/design.md)
+- explicit resolution of follow-up questions in [journey/design.md](../design.md)
 - final roadmap log marking what shipped in `2.0` and what moved to post-`2.0`
 
 Open items from the original roadmap that are not fully closed yet:
