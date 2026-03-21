@@ -68,6 +68,10 @@ export const SWRVConfig = defineComponent({
   setup(props, { slots }) {
     const parentContext = useSWRVContext();
     const resolvedValue = () => resolveConfigurationValue(parentContext.config.value, props.value);
+
+    // Boundary creation is decided once for this provider instance. Later
+    // reactive config updates still flow through `resolvedConfig`, but they do
+    // not replace the active client or rebuild provider-scoped listeners.
     const initialValue = resolvedValue();
     const { client, ownsClient } = createClientFromConfiguration(
       initialValue,
@@ -93,6 +97,8 @@ export const SWRVConfig = defineComponent({
       });
     }
 
+    // When a nested provider intentionally reuses the parent cache boundary, we
+    // can still bind custom event initializers for that shared boundary.
     if (!ownsClient && (initialValue?.initFocus || initialValue?.initReconnect)) {
       const releaseEvents = attachProviderEvents(client.state, {
         initFocus: initialValue.initFocus,

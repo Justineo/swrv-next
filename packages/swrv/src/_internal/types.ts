@@ -258,7 +258,7 @@ export type InternalSWRVHook = <Data = unknown, Error = unknown, Key extends Raw
 
 export type SWRVMiddleware = (useSWRNext: InternalSWRVHook) => InternalSWRVHook;
 
-export type RevalidateEvent = "focus" | "reconnect" | "mutate" | "error-revalidate";
+export type RevalidateEvent = "focus" | "reconnect" | "mutate";
 
 export interface RevalidateEventOptions {
   dedupe?: boolean;

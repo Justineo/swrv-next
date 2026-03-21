@@ -1,4 +1,5 @@
 import { createSWRVClient } from "./_internal/client";
+import { noop } from "./_internal/shared";
 import {
   INTERNAL_DEFAULT_CONFIGURATION,
   defaultCompare,
@@ -17,8 +18,6 @@ import type {
   SWRVConfigurationValue,
 } from "./_internal/types";
 
-const noop = () => {};
-
 export function resolveConfigurationValue<Data = unknown, Error = unknown>(
   parent: ResolvedSWRVConfiguration<Data, Error>,
   value?: SWRVConfigurationValue<Data, Error>,
@@ -33,6 +32,9 @@ export function createClientFromConfiguration(
   client: SWRVClient;
   ownsClient: boolean;
 } {
+  // `client`, `cache`, `provider`, `initFocus`, and `initReconnect` decide the
+  // provider boundary itself, so they are resolved once when the boundary is
+  // created. Request-time behavior still comes from the merged reactive config.
   if (!value) {
     return {
       client: fallback,

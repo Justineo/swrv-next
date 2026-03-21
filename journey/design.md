@@ -1,7 +1,7 @@
 # SWRV Next Design Snapshot
 
 Status: Post-hardening prerelease, repo-side release verification complete
-Last updated: 2026-03-20
+Last updated: 2026-03-22
 
 ## Mission
 
@@ -189,6 +189,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
 - a second docs-tightening pass has now expanded the remaining thinner pages, especially `advanced/performance`, `advanced/understanding`, `advanced/cache`, `mutation`, `pagination`, and `server-rendering-and-hydration`, so the docs are now materially closer to SWR not just in nav shape but in explanatory depth as well
 - a full Markdown-by-Markdown docs audit has now been completed against the local SWR docs source tree; the remaining docs differences are now intentional and limited to Vue composable semantics, SWRV-specific pages such as `migrate-from-v1`, the explicit SSR and hydration model in place of `with-nextjs`, the built-in devtools surface, and the Vue-specific explanation for not porting React-only dependency collection
 - the home page now keeps a compact equal-width CSS-only split for Markdown-based `Installation`, a low-key SWR and Vercel attribution lockup under installation using local public SVG assets, and `Quick example`, while the feature cards are rendered through VitePress' built-in home `features` support using the legacy SWRV home-page feature copy
+- docs-site ownership drift is now cleaned up in source: the docs nav and social links point at `https://github.com/Justineo/swrv-next`, and the shared docs branding now uses the local `/mark.svg` asset instead of the old remote Netlify logo URL
 - the remaining repo-side work has returned to stable-release execution rather than more in-repo feature or docs churn
 - Internal simplification work has now started after parity closure:
   - web-preset defaults and event initializers now live in a dedicated `_internal/web-preset.ts` module instead of being mixed into `config.ts` and `client.ts`
@@ -204,6 +205,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - feature-local type ownership now lives in `infinite/types.ts`, `mutation/types.ts`, and `subscription/types.ts` instead of being mixed into larger entry modules
   - feature-local side stores now live beside their owning features in `infinite/state.ts` and `subscription/state.ts` instead of generic `_internal` modules
   - infinite key serialization now lives beside the feature in `infinite/serialize.ts`, while `_internal/key-prefix.ts` is reduced to the internal-key filter used by generic mutate paths
+  - the unused internal `"error-revalidate"` event concept is removed, small cross-cutting helpers now live in `_internal/shared.ts` in a more SWR-like shape instead of a standalone `promise-like.ts`, and `SWRVConfig` boundary-creation semantics are now documented directly in `config-context.ts` and `config-utils.ts`
   - the remaining complexity is still concentrated in the base-hook runtime, but a later 2026-03-20 source audit found additional alignable public-type and helper-boundary drift beyond the earlier review rounds
 - a fresh SWR runtime-structure comparison shows the remaining implementation drift is now mostly boundary-level rather than feature-level:
   - SWRV is already aligned on provider-scoped runtime, thin public hook entry plus handler, shared runtime primitives, and base-hook-centered advanced APIs

@@ -1,5 +1,6 @@
 import { invokeFetcher, serialize } from "./serialize";
 import { isServerEnvironment } from "./env";
+import { isPromiseLike } from "./shared";
 
 import type {
   BareFetcher,
@@ -11,14 +12,6 @@ import type {
   RawKey,
   SWRVClient,
 } from "./types";
-
-function isPromiseLike<Data>(value: unknown): value is Promise<Data> {
-  return (
-    value !== null &&
-    typeof value === "object" &&
-    typeof (value as Promise<Data>).then === "function"
-  );
-}
 
 export function preloadKey<Key extends RawKey = RawKey, Data = unknown>(
   client: SWRVClient,

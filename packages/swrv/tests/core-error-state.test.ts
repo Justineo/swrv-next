@@ -79,7 +79,7 @@ describe("swrv core error behavior", () => {
       );
 
     const state = runComposable(() =>
-      useSWRV<string, Error>(`error-revalidate-${Date.now()}`, fetcher, {
+      useSWRV<string, Error>(`error-manual-revalidate-${Date.now()}`, fetcher, {
         dedupingInterval: 0,
         shouldRetryOnError: false,
       }),

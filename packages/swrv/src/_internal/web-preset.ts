@@ -1,6 +1,7 @@
 import { dequal } from "dequal/lite";
 
 import { slowConnection } from "./env";
+import { noop } from "./shared";
 
 import type {
   AnyResolvedConfiguration,
@@ -8,8 +9,6 @@ import type {
   ResolvedSWRVConfiguration,
   SWRVEventInitializer,
 } from "./types";
-
-const noop = () => {};
 
 let online = true;
 

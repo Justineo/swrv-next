@@ -4,7 +4,8 @@ import { tabsMarkdownPlugin } from "vitepress-plugin-tabs";
 
 import { vpInstallCommandsMarkdownPlugin } from "./plugins/vp-install-tabs";
 
-const logoUrl = "https://docs-swrv.netlify.app/logo_45.png";
+const logoUrl = "/mark.svg";
+const repositoryUrl = "https://github.com/Justineo/swrv-next";
 
 export default defineConfig({
   appearance: true,
@@ -27,7 +28,7 @@ export default defineConfig({
   head: [
     ["meta", { content: "#ffffff", media: "(prefers-color-scheme: light)", name: "theme-color" }],
     ["meta", { content: "#000000", media: "(prefers-color-scheme: dark)", name: "theme-color" }],
-    ["link", { href: logoUrl, rel: "icon", type: "image/png" }],
+    ["link", { href: logoUrl, rel: "icon", type: "image/svg+xml" }],
   ],
   themeConfig: {
     logo: {
@@ -41,9 +42,9 @@ export default defineConfig({
       { text: "Docs", link: "/getting-started" },
       { text: "API", link: "/api" },
       { text: "Migrate from v1", link: "/migrate-from-v1" },
-      { text: "GitHub", link: "https://github.com/Kong/swrv" },
+      { text: "GitHub", link: repositoryUrl },
     ],
-    socialLinks: [{ icon: "github", link: "https://github.com/Kong/swrv" }],
+    socialLinks: [{ icon: "github", link: repositoryUrl }],
     footer: {
       message: "Released under the Apache-2.0 License.",
       copyright: "Copyright © 2020-present Kong, Inc.",

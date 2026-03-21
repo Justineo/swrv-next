@@ -1,5 +1,6 @@
 import { isInternalCacheKey } from "./key-prefix";
 import { serialize } from "./serialize";
+import { isFunction, isPromiseLike } from "./shared";
 import { getTimestamp } from "./timestamp";
 
 import type {
@@ -10,18 +11,6 @@ import type {
   ScopedMutator,
   SWRVClient,
 } from "./types";
-
-function isFunction(value: unknown): value is (...args: readonly unknown[]) => unknown {
-  return typeof value === "function";
-}
-
-function isPromiseLike<Data>(value: unknown): value is Promise<Data> {
-  return (
-    value !== null &&
-    typeof value === "object" &&
-    typeof (value as Promise<Data>).then === "function"
-  );
-}
 
 function shouldRollback(rollbackOnError: MutatorOptions["rollbackOnError"], error: unknown) {
   return typeof rollbackOnError === "function" ? rollbackOnError(error) : rollbackOnError !== false;

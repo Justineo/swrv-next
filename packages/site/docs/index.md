@@ -7,7 +7,7 @@ hero:
   tagline: With SWRV, components will get a stream of data updates constantly and automatically. The UI will always be fast and reactive.
   image:
     alt: SWRV logo
-    src: https://docs-swrv.netlify.app/logo_45.png
+    src: /mark.svg
   actions:
     - theme: brand
       text: Get started
