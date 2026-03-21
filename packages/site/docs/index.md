@@ -7,7 +7,7 @@ hero:
   tagline: With SWRV, components will get a stream of data updates constantly and automatically. The UI will always be fast and reactive.
   image:
     alt: SWRV logo
-    src: /mark.svg
+    src: /swrv-logo.png
   actions:
     - theme: brand
       text: Get started

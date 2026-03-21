@@ -4,7 +4,7 @@ import { tabsMarkdownPlugin } from "vitepress-plugin-tabs";
 
 import { vpInstallCommandsMarkdownPlugin } from "./plugins/vp-install-tabs";
 
-const logoUrl = "/mark.svg";
+const logoUrl = "/swrv-logo.png";
 const repositoryUrl = "https://github.com/Justineo/swrv-next";
 
 export default defineConfig({
@@ -28,7 +28,7 @@ export default defineConfig({
   head: [
     ["meta", { content: "#ffffff", media: "(prefers-color-scheme: light)", name: "theme-color" }],
     ["meta", { content: "#000000", media: "(prefers-color-scheme: dark)", name: "theme-color" }],
-    ["link", { href: logoUrl, rel: "icon", type: "image/svg+xml" }],
+    ["link", { href: logoUrl, rel: "icon", type: "image/png" }],
   ],
   themeConfig: {
     logo: {
