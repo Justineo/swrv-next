@@ -1,3 +1,4 @@
+import { FOCUS_EVENT, RECONNECT_EVENT, normalizeRevalidateEvent } from "./events";
 import { defaultInitFocus, defaultInitReconnect } from "./web-preset";
 
 import type {
@@ -78,12 +79,15 @@ export function broadcastProviderRevalidators(
   event: RevalidateEvent,
   options?: RevalidateEventOptions,
 ): Promise<unknown[]> {
+  const normalizedEvent = normalizeRevalidateEvent(event);
   const revalidators = state.revalidators.get(key);
   if (!revalidators || revalidators.size === 0) {
     return Promise.resolve([]);
   }
 
-  return Promise.all(Array.from(revalidators).map((revalidator) => revalidator(event, options)));
+  return Promise.all(
+    Array.from(revalidators).map((revalidator) => revalidator(normalizedEvent, options)),
+  );
 }
 
 export async function broadcastAllProviderRevalidators(
@@ -200,12 +204,12 @@ export function attachProviderEvents(
 
   const disposeFocus = toDisposer(
     initFocus(() => {
-      void broadcastAllProviderRevalidators(state, "focus");
+      void broadcastAllProviderRevalidators(state, FOCUS_EVENT);
     }),
   );
   const disposeReconnect = toDisposer(
     initReconnect(() => {
-      void broadcastAllProviderRevalidators(state, "reconnect");
+      void broadcastAllProviderRevalidators(state, RECONNECT_EVENT);
     }),
   );
 

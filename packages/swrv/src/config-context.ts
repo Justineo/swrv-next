@@ -9,16 +9,15 @@ import {
   type PropType,
 } from "vue";
 
-import { createSWRVClient } from "./_internal/client";
+import { client as defaultClient, defaultConfig } from "./_internal/config";
 import { getScopedMutator } from "./_internal/mutate";
 import { getScopedPreload } from "./_internal/preload";
 import { attachProviderEvents } from "./_internal/provider-state";
 import {
   createClientFromConfiguration,
-  mergeConfiguration,
+  mergeConfigs,
   resolveConfigurationValue,
 } from "./config-utils";
-import { INTERNAL_DEFAULT_CONFIGURATION } from "./config-utils";
 
 import type {
   AnyConfigurationValue,
@@ -27,10 +26,9 @@ import type {
   SWRVContextValue,
 } from "./_internal/types";
 
-const defaultClient = createSWRVClient();
 const defaultContext = {
   client: defaultClient,
-  config: ref(INTERNAL_DEFAULT_CONFIGURATION),
+  config: ref(defaultConfig),
 } satisfies SWRVContextValue;
 
 const contextKey = Symbol("swrv-config");
@@ -69,9 +67,9 @@ export const SWRVConfig = defineComponent({
     const parentContext = useSWRVContext();
     const resolvedValue = () => resolveConfigurationValue(parentContext.config.value, props.value);
 
-    // Boundary creation is decided once for this provider instance. Later
-    // reactive config updates still flow through `resolvedConfig`, but they do
-    // not replace the active client or rebuild provider-scoped listeners.
+    // Provider boundaries behave like SWR cache providers: boundary-defining
+    // inputs are captured once for this instance, while later reactive updates
+    // only affect request-time options exposed through `resolvedConfig`.
     const initialValue = resolvedValue();
     const { client, ownsClient } = createClientFromConfiguration(
       initialValue,
@@ -79,11 +77,16 @@ export const SWRVConfig = defineComponent({
     );
     const resolvedConfig = computed(() => {
       const value = resolvedValue();
-      if (typeof props.value === "function") {
-        return mergeConfiguration(INTERNAL_DEFAULT_CONFIGURATION, value);
-      }
+      const merged =
+        typeof props.value === "function"
+          ? mergeConfigs(defaultConfig, value)
+          : mergeConfigs(parentContext.config.value, value);
 
-      return mergeConfiguration(parentContext.config.value, value);
+      return {
+        ...merged,
+        cache: client.cache,
+        client,
+      };
     });
 
     provide(contextKey, {
@@ -97,8 +100,8 @@ export const SWRVConfig = defineComponent({
       });
     }
 
-    // When a nested provider intentionally reuses the parent cache boundary, we
-    // can still bind custom event initializers for that shared boundary.
+    // Reused boundaries can still layer custom event initializers over the
+    // shared client without creating a shadow cache boundary.
     if (!ownsClient && (initialValue?.initFocus || initialValue?.initReconnect)) {
       const releaseEvents = attachProviderEvents(client.state, {
         initFocus: initialValue.initFocus,
@@ -116,4 +119,4 @@ export const SWRVConfig = defineComponent({
 
 export const GLOBAL_SWRV_CLIENT = defaultClient;
 
-SWRVConfig.defaultValue = INTERNAL_DEFAULT_CONFIGURATION;
+SWRVConfig.defaultValue = defaultConfig;

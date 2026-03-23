@@ -59,7 +59,7 @@
   },
   "scripts": {
     "build": "vp pack src/index.ts src/infinite/index.ts src/mutation/index.ts src/subscription/index.ts src/immutable/index.ts src/_internal/index.ts",
-    "check": "vp check",
+    "check": "vp check src tests e2e scripts vite.config.ts package.json README.md tsconfig.json",
     "dev": "vp pack src/index.ts src/infinite/index.ts src/mutation/index.ts src/subscription/index.ts src/immutable/index.ts src/_internal/index.ts --watch",
     "release:verify": "vp exec node ./scripts/release-smoke.mjs",
     "test": "vp test"

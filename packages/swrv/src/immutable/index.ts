@@ -1,4 +1,4 @@
-import useSWRV from "../index/use-swrv";
+import useSWRV from "../index/use-swr";
 import { withMiddleware } from "../_internal/with-middleware";
 
 import type { SWRVMiddleware } from "../_internal/types";

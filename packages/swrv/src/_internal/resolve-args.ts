@@ -1,6 +1,6 @@
-import { useSWRVContext } from "../config";
-import { getDevtoolsUse } from "./devtools";
+import { getBuiltInMiddleware } from "./middleware-preset";
 import { normalize } from "./normalize-args";
+import { useSWRConfig } from "./use-swr-config";
 import { applyMiddleware } from "./with-middleware";
 
 import type {
@@ -24,18 +24,22 @@ export function withArgs(hook: InternalSWRVHook): HookWithArgs {
     fetcherOrConfig?: HookFetcher<Data> | SWRVConfiguration<Data, Error> | null,
     config?: SWRVConfiguration<Data, Error>,
   ) {
-    const context = useSWRVContext();
+    const fallbackConfig = useSWRConfig();
     const [resolvedKey, fetcher, localConfig] = normalize<
       typeof key,
       Data,
       SWRVConfiguration<Data, Error>
     >([key, fetcherOrConfig, config]);
-    const middlewares = getDevtoolsUse().concat(context.config.value.use, localConfig?.use ?? []);
+    const middlewares = fallbackConfig.use
+      .concat(localConfig?.use ?? [])
+      .concat(getBuiltInMiddleware());
+    const next = middlewares.length === 0 ? hook : applyMiddleware(hook, middlewares);
+    const hookConfig = {
+      ...localConfig,
+      cache: fallbackConfig.cache,
+      client: fallbackConfig.client,
+    } satisfies SWRVConfiguration<Data, Error>;
 
-    if (middlewares.length === 0) {
-      return hook<Data, Error>(resolvedKey, fetcher, localConfig);
-    }
-
-    return applyMiddleware(hook, middlewares)<Data, Error>(resolvedKey, fetcher, localConfig);
+    return next<Data, Error>(resolvedKey, (fetcher ?? null) as HookFetcher<Data>, hookConfig);
   };
 }

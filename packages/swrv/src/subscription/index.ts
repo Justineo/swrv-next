@@ -1,11 +1,9 @@
 import { watch } from "vue";
 
 import { useSWRVConfig } from "../config";
-import { SUBSCRIPTION_PREFIX } from "../_internal/constants";
 import { resolveKeyValue, serialize } from "../_internal/serialize";
 import { type HookWithArgs, withMiddleware } from "../_internal/with-middleware";
-import useSWRV from "../index/use-swrv";
-import { getSubscriptionStorage } from "./state";
+import useSWRV from "../index/use-swr";
 
 import type { KeySource, MutatorCallback, RawKey, SWRVConfiguration } from "../_internal/types";
 import type {
@@ -14,8 +12,19 @@ import type {
   SWRVSubscriptionResponse,
 } from "./types";
 
-export function createSubscriptionCacheKey(serializedKey: string): string {
-  return `${SUBSCRIPTION_PREFIX}${serializedKey}`;
+type SubscriptionStorage = [Map<string, number>, Map<string, () => void>];
+const subscriptionStorage = new WeakMap<object, SubscriptionStorage>();
+const SUBSCRIPTION_PREFIX = "$sub$";
+
+function getSubscriptionStorage(storageKey: object): SubscriptionStorage {
+  const current = subscriptionStorage.get(storageKey);
+  if (current) {
+    return current;
+  }
+
+  const next: SubscriptionStorage = [new Map(), new Map()];
+  subscriptionStorage.set(storageKey, next);
+  return next;
 }
 
 export const subscription = function subscription(
@@ -29,11 +38,12 @@ export const subscription = function subscription(
     const { client } = useSWRVConfig();
     const storageKey = client.cache as object;
     const [subscriptions, disposers] = getSubscriptionStorage(storageKey);
+    const getSubscriptionKey = (serializedKey: string) => SUBSCRIPTION_PREFIX + serializedKey;
 
     const swrv = useSWRVNext(
       (() => {
         const [serializedKey] = serialize(key as KeySource<Key>);
-        return serializedKey ? createSubscriptionCacheKey(serializedKey) : null;
+        return serializedKey ? getSubscriptionKey(serializedKey) : null;
       }) as KeySource<RawKey>,
       null,
       {
@@ -52,7 +62,7 @@ export const subscription = function subscription(
         }
 
         const resolvedKey = resolveKeyValue(key as KeySource<Key>);
-        const subscriptionKey = createSubscriptionCacheKey(serializedKey);
+        const subscriptionKey = getSubscriptionKey(serializedKey);
         const currentCount = subscriptions.get(subscriptionKey) ?? 0;
 
         subscriptions.set(subscriptionKey, currentCount + 1);
@@ -122,4 +132,12 @@ export default function useSWRVSubscription<
 
 export type SWRVSubscriptionHook = typeof useSWRVSubscription;
 
-export type { SWRVSubscription, SWRVSubscriptionOptions, SWRVSubscriptionResponse } from "./types";
+export type {
+  SWRSubscription,
+  SWRSubscriptionHook,
+  SWRSubscriptionOptions,
+  SWRSubscriptionResponse,
+  SWRVSubscription,
+  SWRVSubscriptionOptions,
+  SWRVSubscriptionResponse,
+} from "./types";

@@ -145,3 +145,19 @@ export type InternalSWRVMutationHook = <
   fetcher: MutationFetcher<Data, Key, ExtraArg> | null,
   config?: SWRVMutationConfiguration<Data, Error, Key, ExtraArg, SWRData>,
 ) => SWRVMutationResponse<Data, Error, Key, ExtraArg, SWRData>;
+
+export type SWRMutationConfiguration<
+  Data = unknown,
+  Error = unknown,
+  Key extends RawKey = RawKey,
+  ExtraArg = unknown,
+  SWRData = Data,
+> = SWRVMutationConfiguration<Data, Error, Key, ExtraArg, SWRData>;
+export type SWRMutationHook = InternalSWRVMutationHook;
+export type SWRMutationResponse<
+  Data = unknown,
+  Error = unknown,
+  Key extends RawKey = RawKey,
+  ExtraArg = unknown,
+  SWRData = Data,
+> = SWRVMutationResponse<Data, Error, Key, ExtraArg, SWRData>;

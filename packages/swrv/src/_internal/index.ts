@@ -1,10 +1,21 @@
-export { createCache } from "./cache";
+import { setupDevTools } from "./utils/devtools";
+
+export { createCache } from "./utils/cache";
+export { INFINITE_PREFIX } from "./constants";
+export { cache, client, compare, defaultConfig, mutate, preload } from "./utils/config";
 export { createSWRVClient } from "./client";
+export * as revalidateEvents from "./events";
 export { hydrateSWRVSnapshot, serializeSWRVSnapshot } from "./ssr";
-export { stableHash } from "./hash";
-export { callFetcher, resolveKeyValue, serialize } from "./serialize";
-export { isFunction, isPromiseLike, noop } from "./shared";
-export { getTimestamp } from "./timestamp";
+export { stableHash } from "./utils/hash";
+export { mergeConfigs } from "./utils/merge-config";
+export { withArgs } from "./utils/resolve-args";
+export { callFetcher, resolveKeyValue, serialize } from "./utils/serialize";
+export { isFunction, isPromiseLike, noop } from "./utils/shared";
+export { getTimestamp } from "./utils/timestamp";
+export { useSWRConfig } from "./utils/use-swr-config";
+export { preset, defaultConfigOptions } from "./utils/web-preset";
+export { withMiddleware } from "./utils/with-middleware";
+export { SWRVConfig, SWRVConfig as SWRConfig } from "./utils/config-context";
 
 export type {
   Arguments,
@@ -19,6 +30,7 @@ export type {
   KeyFilter,
   KeySource,
   KeyedMutator,
+  Middleware,
   MutatorCallback,
   MutatorOptions,
   PreloadFunction,
@@ -26,6 +38,8 @@ export type {
   RevalidateEvent,
   RevalidateEventOptions,
   RevalidateOptions,
+  SWRConfiguration,
+  SWRResponse,
   ResolvedSWRVConfiguration,
   ScopedMutator,
   SWRVClient,
@@ -38,3 +52,5 @@ export type {
   SWRVMiddleware,
   SWRVResponse,
 } from "./types";
+
+setupDevTools();

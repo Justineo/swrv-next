@@ -1,11 +1,13 @@
 import { getCurrentScope, onScopeDispose, ref, watch } from "vue";
 
-import { mergeConfiguration, useSWRVContext } from "../config";
+import { mergeConfigs } from "../_internal/merge-config";
+import * as revalidateEvents from "../_internal/events";
 import { isServerEnvironment } from "../_internal/env";
 import { getScopedMutator } from "../_internal/mutate";
 import { callFetcher, resolveKeyValue, serialize } from "../_internal/serialize";
 import { warnMissingServerPrefetch } from "../_internal/server-prefetch-warning";
 import { getTimestamp } from "../_internal/timestamp";
+import { useSWRVContext } from "../config-context";
 
 import type {
   BareFetcher,
@@ -14,6 +16,7 @@ import type {
   MutatorCallback,
   MutatorOptions,
   RawKey,
+  RevalidateEvent,
   RevalidateEventOptions,
   RevalidateOptions,
   ResolvedSWRVConfiguration,
@@ -97,7 +100,7 @@ export function useSWRVHandler<Data = unknown, Error = unknown>(
 
   const context = useSWRVContext();
   const getConfig = () =>
-    mergeConfiguration(context.config.value as ResolvedSWRVConfiguration<Data, Error>, config);
+    mergeConfigs(context.config.value as ResolvedSWRVConfiguration<Data, Error>, config);
   const client = context.client;
   const scopedMutate = getScopedMutator(client);
   const serverPrefetchStorageKey = client.cache as object;
@@ -454,9 +457,9 @@ export function useSWRVHandler<Data = unknown, Error = unknown>(
     }
   };
 
-  const bindCurrentKey = (event: string, options?: RevalidateEventOptions) => {
+  const bindCurrentKey = (event: RevalidateEvent, options?: RevalidateEventOptions) => {
     const configValue = getConfig();
-    if (event === "focus") {
+    if (event === revalidateEvents.FOCUS_EVENT) {
       if (!configValue.revalidateOnFocus) {
         return undefined;
       }
@@ -469,11 +472,14 @@ export function useSWRVHandler<Data = unknown, Error = unknown>(
       nextFocusRevalidatedAt = now + configValue.focusThrottleInterval;
     }
 
-    if (event === "reconnect" && (!configValue.revalidateOnReconnect || !isActive(configValue))) {
+    if (
+      event === revalidateEvents.RECONNECT_EVENT &&
+      (!configValue.revalidateOnReconnect || !isActive(configValue))
+    ) {
       return undefined;
     }
 
-    if (event === "mutate") {
+    if (event === revalidateEvents.MUTATE_EVENT) {
       const shouldRevalidate =
         typeof options?.revalidate === "function"
           ? options.revalidate(data.value, currentKey.value.rawKey)
@@ -487,7 +493,7 @@ export function useSWRVHandler<Data = unknown, Error = unknown>(
 
     return revalidate({
       dedupe: options?.dedupe ?? true,
-      force: options?.force ?? event === "mutate",
+      force: options?.force ?? event === revalidateEvents.MUTATE_EVENT,
       throwOnError: options?.throwOnError,
     });
   };

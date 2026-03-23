@@ -3,7 +3,7 @@ import { ref } from "vue";
 import { useSWRVConfig } from "../config";
 import { resolveKeyValue, serialize } from "../_internal/serialize";
 import { type HookWithArgs, withMiddleware } from "../_internal/with-middleware";
-import useSWRV from "../index/use-swrv";
+import useSWRV from "../index/use-swr";
 
 import type { KeySource, RawKey } from "../_internal/types";
 import type {
@@ -165,6 +165,9 @@ export type SWRVMutationHook = typeof useSWRVMutation;
 
 export type {
   MutationFetcher,
+  SWRMutationConfiguration,
+  SWRMutationHook,
+  SWRMutationResponse,
   SWRVMutationConfiguration,
   SWRVMutationResponse,
   TriggerWithArgs,

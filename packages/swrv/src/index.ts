@@ -1,23 +1,24 @@
-import useSWRV, { unstable_serialize } from "./index/use-swrv";
+import useSWRV, { unstable_serialize } from "./index/use-swr";
 
-import { GLOBAL_SWRV_CLIENT, SWRVConfig, useSWRVConfig } from "./config";
+import { SWRConfig, SWRVConfig, useSWRConfig, useSWRVConfig } from "./config";
 import { createCache } from "./_internal/cache";
 import { createSWRVClient } from "./_internal/client";
-import { getScopedMutator } from "./_internal/mutate";
-import { getScopedPreload } from "./_internal/preload";
+import { mutate, preload } from "./_internal/config";
 import { hydrateSWRVSnapshot, serializeSWRVSnapshot } from "./_internal/ssr";
 
-import type { PreloadFunction } from "./_internal/types";
-
-export { SWRVConfig, useSWRVConfig };
+export { SWRConfig, SWRVConfig, useSWRConfig, useSWRVConfig };
 export { createCache, createSWRVClient };
 export { default as useSWRVImmutable } from "./immutable";
 export { default as useSWRVInfinite } from "./infinite";
 export { default as useSWRVMutation } from "./mutation";
 export { default as useSWRVSubscription } from "./subscription";
+export { mutate, preload };
+export { default as useSWR } from "./index/use-swr";
+export { default as useSWRImmutable } from "./immutable";
+export { default as useSWRInfinite } from "./infinite";
+export { default as useSWRMutation } from "./mutation";
+export { default as useSWRSubscription } from "./subscription";
 
-export const mutate = getScopedMutator(GLOBAL_SWRV_CLIENT);
-export const preload: PreloadFunction = getScopedPreload(GLOBAL_SWRV_CLIENT);
 export { hydrateSWRVSnapshot, serializeSWRVSnapshot };
 
 export default useSWRV;
@@ -32,11 +33,14 @@ export type {
   Fetcher,
   Key,
   KeyedMutator,
+  Middleware,
   MutatorCallback,
   MutatorOptions,
   PreloadFunction,
   RevalidateOptions,
   ScopedMutator,
+  SWRConfiguration,
+  SWRResponse,
   SWRVClient,
   SWRVConfiguration,
   SWRVConfigurationValue,
@@ -45,9 +49,12 @@ export type {
   SWRVMiddleware,
   SWRVResponse,
 } from "./_internal";
-export type { SWRVHook } from "./index/use-swrv";
+export type { SWRHook, SWRVHook } from "./index/use-swr";
 export type {
   MutationFetcher,
+  SWRMutationConfiguration,
+  SWRMutationHook,
+  SWRMutationResponse,
   SWRVMutationConfiguration,
   SWRVMutationHook,
   SWRVMutationResponse,
@@ -56,6 +63,14 @@ export type {
   TriggerWithoutArgs,
 } from "./mutation";
 export type {
+  SWRInfiniteCompareFn,
+  SWRInfiniteConfiguration,
+  SWRInfiniteHook,
+  SWRInfiniteKeyedMutator,
+  SWRInfiniteKeyLoader,
+  SWRInfiniteMutatorOptions,
+  SWRInfiniteRevalidateFn,
+  SWRInfiniteResponse,
   SWRVInfiniteCompareFn,
   SWRVInfiniteConfiguration,
   SWRVInfiniteHook,
@@ -66,6 +81,10 @@ export type {
   SWRVInfiniteResponse,
 } from "./infinite";
 export type {
+  SWRSubscription,
+  SWRSubscriptionHook,
+  SWRSubscriptionOptions,
+  SWRSubscriptionResponse,
   SWRVSubscription,
   SWRVSubscriptionHook,
   SWRVSubscriptionOptions,

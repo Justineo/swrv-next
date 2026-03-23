@@ -29,3 +29,18 @@ export type InternalSWRVSubscriptionHook = <
   subscribe: SWRVSubscription<Data, Error, Key>,
   config?: SWRVConfiguration<Data, Error>,
 ) => SWRVSubscriptionResponse<Data, Error>;
+
+export type SWRSubscription<
+  Data = unknown,
+  Error = unknown,
+  Key extends RawKey = RawKey,
+> = SWRVSubscription<Data, Error, Key>;
+export type SWRSubscriptionHook = InternalSWRVSubscriptionHook;
+export type SWRSubscriptionOptions<Data = unknown, Error = unknown> = SWRVSubscriptionOptions<
+  Data,
+  Error
+>;
+export type SWRSubscriptionResponse<Data = unknown, Error = unknown> = SWRVSubscriptionResponse<
+  Data,
+  Error
+>;

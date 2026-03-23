@@ -1,14 +1,8 @@
 import { dequal } from "dequal/lite";
 
-import { slowConnection } from "./env";
 import { noop } from "./shared";
 
-import type {
-  AnyResolvedConfiguration,
-  Compare,
-  ResolvedSWRVConfiguration,
-  SWRVEventInitializer,
-} from "./types";
+import type { Compare, ResolvedSWRVConfiguration, SWRVEventInitializer } from "./types";
 
 let online = true;
 
@@ -63,6 +57,16 @@ export const defaultIsOnline = () => online;
 export const defaultIsVisible = () =>
   typeof document === "undefined" || document.visibilityState !== "hidden";
 
+export const preset = {
+  isOnline: defaultIsOnline,
+  isVisible: defaultIsVisible,
+} as const;
+
+export const defaultConfigOptions = {
+  initFocus: defaultInitFocus,
+  initReconnect: defaultInitReconnect,
+} as const;
+
 export const defaultOnErrorRetry = <Data = unknown, Error = unknown>(
   _error: Error,
   _key: string,
@@ -88,33 +92,4 @@ export const defaultOnErrorRetry = <Data = unknown, Error = unknown>(
   setTimeout(() => {
     void revalidate(options);
   }, timeout);
-};
-
-export const INTERNAL_DEFAULT_CONFIGURATION: AnyResolvedConfiguration = {
-  compare: defaultCompare,
-  dedupingInterval: 2000,
-  errorRetryInterval: slowConnection ? 10000 : 5000,
-  fallback: {},
-  focusThrottleInterval: 5000,
-  initFocus: defaultInitFocus,
-  initReconnect: defaultInitReconnect,
-  isOnline: defaultIsOnline,
-  isPaused: () => false,
-  isVisible: defaultIsVisible,
-  keepPreviousData: false,
-  loadingTimeout: slowConnection ? 5000 : 3000,
-  onDiscarded: noop,
-  onError: noop,
-  onErrorRetry: defaultOnErrorRetry,
-  onLoadingSlow: noop,
-  onSuccess: noop,
-  refreshInterval: 0,
-  refreshWhenHidden: false,
-  refreshWhenOffline: false,
-  revalidateIfStale: true,
-  revalidateOnFocus: true,
-  revalidateOnReconnect: true,
-  shouldRetryOnError: true,
-  strictServerPrefetchWarning: false,
-  use: [],
 };

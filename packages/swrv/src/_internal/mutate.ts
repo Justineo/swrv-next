@@ -1,4 +1,4 @@
-import { isInternalCacheKey } from "./key-prefix";
+import { MUTATE_EVENT } from "./events";
 import { serialize } from "./serialize";
 import { isFunction, isPromiseLike } from "./shared";
 import { getTimestamp } from "./timestamp";
@@ -34,7 +34,7 @@ export function createScopedMutator(client: SWRVClient): ScopedMutator {
       const results: Array<MutationData | undefined> = [];
 
       for (const key of client.cache.keys()) {
-        if (isInternalCacheKey(key)) {
+        if (/^\$(inf|sub)\$/.test(key)) {
           continue;
         }
 
@@ -68,7 +68,7 @@ export function createScopedMutator(client: SWRVClient): ScopedMutator {
     client.invalidateFetch(serializedKey);
 
     if (arguments.length < 2) {
-      await client.broadcast(serializedKey, "mutate", {
+      await client.broadcast(serializedKey, MUTATE_EVENT, {
         revalidate: normalizedOptions.revalidate as
           | boolean
           | ((data: unknown, key: RawKey) => boolean)
@@ -175,7 +175,7 @@ export function createScopedMutator(client: SWRVClient): ScopedMutator {
       rawKey,
     );
 
-    await client.broadcast(serializedKey, "mutate", {
+    await client.broadcast(serializedKey, MUTATE_EVENT, {
       revalidate,
       throwOnError: normalizedOptions.throwOnError,
     });

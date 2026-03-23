@@ -38,9 +38,15 @@ export interface SWRVInfiniteRevalidateFn<Data = unknown> {
   (data: Data | undefined, key: RawKey): boolean;
 }
 
-export interface SWRVInfiniteRevalidationState<Data = unknown> {
-  revalidate?: boolean | SWRVInfiniteRevalidateFn<Data>;
-  revalidateAll?: boolean;
+export interface SWRVInfiniteCacheState<Data = unknown, Error = unknown> {
+  data?: Data;
+  error?: Error;
+  isLoading?: boolean;
+  isValidating?: boolean;
+  _i?: boolean;
+  _k?: RawKey;
+  _l?: number;
+  _r?: boolean | SWRVInfiniteRevalidateFn<Data extends unknown[] ? Data[number] : never>;
 }
 
 export type SWRVInfiniteKeyedMutator<Data> = <MutationData = Data>(
@@ -73,3 +79,25 @@ export type InternalSWRVInfiniteHook = <
   fetcher?: BareFetcher<Data> | null,
   config?: SWRVInfiniteConfiguration<Data, Error, Key>,
 ) => SWRVInfiniteResponse<Data, Error>;
+
+export type SWRInfiniteCompareFn<Data = unknown> = SWRVInfiniteCompareFn<Data>;
+export type SWRInfiniteConfiguration<
+  Data = unknown,
+  Error = unknown,
+  Key extends RawKey = RawKey,
+> = SWRVInfiniteConfiguration<Data, Error, Key>;
+export type SWRInfiniteHook = InternalSWRVInfiniteHook;
+export type SWRInfiniteKeyedMutator<Data> = SWRVInfiniteKeyedMutator<Data>;
+export type SWRInfiniteKeyLoader<
+  Data = unknown,
+  Key extends RawKey = RawKey,
+> = SWRVInfiniteKeyLoader<Data, Key>;
+export type SWRInfiniteMutatorOptions<
+  Data = unknown,
+  MutationData = Data,
+> = SWRVInfiniteMutatorOptions<Data, MutationData>;
+export type SWRInfiniteRevalidateFn<Data = unknown> = SWRVInfiniteRevalidateFn<Data>;
+export type SWRInfiniteResponse<Data = unknown, Error = unknown> = SWRVInfiniteResponse<
+  Data,
+  Error
+>;

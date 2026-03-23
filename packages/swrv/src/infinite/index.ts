@@ -1,15 +1,16 @@
 import { onMounted, ref, watch } from "vue";
 
 import { useSWRVConfig } from "../config";
+import { INFINITE_PREFIX } from "../_internal/constants";
 import { normalize } from "../_internal/normalize-args";
 import { callFetcher, serialize } from "../_internal/serialize";
 import { type HookWithArgs, withMiddleware } from "../_internal/with-middleware";
-import useSWRV from "../index/use-swrv";
-import { getInfiniteRevalidationStore, getInfiniteSizeStore } from "./state";
-import { getInfinitePage, unstable_serialize } from "./serialize";
+import useSWRV from "../index/use-swr";
+import { getFirstPageKey, unstable_serialize } from "./serialize";
 
-import type { BareFetcher, FetcherResponse, RawKey } from "../_internal/types";
+import type { BareFetcher, CacheState, FetcherResponse, RawKey } from "../_internal/types";
 import type {
+  SWRVInfiniteCacheState,
   InternalSWRVInfiniteHook,
   SWRVInfiniteConfiguration,
   SWRVInfiniteKeyLoader,
@@ -28,39 +29,55 @@ export const infinite = function infinite(useSWRVNext: HookWithArgs): InternalSW
     config: SWRVInfiniteConfiguration<Data, Error, Key> = {},
   ): SWRVInfiniteResponse<Data, Error> {
     const { client, config: rootConfig } = useSWRVConfig();
-    const sizeStore = getInfiniteSizeStore(client.cache as object);
-    const revalidationStore = getInfiniteRevalidationStore<Data>(client.cache as object);
     const initialSize = config.initialSize ?? 1;
     const didMount = ref(false);
-
     const size = ref(initialSize);
+    const lastPageSize = ref(initialSize);
 
     onMounted(() => {
       didMount.value = true;
     });
 
-    function getInfiniteKey(): string {
-      return unstable_serialize(getKey);
+    function getInfiniteState(infiniteKey: string) {
+      return client.getState<Data[], Error>(infiniteKey) as SWRVInfiniteCacheState<Data[], Error>;
     }
 
-    async function loadPages(
+    function setInfiniteState(
       infiniteKey: string,
-      options: { revalidateAll?: boolean } = {},
-    ): Promise<Data[]> {
+      patch: Partial<SWRVInfiniteCacheState<Data[], Error>>,
+    ): SWRVInfiniteCacheState<Data[], Error> {
+      return client.setState<Data[], Error>(
+        infiniteKey,
+        patch as Partial<CacheState<Data[], Error>>,
+      ) as SWRVInfiniteCacheState<Data[], Error>;
+    }
+
+    function resolvePageSize(infiniteKey: string): number {
+      const cachedPageSize = getInfiniteState(infiniteKey)?._l;
+      return cachedPageSize === undefined ? initialSize : cachedPageSize;
+    }
+
+    function getInfiniteKey(): string {
+      const firstPageKey = getFirstPageKey(getKey);
+      return firstPageKey ? INFINITE_PREFIX + firstPageKey : "";
+    }
+
+    async function loadPages(infiniteKey: string): Promise<Data[]> {
       const pages: Data[] = [];
       const tasks: Array<Promise<void>> = [];
-      const pendingRevalidation = revalidationStore.get(infiniteKey);
-      if (pendingRevalidation) {
-        revalidationStore.delete(infiniteKey);
-      }
+      const infiniteState = getInfiniteState(infiniteKey);
       const activeFetcher = fetcher ?? config.fetcher;
-      const cachedPages = client.getState<Data[], Error>(infiniteKey)?.data;
+      const cachedPages = infiniteState?.data;
       const revalidateFirstPage = config.revalidateFirstPage !== false && cachedPages !== undefined;
       const revalidateOnMount = config.revalidateOnMount === true && !didMount.value;
+      const forceRevalidateAll = infiniteState?._i;
+      const shouldRevalidatePage = infiniteState?._r;
+      setInfiniteState(infiniteKey, { _r: undefined });
+      const pageSize = resolvePageSize(infiniteKey);
       let previousPageData: Data | null = null;
 
-      async function loadPage(index: number, pageKey: RawKey): Promise<void> {
-        const [serializedPageKey, rawPageKey] = serialize(pageKey);
+      async function loadPage(index: number, pageKey: RawKey, rawPageKey: RawKey): Promise<void> {
+        const [serializedPageKey] = serialize(pageKey);
         if (!serializedPageKey) {
           return;
         }
@@ -69,15 +86,13 @@ export const infinite = function infinite(useSWRVNext: HookWithArgs): InternalSW
         const aggregatePageData =
           Array.isArray(cachedPages) && index < cachedPages.length ? cachedPages[index] : undefined;
         const shouldFetchPage =
-          options.revalidateAll ||
-          pendingRevalidation?.revalidateAll ||
           config.revalidateAll ||
+          forceRevalidateAll ||
           cached?.data === undefined ||
           revalidateOnMount ||
           (revalidateFirstPage && index === 0) ||
           (aggregatePageData !== undefined &&
             !(config.compare ?? rootConfig.compare)(aggregatePageData, cached?.data));
-        const shouldRevalidatePage = pendingRevalidation?.revalidate;
         const shouldFetchCurrentPage =
           Boolean(activeFetcher) &&
           (typeof shouldRevalidatePage === "function"
@@ -120,21 +135,23 @@ export const infinite = function infinite(useSWRVNext: HookWithArgs): InternalSW
         }
       }
 
-      for (let index = 0; index < size.value; index += 1) {
-        const [, rawPageKey] = getInfinitePage(
-          getKey,
-          index,
-          config.parallel ? null : previousPageData,
-        );
-        const [serializedPageKey] = serialize(rawPageKey);
+      for (let index = 0; index < pageSize; index += 1) {
+        let pageKey: RawKey;
+        try {
+          pageKey = getKey(index, config.parallel ? null : previousPageData);
+        } catch {
+          break;
+        }
+
+        const [serializedPageKey, rawPageKey] = serialize(pageKey);
         if (!serializedPageKey) {
           break;
         }
 
         if (config.parallel) {
-          tasks.push(loadPage(index, rawPageKey));
+          tasks.push(loadPage(index, pageKey, rawPageKey));
         } else {
-          await loadPage(index, rawPageKey);
+          await loadPage(index, pageKey, rawPageKey);
         }
       }
 
@@ -142,6 +159,7 @@ export const infinite = function infinite(useSWRVNext: HookWithArgs): InternalSW
         await Promise.all(tasks);
       }
 
+      setInfiniteState(infiniteKey, { _i: undefined });
       return pages;
     }
 
@@ -150,17 +168,17 @@ export const infinite = function infinite(useSWRVNext: HookWithArgs): InternalSW
       (infiniteKey, previousInfiniteKey) => {
         if (!infiniteKey) {
           size.value = initialSize;
+          lastPageSize.value = initialSize;
           return;
         }
 
-        if (config.persistSize && previousInfiniteKey && previousInfiniteKey !== infiniteKey) {
-          sizeStore.set(infiniteKey, size.value);
-          return;
-        }
-
-        const nextSize = sizeStore.get(infiniteKey) ?? initialSize;
+        const nextSize =
+          config.persistSize && previousInfiniteKey && previousInfiniteKey !== infiniteKey
+            ? lastPageSize.value
+            : resolvePageSize(infiniteKey);
         size.value = nextSize;
-        sizeStore.set(infiniteKey, nextSize);
+        lastPageSize.value = nextSize;
+        setInfiniteState(infiniteKey, { _l: nextSize });
       },
       { immediate: true },
     );
@@ -186,9 +204,9 @@ export const infinite = function infinite(useSWRVNext: HookWithArgs): InternalSW
       const shouldRevalidate = normalizedOptions.revalidate !== false;
 
       if (shouldRevalidate) {
-        revalidationStore.set(infiniteKey, {
-          revalidateAll: arguments.length === 0,
-          revalidate: normalizedOptions.revalidate,
+        setInfiniteState(infiniteKey, {
+          _i: arguments.length === 0,
+          _r: normalizedOptions.revalidate,
         });
       }
 
@@ -213,18 +231,30 @@ export const infinite = function infinite(useSWRVNext: HookWithArgs): InternalSW
           return undefined;
         }
 
-        size.value = typeof nextSize === "function" ? nextSize(size.value) : nextSize;
-        sizeStore.set(infiniteKey, size.value);
+        const resolvedSize =
+          typeof nextSize === "function" ? nextSize(resolvePageSize(infiniteKey)) : nextSize;
+
+        if (typeof resolvedSize !== "number") {
+          return undefined;
+        }
+
+        size.value = resolvedSize;
+        lastPageSize.value = resolvedSize;
+        setInfiniteState(infiniteKey, { _l: resolvedSize });
 
         const pages: Data[] = [];
+        const currentPages = getInfiniteState(infiniteKey)?.data;
         let previousPageData: Data | null = null;
 
-        for (let index = 0; index < size.value; index += 1) {
-          const [serializedPageKey]: [string, RawKey] = getInfinitePage(
-            getKey,
-            index,
-            config.parallel ? null : previousPageData,
-          );
+        for (let index = 0; index < resolvedSize; index += 1) {
+          let pageKey: RawKey;
+          try {
+            pageKey = getKey(index, config.parallel ? null : previousPageData);
+          } catch {
+            break;
+          }
+
+          const [serializedPageKey] = serialize(pageKey);
 
           if (!serializedPageKey) {
             break;
@@ -234,7 +264,6 @@ export const infinite = function infinite(useSWRVNext: HookWithArgs): InternalSW
             serializedPageKey,
           )?.data;
           if (cachedPageData === undefined) {
-            const currentPages = client.getState<Data[], Error>(infiniteKey)?.data;
             if (currentPages === undefined) {
               return mutatePages();
             }
@@ -322,6 +351,14 @@ export default function useSWRVInfinite<Data = unknown, Error = unknown>(
 export type SWRVInfiniteHook = typeof useSWRVInfinite;
 
 export type {
+  SWRInfiniteCompareFn,
+  SWRInfiniteConfiguration,
+  SWRInfiniteHook,
+  SWRInfiniteKeyedMutator,
+  SWRInfiniteKeyLoader,
+  SWRInfiniteMutatorOptions,
+  SWRInfiniteRevalidateFn,
+  SWRInfiniteResponse,
   SWRVInfiniteCompareFn,
   SWRVInfiniteConfiguration,
   SWRVInfiniteFetcher,

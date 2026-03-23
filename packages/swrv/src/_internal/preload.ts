@@ -1,3 +1,4 @@
+import { INFINITE_PREFIX } from "./constants";
 import { invokeFetcher, serialize } from "./serialize";
 import { isServerEnvironment } from "./env";
 import { isPromiseLike } from "./shared";
@@ -10,10 +11,13 @@ import type {
   PreloadFunction,
   PreloadResponse,
   RawKey,
+  SWRVConfiguration,
+  SWRVMiddleware,
   SWRVClient,
+  SWRVResponse,
 } from "./types";
 
-export function preloadKey<Key extends RawKey = RawKey, Data = unknown>(
+export function preload<Key extends RawKey = RawKey, Data = unknown>(
   client: SWRVClient,
   key: KeySource<Key>,
   fetcher: Fetcher<Data, Key>,
@@ -51,7 +55,31 @@ export function getScopedPreload(client: SWRVClient): PreloadFunction {
   }
 
   const next = ((key: KeySource<RawKey>, fetcher: Fetcher<unknown, RawKey>) =>
-    preloadKey(client, key, fetcher)) as PreloadFunction;
+    preload(client, key, fetcher)) as PreloadFunction;
   client.state.helpers.preload = next;
   return next;
 }
+
+export const middleware: SWRVMiddleware = (useSWRVNext) => {
+  return function useSWRVPreload<Data = unknown, Error = unknown, Key extends RawKey = RawKey>(
+    key: KeySource<Key>,
+    fetcher?: BareFetcher<Data> | null,
+    config?: SWRVConfiguration<Data, Error>,
+  ): SWRVResponse<Data, Error> {
+    const nextFetcher =
+      fetcher &&
+      ((...args: readonly unknown[]) => {
+        const [serializedKey] = serialize(key);
+        const client = config?.client;
+
+        if (!serializedKey || serializedKey.startsWith(INFINITE_PREFIX) || !client) {
+          return fetcher(...args);
+        }
+
+        const request = client.consumePreload(serializedKey);
+        return request === undefined ? fetcher(...args) : request;
+      });
+
+    return useSWRVNext(key, nextFetcher as BareFetcher<Data> | null | undefined, config);
+  };
+};

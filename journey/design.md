@@ -19,6 +19,10 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - `vp exec playwright test`
   - `vp run build -r`
   - `vp run swrv#release:verify`
+- The package-local `vp run swrv#check` path now scopes `vp check` to the
+  package source inputs (`src`, `tests`, `e2e`, `scripts`, and key package
+  metadata files) so ignored local `dist/` build output no longer causes false
+  formatting failures during contributor validation.
 - The root `vp run release:verify` command now exists and chains `vp run ready` with the package-local tarball smoke lane.
 - The GitHub Actions workflow now follows the official Vite+ CI path through `voidzero-dev/setup-vp@v1`, so Node.js, the package manager, dependency caching, and the `vp` CLI are provisioned by the recommended action instead of custom setup steps.
 - The GitHub Actions workflow now uses plain `vp` commands for every lane again, including the package dry-run through `vp pm pack -- --json --dry-run` in `packages/swrv`.
@@ -194,27 +198,29 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
 - Internal simplification work has now started after parity closure:
   - web-preset defaults and event initializers now live in a dedicated `_internal/web-preset.ts` module instead of being mixed into `config.ts` and `client.ts`
   - provider-scoped runtime maps now live behind `_internal/provider-state.ts`, and cache read/write concerns now live behind `_internal/cache-helper.ts`
-  - config responsibilities are now split across a thin public `config.ts` facade plus `config-context.ts` and `config-utils.ts`
-  - repeated WeakMap store initialization for the base hook, `infinite`, and `subscription` now lives behind a shared `_internal/scoped-storage.ts` helper
+  - default config ownership now lives in `_internal/config.ts`, while merge, preload, built-in middleware, and `use-swr-config` responsibilities now map back onto SWR-shaped internal modules
+  - a parallel `_internal/utils/*` wrapper tree now exists so the internal source layout mirrors SWR much more closely while the flat files continue to hold the Vue-specific implementation
   - stable scoped helper identities for `mutate` and `preload` now live in provider state instead of separate module-level helper caches
   - `createSWRVClient()` is now a much thinner facade over provider-state, cache-helper, and event binding helpers
-  - the public base-hook family now lives under `src/index/`, with `index/use-swrv.ts`, `index/use-swrv-handler.ts`, and `index/serialize.ts`; the temporary top-level forwarding files and `src/index/index.ts` shim have now been removed
-  - base-hook argument normalization and middleware composition now flow through `_internal/normalize-args.ts`, `_internal/resolve-args.ts`, and `_internal/with-middleware.ts`, with helper naming now matching SWR's `resolve-args` and `normalize` terminology more closely
+  - the public base-hook family now lives under `src/index/`, with `index/index.ts`, `index/config.ts`, `index/use-swr.ts`, `index/use-swr-handler.ts`, and `index/serialize.ts`; the older `use-swrv*` files remain only as compatibility shims
+  - base-hook argument normalization and middleware composition now flow through `_internal/normalize-args.ts`, `_internal/resolve-args.ts`, `_internal/middleware-preset.ts`, `_internal/preload.ts`, and `_internal/with-middleware.ts`, with helper naming and call flow much closer to SWR's `withArgs` path
   - helper-only hook signatures no longer live in shared core types or the `_internal` barrel; the shim-only `SWRVHookWithArgs` export is removed and the helper signature now stays local to `_internal/resolve-args.ts` and `_internal/with-middleware.ts`
   - `immutable`, `infinite`, `mutation`, and `subscription` now follow the same SWR-shaped `withMiddleware(useSWRV, feature)` wrapper pattern instead of each hand-assembling context, config, and middleware resolution
   - feature-local type ownership now lives in `infinite/types.ts`, `mutation/types.ts`, and `subscription/types.ts` instead of being mixed into larger entry modules
-  - feature-local side stores now live beside their owning features in `infinite/state.ts` and `subscription/state.ts` instead of generic `_internal` modules
-  - infinite key serialization now lives beside the feature in `infinite/serialize.ts`, while `_internal/key-prefix.ts` is reduced to the internal-key filter used by generic mutate paths
-  - the unused internal `"error-revalidate"` event concept is removed, small cross-cutting helpers now live in `_internal/shared.ts` in a more SWR-like shape instead of a standalone `promise-like.ts`, and `SWRVConfig` boundary-creation semantics are now documented directly in `config-context.ts` and `config-utils.ts`
-  - the remaining complexity is still concentrated in the base-hook runtime, but a later 2026-03-20 source audit found additional alignable public-type and helper-boundary drift beyond the earlier review rounds
-- a fresh SWR runtime-structure comparison shows the remaining implementation drift is now mostly boundary-level rather than feature-level:
-  - SWRV is already aligned on provider-scoped runtime, thin public hook entry plus handler, shared runtime primitives, and base-hook-centered advanced APIs
-  - the main remaining alignable drift is now mostly the heavier `SWRVClient` facade; the repeated per-feature middleware resolution, entry normalization, and feature-only generic `_internal` state have been removed
-  - the main divergences that should remain are Vue-native refs and watchers, provide/inject context, effect-scope enforcement, and explicit Vue SSR handoff primitives instead of React server-component paths
-- the latest 2026-03-20 source audit shows that no remaining safe, non-Vue-required SWR drift is still open inside the repo:
-  - default compare, retry scheduling, online state tracking, slow-connection defaults, cached-error mount behavior, and `useSWRVInfinite` mount revalidation are aligned with SWR
-  - the public-type and helper-boundary drifts from that audit are closed: hook aliases follow their real callable surfaces, root exports use SWR-shaped public names, immutable stays a thin middleware wrapper, provider reuse no longer creates a shadow boundary, and mutation or subscription typing matches the shipped behavior
-  - the remaining intentional drift is Vue reactive key sources and refs, explicit provider-scoped client state, provide/inject config flow, explicit SSR snapshot helpers, and the explicitly deferred React-only Suspense or RSC machinery
+  - infinite key serialization now lives beside the feature in `infinite/serialize.ts`, `INFINITE_PREFIX` is restored in `_internal/constants.ts`, and infinite metadata now lives in the infinite cache entry itself instead of separate side stores
+  - subscription now keeps its `$sub$` prefix and ref-count storage inline in `subscription/index.ts`, while generic mutate filters internal keys through the same inline SWR-style prefix test instead of a shared helper module
+  - public aliases now include SWR-shaped names where safe (`SWRConfig`, `useSWRConfig`, `useSWR`, `useSWRInfinite`, `useSWRMutation`, `useSWRSubscription`, plus SWR-style type aliases) alongside the existing SWRV names
+  - the unused internal `"error-revalidate"` event concept is restored as an event constant for structural alignment, small cross-cutting helpers still live in `_internal/shared.ts`, and `SWRVConfig` boundary-creation semantics remain documented directly in `config-context.ts` and `config-utils.ts`
+- the latest 2026-03-22 SWR structure-alignment round shows that the main remaining source drift is now intentionally Vue-specific or compatibility-only:
+  - explicit `SWRVClient` plus provider-state replace SWR's `global-state` and `subscribe-key` internals
+  - Vue refs, watchers, effect scopes, and provide or inject context remain the primary runtime boundary instead of React hooks and contexts
+  - explicit SSR snapshot helpers and server-prefetch warnings remain first-class SWRV-only modules
+  - React server-entry files and the React-only `mutation/state.ts` helper remain intentionally absent
+  - a few compatibility shims such as flat `_internal/*.ts`, top-level `config*.ts`, and `index/use-swrv*` files remain in place even though the primary ownership now follows the SWR-shaped wrappers
+  - repo validation currently passes on the aligned source through:
+    - `vp check src tests e2e scripts vite.config.ts package.json README.md tsconfig.json`
+    - `vp run swrv#test`
+    - `vp exec playwright test`
 - The main reference materials for the rebuild remain:
   - `journey/research/swr-vs-swrv.md`
   - `journey/research/2026-03-18-swrv-next-vs-swr-and-swrv-current-state.md`
@@ -223,6 +229,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - `journey/research/2026-03-19-swrv-next-complexity-and-simplification.md`
   - `journey/research/2026-03-19-swr-runtime-structure-alignment.md`
   - `journey/research/2026-03-20-final-swr-deviation-audit.md`
+  - `journey/research/2026-03-22-swr-alignment-gap-investigation.md`
   - `/Users/yiling.gu@konghq.com/Developer/Justineo/swr` (local SWR source, version 2.4.1)
   - `/Users/yiling.gu@konghq.com/Developer/Justineo/swr-site/content/docs` (local SWR docs source tree for docs IA and content structure)
   - `/Users/yiling.gu@konghq.com/Developer/Kong/swrv` (local legacy SWRV source, version 1.1.0)

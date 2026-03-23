@@ -4,33 +4,19 @@ import { serialize } from "../_internal/serialize";
 import type { RawKey } from "../_internal/types";
 import type { SWRVInfiniteKeyLoader } from "./types";
 
-export function createInfiniteCacheKey(serializedKey: string): string {
-  return `${INFINITE_PREFIX}${serializedKey}`;
-}
-
-function serializePage<Data = unknown, Key extends RawKey = RawKey>(
+export function getFirstPageKey<Data = unknown, Key extends RawKey = RawKey>(
   getKey: SWRVInfiniteKeyLoader<Data, Key>,
-  index: number,
-  previousPageData: Data | null,
-): [string, RawKey] {
+): string {
   try {
-    return serialize(getKey(index, previousPageData));
+    return serialize(getKey(0, null))[0];
   } catch {
-    return ["", null];
+    return "";
   }
-}
-
-export function getInfinitePage<Data = unknown, Key extends RawKey = RawKey>(
-  getKey: SWRVInfiniteKeyLoader<Data, Key>,
-  index: number,
-  previousPageData: Data | null,
-): [string, RawKey] {
-  return serializePage(getKey, index, previousPageData);
 }
 
 export function unstable_serialize<Data = unknown, Key extends RawKey = RawKey>(
   getKey: SWRVInfiniteKeyLoader<Data, Key>,
 ): string {
-  const [serializedKey] = serializePage(getKey, 0, null);
-  return serializedKey ? createInfiniteCacheKey(serializedKey) : "";
+  const serializedKey = getFirstPageKey(getKey);
+  return serializedKey ? INFINITE_PREFIX + serializedKey : "";
 }

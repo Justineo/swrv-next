@@ -34,18 +34,16 @@ export function createCacheHelper(
     ): CacheState<Data, Error> {
       const previous = cloneState(this.get<Data, Error>(key));
       const next = {
-        data: previous?.data,
-        error: previous?.error,
+        ...previous,
         isLoading: previous?.isLoading ?? false,
         isValidating: previous?.isValidating ?? false,
-        _c: previous?._c,
         _k: rawKey ?? previous?._k,
         ...patch,
       } satisfies CacheState<Data, Error>;
 
       cache.set(key, next);
       const current = this.get<Data, Error>(key) ?? next;
-      notify(key, current, previous);
+      notify(key, current as AnyCacheState | undefined, previous as AnyCacheState | undefined);
       return current;
     },
   };

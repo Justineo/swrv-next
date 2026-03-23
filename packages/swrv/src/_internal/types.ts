@@ -1,4 +1,5 @@
 import type { ComputedRef, DefineComponent, Ref } from "vue";
+import { ERROR_REVALIDATE_EVENT, FOCUS_EVENT, MUTATE_EVENT, RECONNECT_EVENT } from "./events";
 
 export type RawKey =
   | string
@@ -152,6 +153,8 @@ export interface ResolvedSWRVConfiguration<
   Error = unknown,
   Fn = BareFetcher<Data>,
 > extends SWRVConfiguration<Data, Error, Fn> {
+  cache: CacheAdapter<AnyCacheState>;
+  client: SWRVClient;
   compare: Compare<Data>;
   dedupingInterval: number;
   errorRetryCount?: number;
@@ -250,6 +253,18 @@ export interface SWRVResponse<Data = unknown, Error = unknown, Config = unknown>
   mutate: BoundMutator<Data>;
 }
 
+export type SWRConfiguration<
+  Data = unknown,
+  Error = unknown,
+  Fn = BareFetcher<Data>,
+> = SWRVConfiguration<Data, Error, Fn>;
+export type Middleware = SWRVMiddleware;
+export type SWRResponse<Data = unknown, Error = unknown, Config = unknown> = SWRVResponse<
+  Data,
+  Error,
+  Config
+>;
+
 export type InternalSWRVHook = <Data = unknown, Error = unknown, Key extends RawKey = RawKey>(
   key: KeySource<Key>,
   fetcher?: HookFetcher<Data>,
@@ -258,7 +273,15 @@ export type InternalSWRVHook = <Data = unknown, Error = unknown, Key extends Raw
 
 export type SWRVMiddleware = (useSWRNext: InternalSWRVHook) => InternalSWRVHook;
 
-export type RevalidateEvent = "focus" | "reconnect" | "mutate";
+export type RevalidateEvent =
+  | typeof FOCUS_EVENT
+  | typeof RECONNECT_EVENT
+  | typeof MUTATE_EVENT
+  | typeof ERROR_REVALIDATE_EVENT
+  | "focus"
+  | "reconnect"
+  | "mutate"
+  | "error-revalidate";
 
 export interface RevalidateEventOptions {
   dedupe?: boolean;
