@@ -1,98 +1,51 @@
-Start a new epic focused on bringing this SWRV codebase into the closest possible structural and behavioral alignment with the latest SWR implementation.
+Start a new epic to align this SWRV codebase as closely as possible with the latest SWR implementation.
 
-Primary objective:
-Align SWRV to SWR module by module, function by function, and logic branch by logic branch. Treat SWR as the source of truth for architecture, control flow, semantics, and internal organization unless a difference is strictly required by the React vs Vue runtime model.
+Context:
+A v2 rewrite has already been done using SWR as the reference, and several follow-up alignment passes have improved module boundaries and major logic flow. However, there are still many unnecessary deviations in module structure, function design, control flow, and branch behavior. The goal of this epic is to remove those deviations as thoroughly as possible.
 
-Core rules:
+Goal:
+Use SWR as the source of truth and align SWRV module by module, function by function, and logic branch by logic branch. Unless a difference is strictly required by React vs Vue runtime differences, do not keep or introduce divergent implementations.
+
+Rules:
 
 1. Follow SWR as literally as possible.
-   - Align file responsibilities, exported surface area, helper boundaries, internal control flow, initialization timing, cleanup behavior, memoization or computed semantics, merge behavior, provider behavior, and edge case handling as closely as the framework difference allows.
+   - Align module responsibility, exports, helper boundaries, control flow, lifecycle, cleanup, config merging, cache and provider behavior, and edge case handling.
    - Do not preserve existing SWRV differences just because they already exist.
-   - Do not introduce new abstractions, indirections, or refactors unless they are required to match SWR more closely or to adapt React concepts to Vue correctly.
+   - Do not introduce new abstractions or SWRV-specific redesigns unless they are required to match SWR more closely or to translate React behavior correctly into Vue.
 
 2. Only allow differences that are truly caused by React vs Vue differences.
-   - If a behavior, structure, or branch can be made equivalent in Vue, make it equivalent.
-   - If a difference is necessary, keep it minimal and explicitly document why it is unavoidable.
-   - “Different style”, “cleaner design”, or “better fit for SWRV” are not valid reasons for divergence unless the React to Vue translation genuinely requires it.
+   - If something can be equivalent in Vue, make it equivalent.
+   - If a difference is unavoidable, keep it minimal and document it clearly.
 
-3. Work module by module with strict tracking.
-   - Create and maintain a dedicated todo tracker file for this epic, under `journey/plans/`.
-   - The tracker must list every relevant module and its status.
-   - For each module, track at least:
-     - planning
-     - implementation
-     - review
-     - remaining gaps, if any
-   - Update this tracker every time meaningful progress is made.
-   - As long as the tracker contains any unfinished item, do not stop working.
+3. Create and maintain a tracker file for this epic, under `journey/plans`.
+   - Track every relevant module.
+   - For each module, record: plan, implement, review, feedback, remaining gaps, and completion status.
+   - Update this file whenever meaningful progress is made.
+   - If the tracker contains any unfinished item, do not stop working.
 
-4. Each module must go through this exact sequence before moving on:
-   - Plan
-   - Implement
-   - Review
+Workflow for each module:
+Plan -> Implement -> Review -> Address feedback
 
-Detailed workflow per module:
+Module requirements:
 
-1. Plan
-   - Compare the SWR module and the corresponding SWRV module in detail.
-   - Identify all deviations, including:
-     - public API differences
-     - internal function signatures
-     - control flow differences
-     - conditional branch differences
-     - cache or provider lifecycle differences
-     - state management differences
-     - cleanup and subscription differences
-     - default value behavior
-     - config merge behavior
-     - naming and file responsibility differences
-   - Add a concrete checklist for that module to the tracker.
+- Plan: compare the SWR module and the SWRV module in detail, identify all deviations, and write a concrete checklist in the tracker.
+- Implement: apply the changes needed to align SWRV with SWR as literally as possible, except where Vue vs React differences make that impossible.
+- Review: compare the updated SWRV module against SWR again and identify all remaining deviations, including small structural, behavioral, lifecycle, and branch-level differences.
+- Address feedback: fix every issue found during review before the module is considered complete.
 
-2. Implement
-   - Make the code changes needed to align SWRV with SWR as closely as possible.
-   - Prefer direct alignment over local optimization.
-   - Preserve Vue correctness, but do not add Vue-specific divergence unless required.
-   - Keep the resulting code organization as parallel to SWR as possible.
+Completion rules:
 
-3. Review
-   - Re-read the SWR source and the updated SWRV module side by side.
-   - Verify parity at the level of:
-     - module purpose
-     - exports
-     - helper composition
-     - function behavior
-     - branch behavior
-     - lifecycle and cleanup
-     - edge cases
-   - Record any remaining unavoidable differences in the tracker.
-   - Only mark the module complete when the remaining differences are truly framework-required.
+- A module is not complete until all review feedback has been addressed.
+- If addressing feedback causes material code changes, review that module again before marking it complete.
+- Only then may you move to the next module.
 
-Execution standards:
+Execution expectations:
 
 - Be exhaustive.
-- Be literal.
-- Be skeptical of every existing difference.
-- Do not settle for “roughly equivalent”.
-- Do not stop at matching behavior if the structure can also be aligned more closely.
-- Do not stop at matching structure if branch behavior still differs.
-- Do not skip small branches, fallback paths, provider semantics, or cleanup details.
-
-Important constraints:
-
-- Unless the difference is directly caused by React vs Vue, there is no need for differentiated implementation.
-- If SWR has a simpler or more direct structure, prefer that structure.
-- If SWRV currently has extra layers, wrappers, helper files, or alternate flows that are not necessary, remove or collapse them when doing so improves alignment with SWR.
-- Keep naming, file boundaries, and logical decomposition as close to SWR as possible within Vue conventions.
-
-Required artifact:
-Maintain the tracker file continuously throughout the epic. It must always reflect the current real state of work. Never let it become stale.
+- Do not settle for rough equivalence.
+- Do not stop at high-level behavior if structure can be aligned more closely.
+- Do not skip small branches, fallback paths, cleanup behavior, provider semantics, or config details.
+- Be skeptical of every existing SWRV difference and treat it as unnecessary unless proven to be required by React vs Vue differences.
 
 Stopping condition:
-Do not end the current turn after finishing only part of the work.
-Do not stop after a single module.
-Do not stop after updating the tracker.
-Do not stop after implementation without review.
-Only end the current turn when all modules in the tracker have gone through plan, implement, and review, and there are no unfinished items left in the tracker.
-
-Final requirement:
-This epic is not complete until the entire tracked scope is finished. If any module, function, branch, or recorded gap remains unfinished, continue working instead of concluding the turn.
+Do not stop after planning, implementation, review, tracker updates, or a single module. Do not end the current turn until the full tracked scope is complete. As long as any module, function, logic branch, or tracked gap remains unfinished, continue working. Only end the current turn when all tracked modules are complete and no unfinished items remain in the tracker.
