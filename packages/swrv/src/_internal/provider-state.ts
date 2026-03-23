@@ -1,5 +1,5 @@
-import { FOCUS_EVENT, RECONNECT_EVENT, normalizeRevalidateEvent } from "./events";
-import { defaultInitFocus, defaultInitReconnect } from "./web-preset";
+import { FOCUS_EVENT, RECONNECT_EVENT } from "./events";
+import { defaultInitFocus, defaultInitReconnect } from "./utils/web-preset";
 
 import type {
   CacheListener,
@@ -18,13 +18,13 @@ function toDisposer(value: void | (() => void)): () => void {
   return typeof value === "function" ? value : NOOP;
 }
 
-function getCallbackSet<Callback>(store: Map<string, Set<Callback>>, key: string): Set<Callback> {
+function getCallbackList<Callback>(store: Map<string, Callback[]>, key: string): Callback[] {
   const current = store.get(key);
   if (current) {
     return current;
   }
 
-  const next = new Set<Callback>();
+  const next: Callback[] = [];
   store.set(key, next);
   return next;
 }
@@ -33,25 +33,30 @@ export function createProviderState(): SWRVClientState {
   return {
     fetches: new Map<string, FetchRecord>(),
     helpers: {},
-    listeners: new Map<string, Set<CacheListener>>(),
+    listeners: new Map<string, CacheListener[]>(),
     latestFetchTimestamp: new Map<string, number>(),
     mutations: new Map<string, [number, number]>(),
     preloads: new Map<string, Promise<unknown>>(),
-    revalidators: new Map<string, Set<Revalidator>>(),
+    revalidators: new Map<string, Revalidator[]>(),
   };
 }
 
 export function addProviderSubscription<Callback>(
-  store: Map<string, Set<Callback>>,
+  store: Map<string, Callback[]>,
   key: string,
   callback: Callback,
 ): () => void {
-  const callbacks = getCallbackSet(store, key);
-  callbacks.add(callback);
+  const callbacks = getCallbackList(store, key);
+  callbacks.push(callback);
 
   return () => {
-    callbacks.delete(callback);
-    if (callbacks.size === 0) {
+    const index = callbacks.indexOf(callback);
+    if (index >= 0) {
+      callbacks[index] = callbacks[callbacks.length - 1] as Callback;
+      callbacks.pop();
+    }
+
+    if (callbacks.length === 0) {
       store.delete(key);
     }
   };
@@ -79,15 +84,12 @@ export function broadcastProviderRevalidators(
   event: RevalidateEvent,
   options?: RevalidateEventOptions,
 ): Promise<unknown[]> {
-  const normalizedEvent = normalizeRevalidateEvent(event);
   const revalidators = state.revalidators.get(key);
-  if (!revalidators || revalidators.size === 0) {
+  if (!revalidators || revalidators.length === 0) {
     return Promise.resolve([]);
   }
 
-  return Promise.all(
-    Array.from(revalidators).map((revalidator) => revalidator(normalizedEvent, options)),
-  );
+  return Promise.resolve(revalidators[0](event, options)).then((result) => [result]);
 }
 
 export async function broadcastAllProviderRevalidators(
@@ -101,18 +103,8 @@ export async function broadcastAllProviderRevalidators(
   );
 }
 
-export function getFetchRecord(
-  state: SWRVClientState,
-  key: string,
-  now: number,
-  dedupingInterval: number,
-): FetchRecord | undefined {
-  const current = state.fetches.get(key);
-  if (!current) {
-    return undefined;
-  }
-
-  return now - current.startedAt <= dedupingInterval ? current : undefined;
+export function getFetchRecord(state: SWRVClientState, key: string): FetchRecord | undefined {
+  return state.fetches.get(key);
 }
 
 export function invalidateFetchRecord(state: SWRVClientState, key: string): void {
@@ -204,12 +196,16 @@ export function attachProviderEvents(
 
   const disposeFocus = toDisposer(
     initFocus(() => {
-      void broadcastAllProviderRevalidators(state, FOCUS_EVENT);
+      setTimeout(() => {
+        void broadcastAllProviderRevalidators(state, FOCUS_EVENT);
+      });
     }),
   );
   const disposeReconnect = toDisposer(
     initReconnect(() => {
-      void broadcastAllProviderRevalidators(state, RECONNECT_EVENT);
+      setTimeout(() => {
+        void broadcastAllProviderRevalidators(state, RECONNECT_EVENT);
+      });
     }),
   );
 

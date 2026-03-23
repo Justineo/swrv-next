@@ -1,19 +1,16 @@
+import type { SWRVMiddleware } from "../index";
 import useSWRV from "../index/use-swr";
-import { withMiddleware } from "../_internal/with-middleware";
+import { withMiddleware } from "../_internal/utils/with-middleware";
 
-import type { SWRVMiddleware } from "../_internal/types";
-
-export const immutable: SWRVMiddleware = (useSWRVNext) => (key, fetcher, config) => {
-  const normalizedConfig = config && typeof config === "object" ? config : {};
-
-  return useSWRVNext(key, fetcher, {
-    ...normalizedConfig,
-    refreshInterval: 0,
-    revalidateIfStale: false,
-    revalidateOnFocus: false,
-    revalidateOnReconnect: false,
-  });
-};
+export const immutable: SWRVMiddleware =
+  (useSWRVNext) =>
+  (key, fetcher, config = {}) => {
+    config.revalidateOnFocus = false;
+    config.revalidateIfStale = false;
+    config.revalidateOnReconnect = false;
+    config.refreshInterval = 0;
+    return useSWRVNext(key, fetcher, config);
+  };
 
 const useSWRVImmutable = withMiddleware(useSWRV, immutable) as typeof useSWRV;
 

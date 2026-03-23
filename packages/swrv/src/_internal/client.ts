@@ -1,5 +1,5 @@
-import { createCache } from "./cache";
-import { createCacheHelper } from "./cache-helper";
+import { createCache } from "./utils/cache";
+import { createCacheHelper } from "./utils/helper";
 import {
   addProviderSubscription,
   attachProviderEvents,
@@ -63,8 +63,8 @@ export function createSWRVClient(
     dispose(): void {
       releaseEvents();
     },
-    getFetch(key: string, now: number, dedupingInterval: number): FetchRecord | undefined {
-      return getFetchRecord(state, key, now, dedupingInterval);
+    getFetch(key: string): FetchRecord | undefined {
+      return getFetchRecord(state, key);
     },
     getMutation(key: string): [number, number] | undefined {
       return getMutationMarker(state, key);

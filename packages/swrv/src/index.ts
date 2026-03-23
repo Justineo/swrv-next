@@ -1,9 +1,9 @@
 import useSWRV, { unstable_serialize } from "./index/use-swr";
 
 import { SWRConfig, SWRVConfig, useSWRConfig, useSWRVConfig } from "./config";
-import { createCache } from "./_internal/cache";
+import { createCache } from "./_internal/utils/cache";
 import { createSWRVClient } from "./_internal/client";
-import { mutate, preload } from "./_internal/config";
+import { mutate, preload } from "./_internal/utils/config";
 import { hydrateSWRVSnapshot, serializeSWRVSnapshot } from "./_internal/ssr";
 
 export { SWRConfig, SWRVConfig, useSWRConfig, useSWRVConfig };

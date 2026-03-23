@@ -1,8 +1,9 @@
 import { ref } from "vue";
 
-import { useSWRVConfig } from "../config";
-import { resolveKeyValue, serialize } from "../_internal/serialize";
-import { type HookWithArgs, withMiddleware } from "../_internal/with-middleware";
+import { useSWRVConfig } from "../_internal/utils/config-context";
+import { resolveKeyValue, serialize } from "../_internal/utils/serialize";
+import { getTimestamp } from "../_internal/utils/timestamp";
+import { type HookWithArgs, withMiddleware } from "../_internal/utils/with-middleware";
 import useSWRV from "../index/use-swr";
 
 import type { KeySource, RawKey } from "../_internal/types";
@@ -31,8 +32,7 @@ export const mutation = function mutation(_useSWRVNext: HookWithArgs): InternalS
     const data = ref<Data>();
     const error = ref<Error>();
     const isMutating = ref(false);
-    let ignoreResultsBefore = 0;
-    let mutationVersion = 0;
+    let ditchMutationsUntil = 0;
 
     const trigger = (async (
       arg?: ExtraArg,
@@ -47,8 +47,8 @@ export const mutation = function mutation(_useSWRVNext: HookWithArgs): InternalS
         throw new Error("Can’t trigger the mutation: missing key.");
       }
 
-      const mutationStartedAt = ++mutationVersion;
-      ignoreResultsBefore = mutationStartedAt;
+      const mutationStartedAt = getTimestamp();
+      ditchMutationsUntil = mutationStartedAt;
       isMutating.value = true;
 
       const mergedOptions = {
@@ -68,7 +68,7 @@ export const mutation = function mutation(_useSWRVNext: HookWithArgs): InternalS
           },
         )) as Data | undefined;
 
-        if (ignoreResultsBefore <= mutationStartedAt) {
+        if (ditchMutationsUntil <= mutationStartedAt) {
           data.value = result;
           error.value = undefined;
           isMutating.value = false;
@@ -78,7 +78,7 @@ export const mutation = function mutation(_useSWRVNext: HookWithArgs): InternalS
         return result;
       } catch (caught) {
         const resolvedError = caught as Error;
-        if (ignoreResultsBefore <= mutationStartedAt) {
+        if (ditchMutationsUntil <= mutationStartedAt) {
           error.value = resolvedError;
           isMutating.value = false;
           mergedOptions.onError?.(resolvedError, serializedKey, mergedOptions);
@@ -96,7 +96,7 @@ export const mutation = function mutation(_useSWRVNext: HookWithArgs): InternalS
       error,
       isMutating,
       reset: () => {
-        ignoreResultsBefore = ++mutationVersion;
+        ditchMutationsUntil = getTimestamp();
         data.value = undefined;
         error.value = undefined;
         isMutating.value = false;

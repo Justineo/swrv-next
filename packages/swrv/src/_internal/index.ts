@@ -6,8 +6,12 @@ export { cache, client, compare, defaultConfig, mutate, preload } from "./utils/
 export { createSWRVClient } from "./client";
 export * as revalidateEvents from "./events";
 export { hydrateSWRVSnapshot, serializeSWRVSnapshot } from "./ssr";
+export * from "./utils/env";
 export { stableHash } from "./utils/hash";
+export { createCacheHelper, type SWRVCacheHelper } from "./utils/helper";
 export { mergeConfigs } from "./utils/merge-config";
+export { internalMutate } from "./utils/mutate";
+export { normalize } from "./utils/normalize-args";
 export { withArgs } from "./utils/resolve-args";
 export { callFetcher, resolveKeyValue, serialize } from "./utils/serialize";
 export { isFunction, isPromiseLike, noop } from "./utils/shared";

@@ -1,4 +1,4 @@
-import { serialize } from "../_internal/serialize";
+import { serialize } from "../_internal/utils/serialize";
 
 import type { RawKey } from "../_internal/types";
 

@@ -19,6 +19,7 @@ import {
   registerApp,
   registerContainer,
   settle,
+  waitForMacrotask,
 } from "./test-utils";
 
 describe("swrv core cache provider behavior", () => {
@@ -676,10 +677,12 @@ describe("swrv core cache provider behavior", () => {
     expect(childClient).toBe(GLOBAL_SWRV_CLIENT);
 
     focusCallbacks[0]?.();
+    await waitForMacrotask();
     await settle();
     expect(fetcher).toHaveBeenCalledTimes(2);
 
     reconnectCallbacks[0]?.();
+    await waitForMacrotask();
     await settle();
     expect(fetcher).toHaveBeenCalledTimes(3);
 
@@ -771,10 +774,12 @@ describe("swrv core cache provider behavior", () => {
     expect(childClient).not.toBe(GLOBAL_SWRV_CLIENT);
 
     focusCallbacks[0]?.();
+    await waitForMacrotask();
     await settle();
     expect(fetcher).toHaveBeenCalledTimes(2);
 
     reconnectCallbacks[0]?.();
+    await waitForMacrotask();
     await settle();
     expect(fetcher).toHaveBeenCalledTimes(3);
 

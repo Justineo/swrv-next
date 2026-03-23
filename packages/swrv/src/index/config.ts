@@ -1,3 +1,3 @@
-import { SWRVConfig as S } from "../config-context";
+import { SWRVConfig as swrvConfig } from "../_internal/utils/config-context";
 
-export const SWRConfig = S;
+export const SWRConfig = swrvConfig;

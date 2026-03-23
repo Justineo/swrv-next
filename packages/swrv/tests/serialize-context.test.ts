@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vite-plus/test";
 
 import { mutate, unstable_serialize, useSWRV } from "../src";
 import { serialize } from "../src/_internal";
-import { stableHash } from "../src/_internal/hash";
+import { stableHash } from "../src/_internal/utils/hash";
 import { mountWithConfig, settle } from "./test-utils";
 
 describe("swrv serialize and context behavior", () => {

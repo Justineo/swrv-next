@@ -1,13 +1,15 @@
 import { getCurrentScope, onScopeDispose, ref, watch } from "vue";
 
-import { mergeConfigs } from "../_internal/merge-config";
+import { ERROR_REVALIDATE_EVENT } from "../_internal/events";
 import * as revalidateEvents from "../_internal/events";
-import { isServerEnvironment } from "../_internal/env";
-import { getScopedMutator } from "../_internal/mutate";
-import { callFetcher, resolveKeyValue, serialize } from "../_internal/serialize";
 import { warnMissingServerPrefetch } from "../_internal/server-prefetch-warning";
-import { getTimestamp } from "../_internal/timestamp";
-import { useSWRVContext } from "../config-context";
+import { defaultConfig } from "../_internal/utils/config";
+import { useSWRVContext } from "../_internal/utils/config-context";
+import { mergeConfigs } from "../_internal/utils/merge-config";
+import { isServerEnvironment } from "../_internal/utils/env";
+import { getScopedMutator } from "../_internal/utils/mutate";
+import { callFetcher, resolveKeyValue, serialize } from "../_internal/utils/serialize";
+import { getTimestamp } from "../_internal/utils/timestamp";
 
 import type {
   BareFetcher,
@@ -100,7 +102,13 @@ export function useSWRVHandler<Data = unknown, Error = unknown>(
 
   const context = useSWRVContext();
   const getConfig = () =>
-    mergeConfigs(context.config.value as ResolvedSWRVConfiguration<Data, Error>, config);
+    mergeConfigs(
+      {
+        ...defaultConfig,
+        ...context.config.value,
+      } as ResolvedSWRVConfiguration<Data, Error>,
+      config,
+    );
   const client = context.client;
   const scopedMutate = getScopedMutator(client);
   const serverPrefetchStorageKey = client.cache as object;
@@ -280,26 +288,11 @@ export function useSWRVHandler<Data = unknown, Error = unknown>(
       return cached?.data;
     }
 
-    if (!options.force) {
-      if (!configValue.refreshWhenHidden && !configValue.isVisible()) {
-        scheduleRefresh();
-        return cached?.data;
-      }
-
-      if (!configValue.refreshWhenOffline && !configValue.isOnline()) {
-        scheduleRefresh();
-        return cached?.data;
-      }
-    }
-
     const now = getTimestamp();
     const latestMutation = client.getMutation(serializedKey);
     const fetchTimestamp =
       latestMutation && now <= latestMutation[1] ? latestMutation[1] + 0.001 : now;
-    const currentFetch =
-      options.dedupe === false
-        ? undefined
-        : client.getFetch(serializedKey, fetchTimestamp, configValue.dedupingInterval);
+    const currentFetch = options.dedupe === false ? undefined : client.getFetch(serializedKey);
 
     const startedAt = currentFetch?.startedAt ?? fetchTimestamp;
     let fetchPromise = currentFetch?.promise as Promise<Data> | undefined;
@@ -355,18 +348,28 @@ export function useSWRVHandler<Data = unknown, Error = unknown>(
       }
 
       if (!client.isLatestFetch(serializedKey, startedAt)) {
+        const discardedState = writeState(serializedKey, rawKey, {
+          isLoading: false,
+          isValidating: false,
+        });
+        syncAfterStateWrite(serializedKey, discardedState);
         if (!currentFetch) {
           getConfig().onDiscarded(serializedKey);
         }
-        return client.getState<Data, Error>(serializedKey)?.data;
+        return discardedState.data;
       }
 
       const mutation = client.getMutation(serializedKey);
       if (mutation && (startedAt <= mutation[0] || startedAt <= mutation[1] || mutation[1] === 0)) {
+        const discardedState = writeState(serializedKey, rawKey, {
+          isLoading: false,
+          isValidating: false,
+        });
+        syncAfterStateWrite(serializedKey, discardedState);
         if (!currentFetch) {
           getConfig().onDiscarded(serializedKey);
         }
-        return client.getState<Data, Error>(serializedKey)?.data;
+        return discardedState.data;
       }
 
       const latestData = client.getState<Data, Error>(serializedKey)?.data;
@@ -387,6 +390,7 @@ export function useSWRVHandler<Data = unknown, Error = unknown>(
     } catch (caught) {
       const resolvedError = caught as Error;
       clearLoadingSlowTimer();
+      client.invalidateFetch(serializedKey);
 
       if (getConfig().isPaused()) {
         const pausedErrorState = writeState(serializedKey, rawKey, {
@@ -432,11 +436,13 @@ export function useSWRVHandler<Data = unknown, Error = unknown>(
               return Promise.resolve(client.getState<Data, Error>(serializedKey)?.data);
             }
 
-            return revalidate({
-              dedupe: retryOptions?.dedupe ?? true,
-              retryCount: retryOptions?.retryCount ?? (options.retryCount ?? 0) + 1,
-              throwOnError: retryOptions?.throwOnError ?? false,
-            });
+            return client
+              .broadcast(serializedKey, ERROR_REVALIDATE_EVENT, {
+                dedupe: retryOptions?.dedupe ?? true,
+                retryCount: retryOptions?.retryCount ?? (options.retryCount ?? 0) + 1,
+                throwOnError: retryOptions?.throwOnError ?? false,
+              })
+              .then(() => client.getState<Data, Error>(serializedKey)?.data);
           },
           {
             dedupe: true,
@@ -491,9 +497,18 @@ export function useSWRVHandler<Data = unknown, Error = unknown>(
       }
     }
 
+    if (event === ERROR_REVALIDATE_EVENT) {
+      return revalidate({
+        dedupe: options?.dedupe ?? true,
+        retryCount: options?.retryCount,
+        throwOnError: options?.throwOnError,
+      });
+    }
+
     return revalidate({
       dedupe: options?.dedupe ?? true,
       force: options?.force ?? event === revalidateEvents.MUTATE_EVENT,
+      retryCount: options?.retryCount,
       throwOnError: options?.throwOnError,
     });
   };
@@ -563,7 +578,8 @@ export function useSWRVHandler<Data = unknown, Error = unknown>(
         return;
       }
 
-      const hasExistingRevalidator = (client.state.revalidators.get(serializedKey)?.size ?? 0) > 0;
+      const hasExistingRevalidator =
+        (client.state.revalidators.get(serializedKey)?.length ?? 0) > 0;
 
       unsubscribeCache = client.subscribe(serializedKey, (current) => {
         applyState(current as CacheState<Data, Error> | undefined, serializedKey);
@@ -618,7 +634,6 @@ export function useSWRVHandler<Data = unknown, Error = unknown>(
         hasMounted = true;
         await revalidate({
           dedupe: true,
-          force: true,
         });
         return;
       }

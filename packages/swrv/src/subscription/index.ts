@@ -1,8 +1,8 @@
 import { watch } from "vue";
 
-import { useSWRVConfig } from "../config";
-import { resolveKeyValue, serialize } from "../_internal/serialize";
-import { type HookWithArgs, withMiddleware } from "../_internal/with-middleware";
+import { useSWRVConfig } from "../_internal/utils/config-context";
+import { resolveKeyValue, serialize } from "../_internal/utils/serialize";
+import { type HookWithArgs, withMiddleware } from "../_internal/utils/with-middleware";
 import useSWRV from "../index/use-swr";
 
 import type { KeySource, MutatorCallback, RawKey, SWRVConfiguration } from "../_internal/types";
@@ -46,12 +46,7 @@ export const subscription = function subscription(
         return serializedKey ? getSubscriptionKey(serializedKey) : null;
       }) as KeySource<RawKey>,
       null,
-      {
-        ...config,
-        revalidateIfStale: false,
-        revalidateOnFocus: false,
-        revalidateOnReconnect: false,
-      },
+      config,
     );
 
     watch(

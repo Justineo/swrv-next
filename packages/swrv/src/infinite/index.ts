@@ -1,10 +1,10 @@
 import { onMounted, ref, watch } from "vue";
 
-import { useSWRVConfig } from "../config";
+import { useSWRVConfig } from "../_internal/utils/config-context";
 import { INFINITE_PREFIX } from "../_internal/constants";
-import { normalize } from "../_internal/normalize-args";
-import { callFetcher, serialize } from "../_internal/serialize";
-import { type HookWithArgs, withMiddleware } from "../_internal/with-middleware";
+import { normalize } from "../_internal/utils/normalize-args";
+import { callFetcher, serialize } from "../_internal/utils/serialize";
+import { type HookWithArgs, withMiddleware } from "../_internal/utils/with-middleware";
 import useSWRV from "../index/use-swr";
 import { getFirstPageKey, unstable_serialize } from "./serialize";
 

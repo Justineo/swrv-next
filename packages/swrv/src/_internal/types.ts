@@ -202,6 +202,8 @@ export interface ResolvedSWRVConfiguration<
 }
 
 export type AnyResolvedConfiguration = ResolvedSWRVConfiguration<unknown, unknown>;
+export type AnyContextConfiguration = AnyConfiguration &
+  Pick<AnyResolvedConfiguration, "cache" | "client">;
 
 export interface RevalidateOptions {
   dedupe?: boolean;
@@ -277,16 +279,13 @@ export type RevalidateEvent =
   | typeof FOCUS_EVENT
   | typeof RECONNECT_EVENT
   | typeof MUTATE_EVENT
-  | typeof ERROR_REVALIDATE_EVENT
-  | "focus"
-  | "reconnect"
-  | "mutate"
-  | "error-revalidate";
+  | typeof ERROR_REVALIDATE_EVENT;
 
 export interface RevalidateEventOptions {
   dedupe?: boolean;
   force?: boolean;
   revalidate?: boolean | ((data: unknown, key: RawKey) => boolean);
+  retryCount?: number;
   throwOnError?: boolean;
 }
 
@@ -311,11 +310,11 @@ export interface SWRVClientState {
     mutate?: ScopedMutator;
     preload?: PreloadFunction;
   };
-  listeners: Map<string, Set<CacheListener>>;
+  listeners: Map<string, CacheListener[]>;
   latestFetchTimestamp: Map<string, number>;
   mutations: Map<string, [number, number]>;
   preloads: Map<string, Promise<unknown>>;
-  revalidators: Map<string, Set<Revalidator>>;
+  revalidators: Map<string, Revalidator[]>;
 }
 
 export interface SWRVClientOptions {
@@ -335,7 +334,7 @@ export interface SWRVClient {
   broadcastAll(event: RevalidateEvent): Promise<void>;
   consumePreload<Data = unknown>(key: string): Promise<Data> | undefined;
   dispose(): void;
-  getFetch(key: string, now: number, dedupingInterval: number): FetchRecord | undefined;
+  getFetch(key: string): FetchRecord | undefined;
   getMutation(key: string): [number, number] | undefined;
   getState<Data = unknown, Error = unknown>(key: string): CacheState<Data, Error> | undefined;
   invalidateFetch(key: string): void;
@@ -358,7 +357,7 @@ export interface SWRVClient {
 
 export interface SWRVContextValue {
   client: SWRVClient;
-  config: Readonly<Ref<AnyResolvedConfiguration>>;
+  config: Readonly<Ref<AnyContextConfiguration>>;
 }
 
 export interface SWRVConfigAccessor {

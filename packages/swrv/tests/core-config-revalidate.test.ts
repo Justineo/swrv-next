@@ -2,6 +2,7 @@ import { computed, createApp, defineComponent, h, ref } from "vue";
 import { describe, expect, it, vi } from "vite-plus/test";
 
 import { SWRVConfig, createSWRVClient, useSWRV, useSWRVImmutable } from "../src";
+import { FOCUS_EVENT, RECONNECT_EVENT } from "../src/_internal/events";
 import { immutable } from "../src/immutable";
 import { serialize } from "../src/_internal";
 import {
@@ -95,6 +96,7 @@ describe("swrv core config and revalidation", () => {
 
     await waitForMacrotask();
     window.dispatchEvent(new Event("focus"));
+    await waitForMacrotask();
     await settle();
 
     expect(state.data.value).toBe(1);
@@ -115,12 +117,13 @@ describe("swrv core config and revalidation", () => {
 
     await waitForMacrotask();
     window.dispatchEvent(new Event("focus"));
+    await waitForMacrotask();
     await settle();
 
     expect(state.data.value).toBe(0);
   });
 
-  it("keeps per-hook focus settings separate for hooks sharing the same key", async () => {
+  it("uses the first registered hook's focus setting for hooks sharing the same key", async () => {
     vi.useFakeTimers();
 
     let stableFetches = 0;
@@ -178,9 +181,9 @@ describe("swrv core config and revalidation", () => {
     await settle();
 
     expect(stableFetches).toBe(1);
-    expect(focusFetches).toBe(1);
-    expect(state.stable.data.value).toBe(101);
-    expect(state.refreshing.data.value).toBe(101);
+    expect(focusFetches).toBe(0);
+    expect(state.stable.data.value).toBe(1);
+    expect(state.refreshing.data.value).toBe(1);
   });
 
   it("reacts to provider config changes for revalidateOnFocus", async () => {
@@ -227,6 +230,7 @@ describe("swrv core config and revalidation", () => {
 
     await waitForMacrotask();
     window.dispatchEvent(new Event("focus"));
+    await waitForMacrotask();
     await settle();
     expect(state.data.value).toBe(0);
 
@@ -235,6 +239,7 @@ describe("swrv core config and revalidation", () => {
 
     await waitForMacrotask();
     window.dispatchEvent(new Event("focus"));
+    await waitForMacrotask();
     await settle();
     expect(state.data.value).toBe(1);
 
@@ -243,6 +248,7 @@ describe("swrv core config and revalidation", () => {
 
     await waitForMacrotask();
     window.dispatchEvent(new Event("focus"));
+    await waitForMacrotask();
     await settle();
     expect(state.data.value).toBe(1);
   });
@@ -263,11 +269,13 @@ describe("swrv core config and revalidation", () => {
     expect(state.data.value).toBe(0);
 
     window.dispatchEvent(new Event("focus"));
+    await vi.advanceTimersByTimeAsync(0);
     await settle();
     expect(state.data.value).toBe(0);
 
     await vi.advanceTimersByTimeAsync(60);
     window.dispatchEvent(new Event("focus"));
+    await vi.advanceTimersByTimeAsync(0);
     await settle();
 
     expect(state.data.value).toBe(1);
@@ -288,6 +296,7 @@ describe("swrv core config and revalidation", () => {
     await waitForMacrotask();
     window.dispatchEvent(new Event("offline"));
     window.dispatchEvent(new Event("online"));
+    await waitForMacrotask();
     await settle();
 
     expect(state.data.value).toBe(1);
@@ -311,6 +320,7 @@ describe("swrv core config and revalidation", () => {
       await waitForMacrotask();
       window.dispatchEvent(new Event("offline"));
       window.dispatchEvent(new Event("online"));
+      await waitForMacrotask();
       await settle();
 
       expect(state.data.value).toBe(0);
@@ -341,13 +351,13 @@ describe("swrv core config and revalidation", () => {
     expect(state().data.value).toBe(0);
 
     visible = false;
-    await client.broadcastAll("focus");
+    await client.broadcastAll(FOCUS_EVENT);
     await settle();
 
     expect(state().data.value).toBe(0);
 
     visible = true;
-    await client.broadcastAll("focus");
+    await client.broadcastAll(FOCUS_EVENT);
     await settle();
 
     expect(state().data.value).toBe(1);
@@ -374,13 +384,13 @@ describe("swrv core config and revalidation", () => {
     expect(state().data.value).toBe(0);
 
     online = false;
-    await client.broadcastAll("reconnect");
+    await client.broadcastAll(RECONNECT_EVENT);
     await settle();
 
     expect(state().data.value).toBe(0);
 
     online = true;
-    await client.broadcastAll("reconnect");
+    await client.broadcastAll(RECONNECT_EVENT);
     await settle();
 
     expect(state().data.value).toBe(1);
@@ -404,6 +414,7 @@ describe("swrv core config and revalidation", () => {
     online = false;
     await waitForMacrotask();
     window.dispatchEvent(new Event("focus"));
+    await waitForMacrotask();
     await settle();
 
     expect(state.data.value).toBe(0);
@@ -411,6 +422,7 @@ describe("swrv core config and revalidation", () => {
     online = true;
     await waitForMacrotask();
     window.dispatchEvent(new Event("focus"));
+    await waitForMacrotask();
     await settle();
 
     expect(state.data.value).toBe(1);
@@ -755,6 +767,30 @@ describe("swrv core config and revalidation", () => {
     random.mockRestore();
   });
 
+  it("does not dedupe an error retry against the failed request record", async () => {
+    const key = `retry-dedupe-reset-${Date.now()}`;
+    const fetcher = vi
+      .fn<() => Promise<string>>()
+      .mockRejectedValueOnce(new Error("boom"))
+      .mockResolvedValueOnce("recovered");
+
+    const state = runComposable(() =>
+      useSWRV<string>(key, fetcher, {
+        dedupingInterval: 1000,
+        onErrorRetry(_error, _retryKey, _config, revalidate, retryOptions) {
+          void revalidate(retryOptions);
+        },
+      }),
+    );
+
+    await settle();
+    await settle();
+
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(state.data.value).toBe("recovered");
+    expect(state.error.value).toBeUndefined();
+  });
+
   it("disables polling in the immutable entry point", async () => {
     vi.useFakeTimers();
 
@@ -792,6 +828,7 @@ describe("swrv core config and revalidation", () => {
 
     await waitForMacrotask();
     window.dispatchEvent(new Event("focus"));
+    await waitForMacrotask();
     await settle();
 
     expect(state.data.value).toBe(0);

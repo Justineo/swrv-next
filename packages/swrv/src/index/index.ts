@@ -7,6 +7,7 @@ export { unstable_serialize } from "./serialize";
 export { mutate, preload, useSWRConfig } from "../_internal";
 
 export interface SWRVGlobalConfig {}
+export type SWRGlobalConfig = SWRVGlobalConfig;
 
 export type {
   Arguments,

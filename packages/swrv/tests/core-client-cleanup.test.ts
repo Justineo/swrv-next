@@ -35,8 +35,8 @@ describe("swrv client cleanup behavior", () => {
     app.mount(container);
     await flush();
 
-    expect(client.state.listeners.get(key)?.size).toBe(1);
-    expect(client.state.revalidators.get(key)?.size).toBe(1);
+    expect(client.state.listeners.get(key)?.length).toBe(1);
+    expect(client.state.revalidators.get(key)?.length).toBe(1);
 
     app.unmount();
 
@@ -80,13 +80,13 @@ describe("swrv client cleanup behavior", () => {
     const second = mountConsumer();
     await flush();
 
-    expect(client.state.listeners.get(key)?.size).toBe(2);
-    expect(client.state.revalidators.get(key)?.size).toBe(2);
+    expect(client.state.listeners.get(key)?.length).toBe(2);
+    expect(client.state.revalidators.get(key)?.length).toBe(2);
 
     first.unmount();
 
-    expect(client.state.listeners.get(key)?.size).toBe(1);
-    expect(client.state.revalidators.get(key)?.size).toBe(1);
+    expect(client.state.listeners.get(key)?.length).toBe(1);
+    expect(client.state.revalidators.get(key)?.length).toBe(1);
 
     second.unmount();
 

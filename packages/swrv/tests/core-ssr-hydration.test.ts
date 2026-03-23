@@ -11,7 +11,7 @@ import {
   useSWRV,
   useSWRVImmutable,
 } from "../src";
-import { isServerEnvironment } from "../src/_internal/env";
+import { isServerEnvironment } from "../src/_internal/utils/env";
 import { flush, mountWithConfig, settle } from "./test-utils";
 
 describe("swrv core ssr and hydration helpers", () => {

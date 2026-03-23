@@ -1,4 +1,4 @@
-import { withArgs } from "../_internal/resolve-args";
+import { withArgs } from "../_internal/utils/resolve-args";
 import { useSWRVHandler } from "./use-swr-handler";
 import { unstable_serialize } from "./serialize";
 
