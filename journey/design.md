@@ -1,7 +1,7 @@
 # SWRV Next Design Snapshot
 
 Status: Post-hardening prerelease, repo-side release verification complete
-Last updated: 2026-03-22
+Last updated: 2026-03-23
 
 ## Mission
 
@@ -42,8 +42,11 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - `revalidateOnMount` now only affects the initial activation, not later key changes
   - fallback data stays idle when revalidation is disabled
   - focus and reconnect revalidation now respect focus throttling and visibility/online state
-  - hooks sharing the same key now still honor their own per-hook focus settings, so a focus-enabled consumer can revalidate shared data without forcing focus-disabled siblings to register the same behavior
+  - provider-scoped listener and revalidator storage now use ordered callback lists again, and shared-key focus, reconnect, mutate, and error-retry broadcasts now dispatch through the first registered revalidator like upstream SWR
+  - focus and reconnect event initializers now defer revalidation through `setTimeout`, matching SWR's event timing again
   - error retries now survive refresh scheduling instead of being cleared immediately
+  - failed fetches now clear their dedupe record immediately on error, so retries do not reuse a rejected in-flight record inside the dedupe window
+  - retry revalidation now flows back through `ERROR_REVALIDATE_EVENT`, and generic `revalidate()` no longer applies extra hidden/offline gating outside the SWR-specific focus, reconnect, and polling paths
   - the immutable entry point now disables polling by forcing `refreshInterval: 0`
   - `isPaused()` now gates mount, focus, reconnect, polling, and mutate-driven revalidation, and in-flight results are discarded while paused
   - bound `mutate()` now correctly treats a no-argument call as revalidation instead of mutating the cache to `undefined`
@@ -69,6 +72,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - polling timers now reschedule when provider-driven refresh settings change, including reactive `refreshInterval` updates and function-style intervals that derive their next delay from the latest data
   - focus throttling now compares with a strict `<` boundary, so `focusThrottleInterval: 0` no longer suppresses same-millisecond focus revalidation after mount
   - stale per-hook refresh completions no longer reset polling or fire hook-local success or error callbacks after the hook has switched to a different key, while cache updates for the old key still land for other consumers
+  - stale or discarded revalidation completions now also clear `isLoading` and `isValidating` before returning, matching SWR's final-state path more closely
   - synchronous fetcher throws are now normalized into rejected promises at the fetcher boundary, so `error`, retry, and callback semantics match asynchronous failures instead of leaking unhandled watcher errors
   - public hook entrypoints now support SWR-style normalized argument forms, so `useSWRV(key, config)` and `useSWRVImmutable(key, config)` can drive requests through `config.fetcher` instead of requiring a positional fetcher argument
   - the public hook fetcher surface now aligns more closely with SWR again: normalized calls accept `null` or `undefined` as the missing fetcher forms, but no longer widen to `false`
@@ -86,6 +90,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - `swrv/infinite` now also supports the SWR-style config-only call form via `config.fetcher`, so `useSWRVInfinite(getKey, { fetcher, ...config })` is a supported runtime path
   - infinite behavior coverage now includes `unstable_serialize` mutation paths, scoped custom-cache revalidation, null-key `setSize()` handling, fallback retention during size growth, page-cache sharing with plain `useSWRV` consumers, and SWR-style bound `mutate()` option behavior for `optimisticData`, `populateCache`, `rollbackOnError`, and `throwOnError`
   - `swrv/mutation` now guards local state against stale trigger results after `reset()` or a newer trigger, and it still records local error state when `throwOnError` is disabled
+  - `swrv/mutation` now also uses timestamp-based latest-result guards again, matching SWR's trigger/reset discard semantics more closely
   - mutation behavior coverage now also includes original key plus arg delivery, hook-level and per-trigger success/error callbacks, `isMutating`, empty-key failures, shared-cache optimistic updates, cache isolation from plain `useSWRV`, clearing error state after a later successful trigger, non-deduped triggers, latest fetcher/config closure behavior, and falsey rejection handling
   - scoped `mutate()` now returns the actual mutation result even when `populateCache` is disabled
 - The subscription helper has now received its first real parity pass:
@@ -93,6 +98,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - it passes original keys through to handlers, deduplicates subscriptions per cache boundary, and enforces disposer return values
   - it now also covers singleton-style subscriptions that switch keys over time without keeping the previous callback wired up
   - it no longer conflicts with normal `useSWRV` state for the same logical key
+  - it no longer injects extra revalidation overrides on top of the null-fetcher base-hook path, so the wrapper structure now matches SWR more literally
 - Public typing and package-shape coverage are now materially stronger:
   - `useSWRV` and `useSWRVImmutable` now infer array-key fetcher arguments more precisely
   - `useSWRV` and `useSWRVImmutable` now also preserve non-null fetcher argument types for nullable string and object keys, and accept readonly tuple keys in positional fetcher signatures
@@ -210,7 +216,9 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - infinite key serialization now lives beside the feature in `infinite/serialize.ts`, `INFINITE_PREFIX` is restored in `_internal/constants.ts`, and infinite metadata now lives in the infinite cache entry itself instead of separate side stores
   - subscription now keeps its `$sub$` prefix and ref-count storage inline in `subscription/index.ts`, while generic mutate filters internal keys through the same inline SWR-style prefix test instead of a shared helper module
   - public aliases now include SWR-shaped names where safe (`SWRConfig`, `useSWRConfig`, `useSWR`, `useSWRInfinite`, `useSWRMutation`, `useSWRSubscription`, plus SWR-style type aliases) alongside the existing SWRV names
-  - the unused internal `"error-revalidate"` event concept is restored as an event constant for structural alignment, small cross-cutting helpers still live in `_internal/shared.ts`, and `SWRVConfig` boundary-creation semantics remain documented directly in `config-context.ts` and `config-utils.ts`
+  - the unused internal `"error-revalidate"` event concept is restored as an event constant for structural alignment, small cross-cutting helpers still live in `_internal/shared.ts`, and `SWRVConfig` boundary-creation semantics now live under `_internal/utils/config-context.ts` while the top-level config files are thinner wrappers again
+  - the straightforward SWR-shaped utility modules under `_internal/utils/*` now own their actual implementations again instead of delegating almost everything through flat `_internal/*` files, and the main feature codepaths now import those utility owners directly
+  - functional `SWRVConfig` values now follow SWR's control flow more literally: the provider keeps the function result direct instead of default-merging it inside `config-context`, and default filling now happens through the config accessor path
 - the latest 2026-03-22 SWR structure-alignment round shows that the main remaining source drift is now intentionally Vue-specific or compatibility-only:
   - explicit `SWRVClient` plus provider-state replace SWR's `global-state` and `subscribe-key` internals
   - Vue refs, watchers, effect scopes, and provide or inject context remain the primary runtime boundary instead of React hooks and contexts
