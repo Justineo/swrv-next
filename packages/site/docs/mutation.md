@@ -9,7 +9,7 @@ SWRV provides the [`mutate`](/mutation#mutate) and [`useSWRVMutation`](/mutation
 APIs for mutating remote data and the related cache.
 
 > [!TIP]
-> Hook snippets on this page assume they are called inside `setup()` or `<script setup>`.
+> Composable snippets on this page assume they are called inside `setup()` or `<script setup>`.
 
 ## `mutate`
 
@@ -38,7 +38,8 @@ await mutate(key, data, options);
 
 > [!WARNING]
 > Using global `mutate(key)` with only the key parameter will not update the cache unless there is
-> a mounted SWRV hook using the same key. It is a revalidation signal, not a write by itself.
+> a mounted component using `useSWRV` with the same key. It is a revalidation signal, not a write
+> by itself.
 
 ### Bound mutate
 
@@ -76,7 +77,7 @@ const { mutate } = useSWRVConfig();
 
 function logout() {
   document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-  void mutate("/api/user");
+  mutate("/api/user");
 }
 </script>
 ```
@@ -84,9 +85,9 @@ function logout() {
 This is useful after auth changes, remote invalidations, or any action where the cache should be
 refetched rather than directly replaced.
 
-It broadcasts to hooks under the same [cache provider](/advanced/cache) scope. If you are using a
-custom provider boundary, prefer the scoped `mutate` from `useSWRVConfig()` so you mutate the cache
-that the current hooks are actually using.
+It broadcasts to consumers under the same [cache provider](/advanced/cache) scope. If you are
+using a custom provider boundary, prefer the scoped `mutate` from `useSWRVConfig()` so you mutate
+the cache that the current components are actually using.
 
 ### API
 
@@ -157,7 +158,7 @@ const { data, error, isMutating, reset, trigger } = useSWRVMutation(key, fetcher
 - `isMutating`: whether there is an ongoing remote mutation
 
 `trigger` also accepts per-call options so you can override optimistic updates or rollback behavior
-for one mutation without changing the base hook configuration.
+for one mutation without changing the base composable configuration.
 
 It returns the remote mutation result when the request succeeds.
 

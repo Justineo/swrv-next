@@ -1,6 +1,6 @@
 ---
 title: API
-description: Complete API reference for SWRV hooks and utilities.
+description: Complete API reference for SWRV composables and utilities.
 ---
 
 # API
@@ -13,12 +13,18 @@ const { data, error, isLoading, isValidating, mutate } = useSWRV(key, fetcher, o
 > `useSWRV` is a composable. Real calls belong inside `setup()` or `<script setup>`. The signature
 > above is reference syntax, not a standalone script.
 
+> [!TIP]
+> Coming from `swrv@1`? Start with [Migrate from v1](/migrate-from-v1). The biggest migration
+> points are `SWRVConfig`-based cache ownership, new `mutate` semantics, `preload` replacing
+> `mutate(key, promise)` prefetching, and the removal of `ttl`, `serverTTL`, and
+> `revalidateDebounce`.
+
 ## Parameters
 
 - `key`: a unique key for the request. It can be a string, tuple, object, ref, computed ref,
   function, or a falsy value such as `null` [(details)](/arguments), [(advanced usage)](/conditional-fetching)
 - `fetcher`: optional. A function that returns the data for the given key [(details)](/data-fetching)
-- `options`: optional. A configuration object for this hook [(global defaults)](/global-configuration)
+- `options`: optional. A configuration object for this composable call [(global defaults)](/global-configuration)
 
 ## Return values
 
@@ -36,7 +42,7 @@ More information can be found in [Understanding SWRV](/advanced/understanding).
 
 ## Options
 
-- `fetcher(args)`: fetcher function for this hook [(details)](/data-fetching)
+- `fetcher(args)`: fetcher function for this composable call [(details)](/data-fetching)
 - `revalidateIfStale = true`: revalidate on activation when cached data exists [(details)](/revalidation)
 - `revalidateOnMount`: explicitly enable or disable the first activation revalidation [(details)](/revalidation#revalidate-on-mount)
 - `revalidateOnFocus = true`: revalidate when the window regains focus [(details)](/revalidation#revalidate-on-focus)
@@ -51,7 +57,7 @@ More information can be found in [Understanding SWRV](/advanced/understanding).
 - `errorRetryInterval = 5000`: delay between retries
 - `errorRetryCount`: maximum number of retries
 - `fallback`: key-value object for config-level fallback data [(details)](/global-configuration), [(SSR)](/server-rendering-and-hydration#pre-rendering-with-default-data)
-- `fallbackData`: fallback data for this hook only [(details)](/prefetching#pre-fill-data)
+- `fallbackData`: fallback data for this composable call only [(details)](/prefetching#pre-fill-data)
 - `strictServerPrefetchWarning = false`: warn during SSR when a key is rendered without prefetched
   data [(details)](/server-rendering-and-hydration#strict-warnings-for-missing-handoff-data)
 - `keepPreviousData = false`: keep the previous key’s data while the new key loads [(details)](/advanced/understanding#return-previous-data-for-better-ux)
@@ -67,7 +73,7 @@ More information can be found in [Understanding SWRV](/advanced/understanding).
 - `use`: middleware array [(details)](/middleware)
 
 Provider-level options such as `client`, `cache`, `provider`, `initFocus`, and `initReconnect`
-belong on [`SWRVConfig`](/global-configuration), not per-hook calls.
+belong on [`SWRVConfig`](/global-configuration), not per-composable calls.
 
 ## Companion APIs
 
@@ -126,8 +132,8 @@ See [Mutation](/mutation).
 await preload(key, fetcher);
 ```
 
-`preload` starts a request before a hook consumes it. It dedupes by serialized key and is consumed
-by the first matching hook request. See [Prefetching](/prefetching).
+`preload` starts a request before a component using `useSWRV` consumes it. It dedupes by serialized
+key and is consumed by the first matching request. See [Prefetching](/prefetching).
 
 ### `unstable_serialize`
 

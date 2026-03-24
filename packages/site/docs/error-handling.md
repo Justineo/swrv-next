@@ -7,7 +7,7 @@ description: Handle errors when fetching data with SWRV.
 
 If the fetcher throws, the error is exposed through `error`:
 
-For fetcher patterns, see [Data fetching](/data-fetching). For the full hook and option surface,
+For fetcher patterns, see [Data fetching](/data-fetching). For the full composable and option surface,
 see [API](/api).
 
 ```vue
@@ -80,7 +80,7 @@ useSWRV("/api/user", fetcher, {
     }
 
     setTimeout(() => {
-      void revalidate({ retryCount });
+      revalidate({ retryCount });
     }, 5000);
   },
 });
@@ -111,5 +111,5 @@ const value = {
 </template>
 ```
 
-Use hook-level `onError` when the effect is local to one request, and config-level `onError` when
+Use per-call `onError` when the effect is local to one request, and config-level `onError` when
 you want one shared reporting path for a whole subtree.

@@ -108,7 +108,7 @@ See [TypeScript](/typescript#useswrvsubscription) for typed subscription example
 
 `useSWRVSubscription` dedupes subscription requests with the same key inside the current cache
 boundary. If multiple components subscribe to the same key, they share one live subscription until
-the last consumer unmounts.
+the last subscribing component unmounts.
 
 Subscription caches are isolated from the normal `useSWRV` request cache. If you want a pushed
 value to update a regular query key as well, do it explicitly through `mutate`.

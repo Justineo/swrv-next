@@ -133,7 +133,7 @@ them together.
   - `parallel = false`
 
 > [!NOTE]
-> `initialSize` should be treated as fixed for the lifecycle of that hook call.
+> `initialSize` should be treated as fixed for the lifecycle of that composable call.
 
 #### Return values
 

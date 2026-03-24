@@ -36,8 +36,8 @@ Later revalidations keep `data` in place while `isValidating` flips back to `tru
 When the key changes, SWRV resolves the new key, reads any cached or fallback data for it, and then
 decides whether the new key should revalidate.
 
-If the new key has no cached value, `data` drops back to `undefined` and the hook enters an initial
-loading state for that key. If the new key already has cached data, SWRV can render it immediately
+If the new key has no cached value, `data` drops back to `undefined` and the composable enters an
+initial loading state for that key. If the new key already has cached data, SWRV can render it immediately
 and revalidate in the background.
 
 ### Key change + previous data
@@ -50,7 +50,7 @@ filter updates.
 
 ### Fallback
 
-When `fallbackData` or config-level `fallback` exists, the hook can render with that data
+When `fallbackData` or config-level `fallback` exists, the composable can render with that data
 immediately before any revalidation finishes.
 
 This is especially helpful for SSR, static pre-rendering, or any workflow where the server already

@@ -41,7 +41,6 @@ export default defineConfig({
     nav: [
       { text: "Docs", link: "/getting-started" },
       { text: "API", link: "/api" },
-      { text: "Migrate from v1", link: "/migrate-from-v1" },
       { text: "GitHub", link: repositoryUrl },
     ],
     socialLinks: [{ icon: "github", link: repositoryUrl }],
@@ -79,7 +78,6 @@ export default defineConfig({
           { text: "Subscription", link: "/subscription" },
           { text: "TypeScript", link: "/typescript" },
           { text: "Server rendering and hydration", link: "/server-rendering-and-hydration" },
-          { text: "Migrate from v1", link: "/migrate-from-v1" },
         ],
       },
       {
@@ -90,6 +88,10 @@ export default defineConfig({
           { text: "Performance", link: "/advanced/performance" },
           { text: "Devtools", link: "/advanced/devtools" },
         ],
+      },
+      {
+        text: "Migration",
+        items: [{ text: "Migrate from v1", link: "/migrate-from-v1" }],
       },
     ],
     outline: [2, 3],

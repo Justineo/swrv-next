@@ -45,10 +45,10 @@ const value = {
 </template>
 ```
 
-All SWRV hooks under that boundary use the same provider.
+All SWRV composable calls under that boundary use the same provider.
 
-When boundaries are nested, hooks use the nearest upper-level provider. If there is no custom
-provider above them, they fall back to the default root cache.
+When boundaries are nested, composable calls use the nearest upper-level provider. If there is no
+custom provider above them, they fall back to the default root cache.
 
 > [!WARNING]
 > When the boundary is remounted, the provider is recreated too. Keep custom providers high enough
@@ -66,8 +66,8 @@ If a custom provider is in use, this keeps you aligned with the current boundary
 
 > [!WARNING]
 > If you use a custom cache boundary, the root global `mutate` helper is no longer the right tool
-> for hooks inside that boundary. Use `useSWRVConfig().mutate` so the mutation targets the current
-> provider.
+> for components inside that boundary. Use `useSWRVConfig().mutate` so the mutation targets the
+> current provider.
 
 ## Experimental: extend cache provider
 

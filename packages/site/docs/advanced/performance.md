@@ -17,7 +17,8 @@ single page render.
 
 ## Deduplication
 
-Hooks sharing the same key dedupe in-flight requests inside the same cache boundary.
+Components or composable calls sharing the same key dedupe in-flight requests inside the same cache
+boundary.
 
 That means repeated `useSWRV("/api/user", fetcher)` calls do not fan out into one request per
 component.

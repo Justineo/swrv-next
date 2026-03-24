@@ -8,7 +8,7 @@ description: Pass arguments to SWRV fetcher functions.
 By default, the `key` identifies the request and is also forwarded to the fetcher.
 
 > [!TIP]
-> Hook snippets on this page assume they are called inside `setup()` or `<script setup>`.
+> Composable snippets on this page assume they are called inside `setup()` or `<script setup>`.
 
 Inside `setup()`, these expressions are equivalent:
 

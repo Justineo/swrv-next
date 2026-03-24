@@ -1,16 +1,17 @@
 ---
 title: Middleware
-description: Extend SWRV hooks with reusable middleware.
+description: Extend SWRV composables with reusable middleware.
 ---
 
 # Middleware
 
-Middleware lets you execute logic before and after SWRV hooks. If there are multiple middleware,
-each one wraps the next middleware, and the last middleware wraps the original SWRV hook.
+Middleware lets you execute logic before and after SWRV composables. If there are multiple
+middleware, each one wraps the next middleware, and the last middleware wraps the original SWRV
+composable.
 
 ## Usage
 
-Register middleware either per hook or through `SWRVConfig`:
+Register middleware either per composable call or through `SWRVConfig`:
 
 ```ts
 const logger = (useSWRVNext) => (key, fetcher, config) => {
@@ -40,18 +41,19 @@ useSWRV("/api/user", fetcher, { use: [logger] });
 
 ## API
 
-A middleware receives the next SWRV hook and returns a wrapped version of it:
+A middleware receives the next SWRV composable and returns a wrapped version of it:
 
 ```ts
 const middleware = (useSWRVNext) => (key, fetcher, config) => {
-  // Before hook runs...
+  // Before composable runs...
   return useSWRVNext(key, fetcher, config);
-  // After hook runs...
+  // After composable runs...
 };
 ```
 
-Unlike React, Vue does not have the same Hook lint rule about function names. The important part is
-that middleware stays a plain function and composables are still called inside setup scope.
+Unlike React, Vue does not have the same lint rule around function naming for this pattern. The
+important part is that middleware stays a plain function and composables are still called inside
+setup scope.
 
 See [TypeScript](/typescript#middleware-types) for the exported middleware helper types.
 
@@ -139,9 +141,10 @@ That matches SWR's composition model. Middleware order also follows config bound
 
 1. parent `SWRVConfig` middleware
 2. nested `SWRVConfig` middleware
-3. per-hook middleware
+3. per-call middleware
 
-This makes it easy to keep broad behavior at the app boundary and local behavior at the hook call.
+This makes it easy to keep broad behavior at the app boundary and local behavior at the composable
+call.
 
 ## Examples
 

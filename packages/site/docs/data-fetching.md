@@ -16,7 +16,7 @@ For key shapes and fetcher arguments, see [Arguments](/arguments). For retry beh
 payload patterns, see [Error handling](/error-handling).
 
 > [!TIP]
-> The fetcher can be omitted from the hook call if it is provided globally through
+> The fetcher can be omitted from the composable call if it is provided globally through
 > [`SWRVConfig`](/global-configuration).
 
 ## Fetch
@@ -39,7 +39,7 @@ const { data, error } = useSWRV("/api/data", fetcher);
 </script>
 ```
 
-If your app always uses the same request shape, move the fetcher to `SWRVConfig` and keep the hook
+If your app always uses the same request shape, move the fetcher to `SWRVConfig` and keep the composable
 calls shorter:
 
 ```vue

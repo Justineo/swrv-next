@@ -24,8 +24,8 @@ later request for the same URL can then reuse that work, including SWRV requests
 
 ## Programmatically prefetch
 
-SWRV provides `preload` so you can start a request before the hook needs it. `preload` accepts a
-`key` and a `fetcher`, just like `useSWRV`.
+SWRV provides `preload` so you can start a request before a component using `useSWRV` needs it.
+`preload` accepts a `key` and a `fetcher`, just like `useSWRV`.
 
 You can call `preload` outside of Vue setup on the client:
 
@@ -34,10 +34,10 @@ import { preload } from "swrv";
 
 const fetcher = (url: string) => fetch(url).then((response) => response.json());
 
-void preload("/api/user", fetcher);
+preload("/api/user", fetcher);
 ```
 
-Then the first matching hook can reuse that request:
+Then the first matching `useSWRV` call can reuse that request:
 
 ```vue
 <script setup lang="ts">
@@ -59,13 +59,13 @@ const props = defineProps<{ userId: string }>();
 watch(
   () => props.userId,
   (userId) => {
-    void preload(`/api/user/${userId}`, fetcher);
+    preload(`/api/user/${userId}`, fetcher);
   },
   { immediate: true },
 );
 
 function warmNextUser(nextUserId: string) {
-  void preload(`/api/user/${nextUserId}`, fetcher);
+  preload(`/api/user/${nextUserId}`, fetcher);
 }
 </script>
 
@@ -82,7 +82,7 @@ request is likely to happen next.
 - accepts the same key shapes as `useSWRV`
 - dedupes repeated preloads by serialized key
 - clears failed preload entries so later attempts can retry
-- hands the response to the first matching hook request
+- hands the response to the first matching request
 
 Tuple keys work too:
 
@@ -94,7 +94,7 @@ await preload(["/api/user", token] as const, async (url, authToken) => {
 
 ## Pre-fill data
 
-Use `fallbackData` when one hook needs placeholder data:
+Use `fallbackData` when one composable call needs placeholder data:
 
 ```vue
 <script setup lang="ts">
@@ -126,7 +126,7 @@ const value = {
 </template>
 ```
 
-See [API](/api#options) for hook-level `fallbackData` and [Global configuration](/global-configuration)
+See [API](/api#options) for composable-level `fallbackData` and [Global configuration](/global-configuration)
 for provider-level `fallback`.
 
 ## Prefetch on the server

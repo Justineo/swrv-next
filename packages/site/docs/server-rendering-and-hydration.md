@@ -5,8 +5,8 @@ description: Use SWRV with Vue SSR and explicit hydration handoff.
 
 # Server rendering and hydration
 
-SWRV’s SSR model is explicit. Hooks can read prefetched data during server rendering, but they do
-not start network requests automatically on the server.
+SWRV’s SSR model is explicit. `useSWRV` calls can read prefetched data during server rendering, but
+they do not start network requests automatically on the server.
 
 ## Client-side data fetching
 
@@ -65,7 +65,7 @@ The page is still pre-rendered, but after hydration SWRV takes over again and ca
 client to keep the data fresh.
 
 The important part is that the article is ready during SSR because it was prefetched explicitly, not
-because the hook fetched on the server.
+because `useSWRV` fetched it on the server.
 
 ### Complex keys
 
@@ -81,19 +81,19 @@ const fallback = {
 };
 ```
 
-## Hooks do not fetch on the server
+## Composables do not fetch on the server
 
 During server rendering:
 
 - `useSWRV` can read `fallbackData`
 - `useSWRV` can read config-level `fallback`
 - `useSWRV` can read hydrated snapshots
-- hooks do not start new fetches
+- composable calls do not start new fetches
 
 This keeps request ownership explicit and avoids accidental server-side waterfalls.
 
-Unlike SWR’s React Server Component examples, there is no promise handoff mechanism for hook calls.
-Server rendering in SWRV is based on prefilling data, then hydrating and revalidating on the
+Unlike SWR’s React Server Component examples, there is no promise handoff mechanism for composable
+calls. Server rendering in SWRV is based on prefilling data, then hydrating and revalidating on the
 client.
 
 ## Request-scoped clients

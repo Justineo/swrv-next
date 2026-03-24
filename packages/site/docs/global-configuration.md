@@ -1,11 +1,11 @@
 ---
 title: Global configuration
-description: Configure default options for all SWRV hooks.
+description: Configure default options for SWRV composables.
 ---
 
 # Global configuration
 
-`SWRVConfig` provides shared configuration for every SWRV hook inside the boundary.
+`SWRVConfig` provides shared configuration for every SWRV composable call inside the boundary.
 
 For the full option list, see [API](/api). This page focuses on how those options are shared across
 cache boundaries and app subtrees.
@@ -40,7 +40,7 @@ const { data: user } = useSWRV("/api/user", { refreshInterval: 0 });
 </script>
 ```
 
-Inside `Dashboard`, all three hooks can reuse the same fetcher. The `/api/user` request still
+Inside `Dashboard`, all three `useSWRV` calls can reuse the same fetcher. The `/api/user` request still
 overrides the shared polling policy locally.
 
 ## Nesting configurations

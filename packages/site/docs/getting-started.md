@@ -5,6 +5,11 @@ description: Install SWRV and start fetching data in Vue.
 
 # Getting started
 
+> [!TIP]
+> Upgrading an existing app from `swrv@1`? Read [Migrate from v1](/migrate-from-v1) first. SWRV 2
+> keeps `useSWRV`, but shared config, `mutate`, caching, and SSR changed enough that the upgrade is
+> not just a version bump.
+
 ## Installation
 
 Inside your Vue project directory, run the following:

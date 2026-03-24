@@ -137,7 +137,7 @@ If the fetcher is less specific, pass the data type explicitly:
 const response = useSWRV<{ id: string; name: string }>("/api/user", fetcher);
 ```
 
-`fallbackData` also narrows `data.value` for that hook call:
+`fallbackData` also narrows `data.value` for that composable call:
 
 ```ts
 const response = useSWRV("/api/user", fetcher, {
