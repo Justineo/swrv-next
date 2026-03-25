@@ -1,7 +1,7 @@
 # SWRV Next Design Snapshot
 
 Status: Post-hardening prerelease, repo-side release verification complete
-Last updated: 2026-03-23
+Last updated: 2026-03-25
 
 ## Mission
 
@@ -187,9 +187,9 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - the repo now also contains a first-class `RELEASING.md` guide plus root and package `release:verify` commands for repeatable repo-side release verification
   - the remaining non-suspense release work is now mostly outside the repo: Trusted Publisher production verification, stable release-note preparation, and the actual stable tag decision
 - the pre-stable refinement lane has materially reduced runtime and middleware drift, but a later 2026-03-20 source audit found a smaller remaining set of public-type and helper-boundary alignment tasks still open
-- the docs site now uses default VitePress layout primitives, keeps the built-in code block treatment and highlighting, and themes the site through separate light and dark `--theme-*` token sets bridged through a shared VitePress `--vp-*` mapping layer plus the SWRV logo
+- the docs site now uses default VitePress layout primitives, keeps the built-in code block treatment and highlighting, and themes the site through a compact semantic `--theme-*` token layer bridged through a shared VitePress `--vp-*` mapping layer plus the SWRV logo
 - the docs site now uses Shiki's `night-owl-light` and `night-owl` themes for code blocks, so syntax highlighting follows a dual light/dark Night Owl pairing instead of the VitePress default
-- the docs light mode now uses a crisp white / jade palette with darker ink and cleaner neutrals, while dark mode keeps the Kong AI-connectivity palette
+- the docs light mode now uses a muted sage and lime palette with dark ink, while dark mode keeps the same palette direction through a matching minimal semantic token set
 - the docs site now explicitly loads Roboto and Space Grotesk for the theme font tokens, so base copy and heading typography no longer rely on unresolved font-family names
 - the docs site now also loads Roboto Mono and maps VitePress's monospaced font token to it, so code and monospaced UI no longer fall back to the browser default monospace stack
 - the docs site now renders install snippets through `vitepress-plugin-npm-commands`, with a local markdown extension that adds a `vp` tab beside the standard package-manager commands

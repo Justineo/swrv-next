@@ -26,8 +26,8 @@ export default defineConfig({
     },
   },
   head: [
-    ["meta", { content: "#ffffff", media: "(prefers-color-scheme: light)", name: "theme-color" }],
-    ["meta", { content: "#000000", media: "(prefers-color-scheme: dark)", name: "theme-color" }],
+    ["meta", { content: "#cdd4cb", media: "(prefers-color-scheme: light)", name: "theme-color" }],
+    ["meta", { content: "#001408", media: "(prefers-color-scheme: dark)", name: "theme-color" }],
     ["link", { href: logoUrl, rel: "icon", type: "image/png" }],
   ],
   themeConfig: {
