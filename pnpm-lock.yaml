@@ -12,9 +12,6 @@ catalogs:
     '@types/node':
       specifier: 24.12.2
       version: 24.12.2
-    '@vue/server-renderer':
-      specifier: 3.5.32
-      version: 3.5.32
     bumpp:
       specifier: 11.0.1
       version: 11.0.1
@@ -45,11 +42,10 @@ catalogs:
     vitepress-plugin-tabs:
       specifier: 0.9.0
       version: 0.9.0
-    vue:
-      specifier: 3.5.32
-      version: 3.5.32
 
 overrides:
+  vue: 3.5.32
+  '@vue/server-renderer': 3.5.32
   vite: npm:@voidzero-dev/vite-plus-core@latest
   vitest: npm:@voidzero-dev/vite-plus-test@latest
 
@@ -65,7 +61,7 @@ importers:
         version: 11.0.1
       vite-plus:
         specifier: 'catalog:'
-        version: 0.1.19(@types/node@25.5.0)(esbuild@0.27.4)(jiti@2.6.1)(jsdom@29.0.2)(typescript@5.9.3)(vite@8.0.0(@types/node@25.5.0)(esbuild@0.27.4)(jiti@2.6.1)(yaml@2.8.2))(yaml@2.8.2)
+        version: 0.1.19(@types/node@25.5.0)(esbuild@0.27.4)(jiti@2.6.1)(jsdom@29.0.2)(typescript@5.9.3)(vite@8.0.0(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@types/node@25.5.0)(esbuild@0.27.4)(jiti@2.6.1)(yaml@2.8.2))(yaml@2.8.2)
 
   packages/site:
     devDependencies:
@@ -83,7 +79,7 @@ importers:
         version: 5.9.3
       vite-plus:
         specifier: 'catalog:'
-        version: 0.1.19(@types/node@24.12.2)(esbuild@0.28.0)(jiti@2.6.1)(jsdom@29.0.2)(typescript@5.9.3)(vite@8.0.0(@types/node@24.12.2)(esbuild@0.28.0)(jiti@2.6.1)(yaml@2.8.2))(yaml@2.8.2)
+        version: 0.1.19(@types/node@24.12.2)(esbuild@0.28.0)(jiti@2.6.1)(jsdom@29.0.2)(typescript@5.9.3)(vite@8.0.0(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@types/node@24.12.2)(esbuild@0.28.0)(jiti@2.6.1)(yaml@2.8.2))(yaml@2.8.2)
       vitepress:
         specifier: 'catalog:'
         version: 2.0.0-alpha.17(@types/node@24.12.2)(esbuild@0.28.0)(jiti@2.6.1)(oxc-minify@0.127.0)(postcss@8.5.8)(typescript@5.9.3)(yaml@2.8.2)
@@ -104,7 +100,7 @@ importers:
         specifier: 'catalog:'
         version: 24.12.2
       '@vue/server-renderer':
-        specifier: 'catalog:'
+        specifier: 3.5.32
         version: 3.5.32(vue@3.5.32(typescript@5.9.3))
       jsdom:
         specifier: 'catalog:'
@@ -114,9 +110,9 @@ importers:
         version: 5.9.3
       vite-plus:
         specifier: 'catalog:'
-        version: 0.1.19(@types/node@24.12.2)(esbuild@0.27.4)(jiti@2.6.1)(jsdom@29.0.2)(typescript@5.9.3)(vite@8.0.0(@types/node@24.12.2)(esbuild@0.27.4)(jiti@2.6.1)(yaml@2.8.2))(yaml@2.8.2)
+        version: 0.1.19(@types/node@24.12.2)(esbuild@0.27.4)(jiti@2.6.1)(jsdom@29.0.2)(typescript@5.9.3)(vite@8.0.0(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@types/node@24.12.2)(esbuild@0.27.4)(jiti@2.6.1)(yaml@2.8.2))(yaml@2.8.2)
       vue:
-        specifier: 'catalog:'
+        specifier: 3.5.32
         version: 3.5.32(typescript@5.9.3)
 
 packages:
@@ -202,20 +198,11 @@ packages:
   '@docsearch/sidepanel-js@4.6.0':
     resolution: {integrity: sha512-lFT5KLwlzUmpoGArCScNoK41l9a22JYsEPwBzMrz+/ILVR5Ax87UphCuiyDFQWEvEmbwzn/kJx5W/O5BUlN1Rw==}
 
-  '@emnapi/core@1.9.0':
-    resolution: {integrity: sha512-0DQ98G9ZQZOxfUcQn1waV2yS8aWdZ6kJMbYCJB3oUBecjWYO1fqJ+a1DRfPF3O5JEkwqwP1A9QEN/9mYm2Yd0w==}
-
   '@emnapi/core@1.9.2':
     resolution: {integrity: sha512-UC+ZhH3XtczQYfOlu3lNEkdW/p4dsJ1r/bP7H8+rhao3TTTMO1ATq/4DdIi23XuGoFY+Cz0JmCbdVl0hz9jZcA==}
 
-  '@emnapi/runtime@1.9.0':
-    resolution: {integrity: sha512-QN75eB0IH2ywSpRpNddCRfQIhmJYBCJ1x5Lb3IscKAL8bMnVAKnRg8dCoXbHzVLLH7P38N2Z3mtulB7W0J0FKw==}
-
   '@emnapi/runtime@1.9.2':
     resolution: {integrity: sha512-3U4+MIWHImeyu1wnmVygh5WlgfYDtyf0k8AbLhMFxOipihf6nrWC4syIm/SwEeec0mNSafiiNnMJwbza/Is6Lw==}
-
-  '@emnapi/wasi-threads@1.2.0':
-    resolution: {integrity: sha512-N10dEJNSsUx41Z6pZsXU8FjPjpBEplgH24sfkmITrBED1/U2Esum9F3lfLrMjKHHjmi557zQn7kR9R+XWXu5Rg==}
 
   '@emnapi/wasi-threads@1.2.1':
     resolution: {integrity: sha512-uTII7OYF+/Mes/MrcIOYp5yOtSMLBWSIoLPpcgwipoiKbli6k322tcoFsxoIIxPDqW01SQGAgko4EzZi2BNv2w==}
@@ -549,9 +536,6 @@ packages:
 
   '@jridgewell/sourcemap-codec@1.5.5':
     resolution: {integrity: sha512-cYQ9310grqxueWbl+WuIUIaiUaDcj7WOq5fVhEljNVgRfOUhY9fy2zTvfoqWsnebh8Sl70VScFbICvJnLKB0Og==}
-
-  '@napi-rs/wasm-runtime@1.1.1':
-    resolution: {integrity: sha512-p64ah1M1ld8xjWv3qbvFwHiFVWrq1yFvV4f7w+mzaqiR4IlSgkqhcRdHwsGgomwzBH51sRY4NEowLxnaBjcW/A==}
 
   '@napi-rs/wasm-runtime@1.1.4':
     resolution: {integrity: sha512-3NQNNgA1YSlJb/kMH1ildASP9HW7/7kYnRI2szWJaofaS1hWmbGI4H+d3+22aGzXXN9IJ+n+GiFVcGipJP18ow==}
@@ -1157,7 +1141,7 @@ packages:
     engines: {node: ^20.19.0 || >=22.12.0}
     peerDependencies:
       vite: ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0
-      vue: ^3.2.25
+      vue: 3.5.32
 
   '@voidzero-dev/vite-plus-core@0.1.19':
     resolution: {integrity: sha512-BTmz50juSDolIN4Vtu5iVaPONV1XSrMB5V+9IoBhhxdogfvp7PBhaHuAcPjTN2RTVowhLZXoo8mn+aHjq//bkw==}
@@ -1302,26 +1286,14 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@vue/compiler-core@3.5.30':
-    resolution: {integrity: sha512-s3DfdZkcu/qExZ+td75015ljzHc6vE+30cFMGRPROYjqkroYI5NV2X1yAMX9UeyBNWB9MxCfPcsjpLS11nzkkw==}
-
   '@vue/compiler-core@3.5.32':
     resolution: {integrity: sha512-4x74Tbtqnda8s/NSD6e1Dr5p1c8HdMU5RWSjMSUzb8RTcUQqevDCxVAitcLBKT+ie3o0Dl9crc/S/opJM7qBGQ==}
-
-  '@vue/compiler-dom@3.5.30':
-    resolution: {integrity: sha512-eCFYESUEVYHhiMuK4SQTldO3RYxyMR/UQL4KdGD1Yrkfdx4m/HYuZ9jSfPdA+nWJY34VWndiYdW/wZXyiPEB9g==}
 
   '@vue/compiler-dom@3.5.32':
     resolution: {integrity: sha512-ybHAu70NtiEI1fvAUz3oXZqkUYEe5J98GjMDpTGl5iHb0T15wQYLR4wE3h9xfuTNA+Cm2f4czfe8B4s+CCH57Q==}
 
-  '@vue/compiler-sfc@3.5.30':
-    resolution: {integrity: sha512-LqmFPDn89dtU9vI3wHJnwaV6GfTRD87AjWpTWpyrdVOObVtjIuSeZr181z5C4PmVx/V3j2p+0f7edFKGRMpQ5A==}
-
   '@vue/compiler-sfc@3.5.32':
     resolution: {integrity: sha512-8UYUYo71cP/0YHMO814TRZlPuUUw3oifHuMR7Wp9SNoRSrxRQnhMLNlCeaODNn6kNTJsjFoQ/kqIj4qGvya4Xg==}
-
-  '@vue/compiler-ssr@3.5.30':
-    resolution: {integrity: sha512-NsYK6OMTnx109PSL2IAyf62JP6EUdk4Dmj6AkWcJGBvN0dQoMYtVekAmdqgTtWQgEJo+Okstbf/1p7qZr5H+bA==}
 
   '@vue/compiler-ssr@3.5.32':
     resolution: {integrity: sha512-Gp4gTs22T3DgRotZ8aA/6m2jMR+GMztvBXUBEUOYOcST+giyGWJ4WvFd7QLHBkzTxkfOt8IELKNdpzITLbA2rw==}
@@ -1335,28 +1307,14 @@ packages:
   '@vue/devtools-shared@8.1.0':
     resolution: {integrity: sha512-h8uCb4Qs8UT8VdTT5yjY6tOJ//qH7EpxToixR0xqejR55t5OdISIg7AJ7eBkhBs8iu1qG5gY3QQNN1DF1EelAA==}
 
-  '@vue/reactivity@3.5.30':
-    resolution: {integrity: sha512-179YNgKATuwj9gB+66snskRDOitDiuOZqkYia7mHKJaidOMo/WJxHKF8DuGc4V4XbYTJANlfEKb0yxTQotnx4Q==}
-
   '@vue/reactivity@3.5.32':
     resolution: {integrity: sha512-/ORasxSGvZ6MN5gc+uE364SxFdJ0+WqVG0CENXaGW58TOCdrAW76WWaplDtECeS1qphvtBZtR+3/o1g1zL4xPQ==}
-
-  '@vue/runtime-core@3.5.30':
-    resolution: {integrity: sha512-e0Z+8PQsUTdwV8TtEsLzUM7SzC7lQwYKePydb7K2ZnmS6jjND+WJXkmmfh/swYzRyfP1EY3fpdesyYoymCzYfg==}
 
   '@vue/runtime-core@3.5.32':
     resolution: {integrity: sha512-pDrXCejn4UpFDFmMd27AcJEbHaLemaE5o4pbb7sLk79SRIhc6/t34BQA7SGNgYtbMnvbF/HHOftYBgFJtUoJUQ==}
 
-  '@vue/runtime-dom@3.5.30':
-    resolution: {integrity: sha512-2UIGakjU4WSQ0T4iwDEW0W7vQj6n7AFn7taqZ9Cvm0Q/RA2FFOziLESrDL4GmtI1wV3jXg5nMoJSYO66egDUBw==}
-
   '@vue/runtime-dom@3.5.32':
     resolution: {integrity: sha512-1CDVv7tv/IV13V8Nip1k/aaObVbWqRlVCVezTwx3K07p7Vxossp5JU1dcPNhJk3w347gonIUT9jQOGutyJrSVQ==}
-
-  '@vue/server-renderer@3.5.30':
-    resolution: {integrity: sha512-v+R34icapydRwbZRD0sXwtHqrQJv38JuMB4JxbOxd8NEpGLny7cncMp53W9UH/zo4j8eDHjQ1dEJXwzFQknjtQ==}
-    peerDependencies:
-      vue: 3.5.30
 
   '@vue/server-renderer@3.5.32':
     resolution: {integrity: sha512-IOjm2+JQwRFS7W28HNuJeXQle9KdZbODFY7hFGVtnnghF51ta20EWAZJHX+zLGtsHhaU6uC9BGPV52KVpYryMQ==}
@@ -1372,7 +1330,7 @@ packages:
   '@vueuse/core@14.2.1':
     resolution: {integrity: sha512-3vwDzV+GDUNpdegRY6kzpLm4Igptq+GA0QkJ3W61Iv27YWwW/ufSlOfgQIpN6FZRMG0mkaz4gglJRtq5SeJyIQ==}
     peerDependencies:
-      vue: ^3.5.0
+      vue: 3.5.32
 
   '@vueuse/integrations@14.2.1':
     resolution: {integrity: sha512-2LIUpBi/67PoXJGqSDQUF0pgQWpNHh7beiA+KG2AbybcNm+pTGWT6oPGlBgUoDWmYwfeQqM/uzOHqcILpKL7nA==}
@@ -1389,7 +1347,7 @@ packages:
       qrcode: ^1.5
       sortablejs: ^1
       universal-cookie: ^7 || ^8
-      vue: ^3.5.0
+      vue: 3.5.32
     peerDependenciesMeta:
       async-validator:
         optional: true
@@ -1422,7 +1380,7 @@ packages:
   '@vueuse/shared@14.2.1':
     resolution: {integrity: sha512-shTJncjV9JTI4oVNyF1FQonetYAiTBd+Qj7cY89SWbXSkx7gyhrgtEdF2ZAVWS1S3SHlaROO6F2IesJxQEkZBw==}
     peerDependencies:
-      vue: ^3.5.0
+      vue: 3.5.32
 
   args-tokenizer@0.3.0:
     resolution: {integrity: sha512-xXAd7G2Mll5W8uo37GETpQ2VrE84M181Z7ugHFGQnJZ50M2mbOv0osSZ9VsSgPfJQ+LVG0prSi0th+ELMsno7Q==}
@@ -1965,7 +1923,7 @@ packages:
     resolution: {integrity: sha512-OB+/T6SkwGIQHIQi1NLl011kWCMzfsVEx0/q+NfF6EmvvpcfDzRClc/iEwUlq8TkQnFxANu+GTdmvtXEjJM2Lg==}
     peerDependencies:
       vitepress: ^1.0.0 || ^2.0.0-alpha.17
-      vue: ^3.5.0
+      vue: 3.5.32
 
   vitepress@2.0.0-alpha.17:
     resolution: {integrity: sha512-Z3VPUpwk/bHYqt1uMVOOK1/4xFiWQov1GNc2FvMdz6kvje4JRXEOngVI9C+bi5jeedMSHiA4dwKkff1NCvbZ9Q==}
@@ -1980,14 +1938,6 @@ packages:
       oxc-minify:
         optional: true
       postcss:
-        optional: true
-
-  vue@3.5.30:
-    resolution: {integrity: sha512-hTHLc6VNZyzzEH/l7PFGjpcTvUgiaPK5mdLkbjrTeWSRcEfxFrv56g/XckIYlE9ckuobsdwqd5mk2g1sBkMewg==}
-    peerDependencies:
-      typescript: '*'
-    peerDependenciesMeta:
-      typescript:
         optional: true
 
   vue@3.5.32:
@@ -2110,29 +2060,13 @@ snapshots:
 
   '@docsearch/sidepanel-js@4.6.0': {}
 
-  '@emnapi/core@1.9.0':
-    dependencies:
-      '@emnapi/wasi-threads': 1.2.0
-      tslib: 2.8.1
-    optional: true
-
   '@emnapi/core@1.9.2':
     dependencies:
       '@emnapi/wasi-threads': 1.2.1
       tslib: 2.8.1
     optional: true
 
-  '@emnapi/runtime@1.9.0':
-    dependencies:
-      tslib: 2.8.1
-    optional: true
-
   '@emnapi/runtime@1.9.2':
-    dependencies:
-      tslib: 2.8.1
-    optional: true
-
-  '@emnapi/wasi-threads@1.2.0':
     dependencies:
       tslib: 2.8.1
     optional: true
@@ -2307,13 +2241,6 @@ snapshots:
   '@iconify/types@2.0.0': {}
 
   '@jridgewell/sourcemap-codec@1.5.5': {}
-
-  '@napi-rs/wasm-runtime@1.1.1':
-    dependencies:
-      '@emnapi/core': 1.9.0
-      '@emnapi/runtime': 1.9.0
-      '@tybys/wasm-util': 0.10.1
-    optional: true
 
   '@napi-rs/wasm-runtime@1.1.4(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)':
     dependencies:
@@ -2572,9 +2499,12 @@ snapshots:
   '@rolldown/binding-openharmony-arm64@1.0.0-rc.9':
     optional: true
 
-  '@rolldown/binding-wasm32-wasi@1.0.0-rc.9':
+  '@rolldown/binding-wasm32-wasi@1.0.0-rc.9(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)':
     dependencies:
-      '@napi-rs/wasm-runtime': 1.1.1
+      '@napi-rs/wasm-runtime': 1.1.4(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)
+    transitivePeerDependencies:
+      - '@emnapi/core'
+      - '@emnapi/runtime'
     optional: true
 
   '@rolldown/binding-win32-arm64-msvc@1.0.0-rc.9':
@@ -2671,11 +2601,11 @@ snapshots:
 
   '@ungap/structured-clone@1.3.0': {}
 
-  '@vitejs/plugin-vue@6.0.5(@voidzero-dev/vite-plus-core@0.1.19(@types/node@24.12.2)(esbuild@0.28.0)(jiti@2.6.1)(typescript@5.9.3)(yaml@2.8.2))(vue@3.5.30(typescript@5.9.3))':
+  '@vitejs/plugin-vue@6.0.5(@voidzero-dev/vite-plus-core@0.1.19(@types/node@24.12.2)(esbuild@0.28.0)(jiti@2.6.1)(typescript@5.9.3)(yaml@2.8.2))(vue@3.5.32(typescript@5.9.3))':
     dependencies:
       '@rolldown/pluginutils': 1.0.0-rc.2
       vite: '@voidzero-dev/vite-plus-core@0.1.19(@types/node@24.12.2)(esbuild@0.28.0)(jiti@2.6.1)(typescript@5.9.3)(yaml@2.8.2)'
-      vue: 3.5.30(typescript@5.9.3)
+      vue: 3.5.32(typescript@5.9.3)
 
   '@voidzero-dev/vite-plus-core@0.1.19(@types/node@24.12.2)(esbuild@0.27.4)(jiti@2.6.1)(typescript@5.9.3)(yaml@2.8.2)':
     dependencies:
@@ -2737,7 +2667,7 @@ snapshots:
   '@voidzero-dev/vite-plus-linux-x64-musl@0.1.19':
     optional: true
 
-  '@voidzero-dev/vite-plus-test@0.1.19(@types/node@24.12.2)(esbuild@0.27.4)(jiti@2.6.1)(jsdom@29.0.2)(typescript@5.9.3)(vite@8.0.0(@types/node@24.12.2)(esbuild@0.27.4)(jiti@2.6.1)(yaml@2.8.2))(yaml@2.8.2)':
+  '@voidzero-dev/vite-plus-test@0.1.19(@types/node@24.12.2)(esbuild@0.27.4)(jiti@2.6.1)(jsdom@29.0.2)(typescript@5.9.3)(vite@8.0.0(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@types/node@24.12.2)(esbuild@0.27.4)(jiti@2.6.1)(yaml@2.8.2))(yaml@2.8.2)':
     dependencies:
       '@standard-schema/spec': 1.1.0
       '@types/chai': 5.2.3
@@ -2751,7 +2681,7 @@ snapshots:
       tinybench: 2.9.0
       tinyexec: 1.0.4
       tinyglobby: 0.2.15
-      vite: 8.0.0(@types/node@24.12.2)(esbuild@0.27.4)(jiti@2.6.1)(yaml@2.8.2)
+      vite: 8.0.0(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@types/node@24.12.2)(esbuild@0.27.4)(jiti@2.6.1)(yaml@2.8.2)
       ws: 8.19.0
     optionalDependencies:
       '@types/node': 24.12.2
@@ -2777,7 +2707,7 @@ snapshots:
       - utf-8-validate
       - yaml
 
-  '@voidzero-dev/vite-plus-test@0.1.19(@types/node@24.12.2)(esbuild@0.28.0)(jiti@2.6.1)(jsdom@29.0.2)(typescript@5.9.3)(vite@8.0.0(@types/node@24.12.2)(esbuild@0.28.0)(jiti@2.6.1)(yaml@2.8.2))(yaml@2.8.2)':
+  '@voidzero-dev/vite-plus-test@0.1.19(@types/node@24.12.2)(esbuild@0.28.0)(jiti@2.6.1)(jsdom@29.0.2)(typescript@5.9.3)(vite@8.0.0(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@types/node@24.12.2)(esbuild@0.28.0)(jiti@2.6.1)(yaml@2.8.2))(yaml@2.8.2)':
     dependencies:
       '@standard-schema/spec': 1.1.0
       '@types/chai': 5.2.3
@@ -2791,7 +2721,7 @@ snapshots:
       tinybench: 2.9.0
       tinyexec: 1.0.4
       tinyglobby: 0.2.15
-      vite: 8.0.0(@types/node@24.12.2)(esbuild@0.28.0)(jiti@2.6.1)(yaml@2.8.2)
+      vite: 8.0.0(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@types/node@24.12.2)(esbuild@0.28.0)(jiti@2.6.1)(yaml@2.8.2)
       ws: 8.19.0
     optionalDependencies:
       '@types/node': 24.12.2
@@ -2817,7 +2747,7 @@ snapshots:
       - utf-8-validate
       - yaml
 
-  '@voidzero-dev/vite-plus-test@0.1.19(@types/node@25.5.0)(esbuild@0.27.4)(jiti@2.6.1)(jsdom@29.0.2)(typescript@5.9.3)(vite@8.0.0(@types/node@25.5.0)(esbuild@0.27.4)(jiti@2.6.1)(yaml@2.8.2))(yaml@2.8.2)':
+  '@voidzero-dev/vite-plus-test@0.1.19(@types/node@25.5.0)(esbuild@0.27.4)(jiti@2.6.1)(jsdom@29.0.2)(typescript@5.9.3)(vite@8.0.0(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@types/node@25.5.0)(esbuild@0.27.4)(jiti@2.6.1)(yaml@2.8.2))(yaml@2.8.2)':
     dependencies:
       '@standard-schema/spec': 1.1.0
       '@types/chai': 5.2.3
@@ -2831,7 +2761,7 @@ snapshots:
       tinybench: 2.9.0
       tinyexec: 1.0.4
       tinyglobby: 0.2.15
-      vite: 8.0.0(@types/node@25.5.0)(esbuild@0.27.4)(jiti@2.6.1)(yaml@2.8.2)
+      vite: 8.0.0(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@types/node@25.5.0)(esbuild@0.27.4)(jiti@2.6.1)(yaml@2.8.2)
       ws: 8.19.0
     optionalDependencies:
       '@types/node': 25.5.0
@@ -2863,14 +2793,6 @@ snapshots:
   '@voidzero-dev/vite-plus-win32-x64-msvc@0.1.19':
     optional: true
 
-  '@vue/compiler-core@3.5.30':
-    dependencies:
-      '@babel/parser': 7.29.2
-      '@vue/shared': 3.5.30
-      entities: 7.0.1
-      estree-walker: 2.0.2
-      source-map-js: 1.2.1
-
   '@vue/compiler-core@3.5.32':
     dependencies:
       '@babel/parser': 7.29.2
@@ -2879,27 +2801,10 @@ snapshots:
       estree-walker: 2.0.2
       source-map-js: 1.2.1
 
-  '@vue/compiler-dom@3.5.30':
-    dependencies:
-      '@vue/compiler-core': 3.5.30
-      '@vue/shared': 3.5.30
-
   '@vue/compiler-dom@3.5.32':
     dependencies:
       '@vue/compiler-core': 3.5.32
       '@vue/shared': 3.5.32
-
-  '@vue/compiler-sfc@3.5.30':
-    dependencies:
-      '@babel/parser': 7.29.2
-      '@vue/compiler-core': 3.5.30
-      '@vue/compiler-dom': 3.5.30
-      '@vue/compiler-ssr': 3.5.30
-      '@vue/shared': 3.5.30
-      estree-walker: 2.0.2
-      magic-string: 0.30.21
-      postcss: 8.5.8
-      source-map-js: 1.2.1
 
   '@vue/compiler-sfc@3.5.32':
     dependencies:
@@ -2912,11 +2817,6 @@ snapshots:
       magic-string: 0.30.21
       postcss: 8.5.8
       source-map-js: 1.2.1
-
-  '@vue/compiler-ssr@3.5.30':
-    dependencies:
-      '@vue/compiler-dom': 3.5.30
-      '@vue/shared': 3.5.30
 
   '@vue/compiler-ssr@3.5.32':
     dependencies:
@@ -2936,30 +2836,14 @@ snapshots:
 
   '@vue/devtools-shared@8.1.0': {}
 
-  '@vue/reactivity@3.5.30':
-    dependencies:
-      '@vue/shared': 3.5.30
-
   '@vue/reactivity@3.5.32':
     dependencies:
       '@vue/shared': 3.5.32
-
-  '@vue/runtime-core@3.5.30':
-    dependencies:
-      '@vue/reactivity': 3.5.30
-      '@vue/shared': 3.5.30
 
   '@vue/runtime-core@3.5.32':
     dependencies:
       '@vue/reactivity': 3.5.32
       '@vue/shared': 3.5.32
-
-  '@vue/runtime-dom@3.5.30':
-    dependencies:
-      '@vue/reactivity': 3.5.30
-      '@vue/runtime-core': 3.5.30
-      '@vue/shared': 3.5.30
-      csstype: 3.2.3
 
   '@vue/runtime-dom@3.5.32':
     dependencies:
@@ -2967,12 +2851,6 @@ snapshots:
       '@vue/runtime-core': 3.5.32
       '@vue/shared': 3.5.32
       csstype: 3.2.3
-
-  '@vue/server-renderer@3.5.30(vue@3.5.30(typescript@5.9.3))':
-    dependencies:
-      '@vue/compiler-ssr': 3.5.30
-      '@vue/shared': 3.5.30
-      vue: 3.5.30(typescript@5.9.3)
 
   '@vue/server-renderer@3.5.32(vue@3.5.32(typescript@5.9.3))':
     dependencies:
@@ -2984,26 +2862,26 @@ snapshots:
 
   '@vue/shared@3.5.32': {}
 
-  '@vueuse/core@14.2.1(vue@3.5.30(typescript@5.9.3))':
+  '@vueuse/core@14.2.1(vue@3.5.32(typescript@5.9.3))':
     dependencies:
       '@types/web-bluetooth': 0.0.21
       '@vueuse/metadata': 14.2.1
-      '@vueuse/shared': 14.2.1(vue@3.5.30(typescript@5.9.3))
-      vue: 3.5.30(typescript@5.9.3)
+      '@vueuse/shared': 14.2.1(vue@3.5.32(typescript@5.9.3))
+      vue: 3.5.32(typescript@5.9.3)
 
-  '@vueuse/integrations@14.2.1(focus-trap@8.1.0)(vue@3.5.30(typescript@5.9.3))':
+  '@vueuse/integrations@14.2.1(focus-trap@8.1.0)(vue@3.5.32(typescript@5.9.3))':
     dependencies:
-      '@vueuse/core': 14.2.1(vue@3.5.30(typescript@5.9.3))
-      '@vueuse/shared': 14.2.1(vue@3.5.30(typescript@5.9.3))
-      vue: 3.5.30(typescript@5.9.3)
+      '@vueuse/core': 14.2.1(vue@3.5.32(typescript@5.9.3))
+      '@vueuse/shared': 14.2.1(vue@3.5.32(typescript@5.9.3))
+      vue: 3.5.32(typescript@5.9.3)
     optionalDependencies:
       focus-trap: 8.1.0
 
   '@vueuse/metadata@14.2.1': {}
 
-  '@vueuse/shared@14.2.1(vue@3.5.30(typescript@5.9.3))':
+  '@vueuse/shared@14.2.1(vue@3.5.32(typescript@5.9.3))':
     dependencies:
-      vue: 3.5.30(typescript@5.9.3)
+      vue: 3.5.32(typescript@5.9.3)
 
   args-tokenizer@0.3.0: {}
 
@@ -3441,7 +3319,7 @@ snapshots:
 
   require-from-string@2.0.2: {}
 
-  rolldown@1.0.0-rc.9:
+  rolldown@1.0.0-rc.9(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2):
     dependencies:
       '@oxc-project/types': 0.115.0
       '@rolldown/pluginutils': 1.0.0-rc.9
@@ -3458,9 +3336,12 @@ snapshots:
       '@rolldown/binding-linux-x64-gnu': 1.0.0-rc.9
       '@rolldown/binding-linux-x64-musl': 1.0.0-rc.9
       '@rolldown/binding-openharmony-arm64': 1.0.0-rc.9
-      '@rolldown/binding-wasm32-wasi': 1.0.0-rc.9
+      '@rolldown/binding-wasm32-wasi': 1.0.0-rc.9(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)
       '@rolldown/binding-win32-arm64-msvc': 1.0.0-rc.9
       '@rolldown/binding-win32-x64-msvc': 1.0.0-rc.9
+    transitivePeerDependencies:
+      - '@emnapi/core'
+      - '@emnapi/runtime'
 
   saxes@6.0.0:
     dependencies:
@@ -3587,11 +3468,11 @@ snapshots:
       '@types/unist': 3.0.3
       vfile-message: 4.0.3
 
-  vite-plus@0.1.19(@types/node@24.12.2)(esbuild@0.27.4)(jiti@2.6.1)(jsdom@29.0.2)(typescript@5.9.3)(vite@8.0.0(@types/node@24.12.2)(esbuild@0.27.4)(jiti@2.6.1)(yaml@2.8.2))(yaml@2.8.2):
+  vite-plus@0.1.19(@types/node@24.12.2)(esbuild@0.27.4)(jiti@2.6.1)(jsdom@29.0.2)(typescript@5.9.3)(vite@8.0.0(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@types/node@24.12.2)(esbuild@0.27.4)(jiti@2.6.1)(yaml@2.8.2))(yaml@2.8.2):
     dependencies:
       '@oxc-project/types': 0.126.0
       '@voidzero-dev/vite-plus-core': 0.1.19(@types/node@24.12.2)(esbuild@0.27.4)(jiti@2.6.1)(typescript@5.9.3)(yaml@2.8.2)
-      '@voidzero-dev/vite-plus-test': 0.1.19(@types/node@24.12.2)(esbuild@0.27.4)(jiti@2.6.1)(jsdom@29.0.2)(typescript@5.9.3)(vite@8.0.0(@types/node@24.12.2)(esbuild@0.27.4)(jiti@2.6.1)(yaml@2.8.2))(yaml@2.8.2)
+      '@voidzero-dev/vite-plus-test': 0.1.19(@types/node@24.12.2)(esbuild@0.27.4)(jiti@2.6.1)(jsdom@29.0.2)(typescript@5.9.3)(vite@8.0.0(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@types/node@24.12.2)(esbuild@0.27.4)(jiti@2.6.1)(yaml@2.8.2))(yaml@2.8.2)
       oxfmt: 0.45.0
       oxlint: 1.60.0(oxlint-tsgolint@0.21.1)
       oxlint-tsgolint: 0.21.1
@@ -3634,11 +3515,11 @@ snapshots:
       - vite
       - yaml
 
-  vite-plus@0.1.19(@types/node@24.12.2)(esbuild@0.28.0)(jiti@2.6.1)(jsdom@29.0.2)(typescript@5.9.3)(vite@8.0.0(@types/node@24.12.2)(esbuild@0.28.0)(jiti@2.6.1)(yaml@2.8.2))(yaml@2.8.2):
+  vite-plus@0.1.19(@types/node@24.12.2)(esbuild@0.28.0)(jiti@2.6.1)(jsdom@29.0.2)(typescript@5.9.3)(vite@8.0.0(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@types/node@24.12.2)(esbuild@0.28.0)(jiti@2.6.1)(yaml@2.8.2))(yaml@2.8.2):
     dependencies:
       '@oxc-project/types': 0.126.0
       '@voidzero-dev/vite-plus-core': 0.1.19(@types/node@24.12.2)(esbuild@0.28.0)(jiti@2.6.1)(typescript@5.9.3)(yaml@2.8.2)
-      '@voidzero-dev/vite-plus-test': 0.1.19(@types/node@24.12.2)(esbuild@0.28.0)(jiti@2.6.1)(jsdom@29.0.2)(typescript@5.9.3)(vite@8.0.0(@types/node@24.12.2)(esbuild@0.28.0)(jiti@2.6.1)(yaml@2.8.2))(yaml@2.8.2)
+      '@voidzero-dev/vite-plus-test': 0.1.19(@types/node@24.12.2)(esbuild@0.28.0)(jiti@2.6.1)(jsdom@29.0.2)(typescript@5.9.3)(vite@8.0.0(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@types/node@24.12.2)(esbuild@0.28.0)(jiti@2.6.1)(yaml@2.8.2))(yaml@2.8.2)
       oxfmt: 0.45.0
       oxlint: 1.60.0(oxlint-tsgolint@0.21.1)
       oxlint-tsgolint: 0.21.1
@@ -3681,11 +3562,11 @@ snapshots:
       - vite
       - yaml
 
-  vite-plus@0.1.19(@types/node@25.5.0)(esbuild@0.27.4)(jiti@2.6.1)(jsdom@29.0.2)(typescript@5.9.3)(vite@8.0.0(@types/node@25.5.0)(esbuild@0.27.4)(jiti@2.6.1)(yaml@2.8.2))(yaml@2.8.2):
+  vite-plus@0.1.19(@types/node@25.5.0)(esbuild@0.27.4)(jiti@2.6.1)(jsdom@29.0.2)(typescript@5.9.3)(vite@8.0.0(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@types/node@25.5.0)(esbuild@0.27.4)(jiti@2.6.1)(yaml@2.8.2))(yaml@2.8.2):
     dependencies:
       '@oxc-project/types': 0.126.0
       '@voidzero-dev/vite-plus-core': 0.1.19(@types/node@25.5.0)(esbuild@0.27.4)(jiti@2.6.1)(typescript@5.9.3)(yaml@2.8.2)
-      '@voidzero-dev/vite-plus-test': 0.1.19(@types/node@25.5.0)(esbuild@0.27.4)(jiti@2.6.1)(jsdom@29.0.2)(typescript@5.9.3)(vite@8.0.0(@types/node@25.5.0)(esbuild@0.27.4)(jiti@2.6.1)(yaml@2.8.2))(yaml@2.8.2)
+      '@voidzero-dev/vite-plus-test': 0.1.19(@types/node@25.5.0)(esbuild@0.27.4)(jiti@2.6.1)(jsdom@29.0.2)(typescript@5.9.3)(vite@8.0.0(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@types/node@25.5.0)(esbuild@0.27.4)(jiti@2.6.1)(yaml@2.8.2))(yaml@2.8.2)
       oxfmt: 0.45.0
       oxlint: 1.60.0(oxlint-tsgolint@0.21.1)
       oxlint-tsgolint: 0.21.1
@@ -3728,13 +3609,13 @@ snapshots:
       - vite
       - yaml
 
-  vite@8.0.0(@types/node@24.12.2)(esbuild@0.27.4)(jiti@2.6.1)(yaml@2.8.2):
+  vite@8.0.0(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@types/node@24.12.2)(esbuild@0.27.4)(jiti@2.6.1)(yaml@2.8.2):
     dependencies:
       '@oxc-project/runtime': 0.115.0
       lightningcss: 1.32.0
       picomatch: 4.0.3
       postcss: 8.5.8
-      rolldown: 1.0.0-rc.9
+      rolldown: 1.0.0-rc.9(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)
       tinyglobby: 0.2.15
     optionalDependencies:
       '@types/node': 24.12.2
@@ -3742,14 +3623,17 @@ snapshots:
       fsevents: 2.3.3
       jiti: 2.6.1
       yaml: 2.8.2
+    transitivePeerDependencies:
+      - '@emnapi/core'
+      - '@emnapi/runtime'
 
-  vite@8.0.0(@types/node@24.12.2)(esbuild@0.28.0)(jiti@2.6.1)(yaml@2.8.2):
+  vite@8.0.0(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@types/node@24.12.2)(esbuild@0.28.0)(jiti@2.6.1)(yaml@2.8.2):
     dependencies:
       '@oxc-project/runtime': 0.115.0
       lightningcss: 1.32.0
       picomatch: 4.0.3
       postcss: 8.5.8
-      rolldown: 1.0.0-rc.9
+      rolldown: 1.0.0-rc.9(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)
       tinyglobby: 0.2.15
     optionalDependencies:
       '@types/node': 24.12.2
@@ -3757,14 +3641,17 @@ snapshots:
       fsevents: 2.3.3
       jiti: 2.6.1
       yaml: 2.8.2
+    transitivePeerDependencies:
+      - '@emnapi/core'
+      - '@emnapi/runtime'
 
-  vite@8.0.0(@types/node@25.5.0)(esbuild@0.27.4)(jiti@2.6.1)(yaml@2.8.2):
+  vite@8.0.0(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(@types/node@25.5.0)(esbuild@0.27.4)(jiti@2.6.1)(yaml@2.8.2):
     dependencies:
       '@oxc-project/runtime': 0.115.0
       lightningcss: 1.32.0
       picomatch: 4.0.3
       postcss: 8.5.8
-      rolldown: 1.0.0-rc.9
+      rolldown: 1.0.0-rc.9(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)
       tinyglobby: 0.2.15
     optionalDependencies:
       '@types/node': 25.5.0
@@ -3772,6 +3659,9 @@ snapshots:
       fsevents: 2.3.3
       jiti: 2.6.1
       yaml: 2.8.2
+    transitivePeerDependencies:
+      - '@emnapi/core'
+      - '@emnapi/runtime'
 
   vitepress-plugin-npm-commands@0.10.0(vitepress-plugin-tabs@0.9.0(vitepress@2.0.0-alpha.17(@types/node@24.12.2)(esbuild@0.28.0)(jiti@2.6.1)(oxc-minify@0.127.0)(postcss@8.5.8)(typescript@5.9.3)(yaml@2.8.2))(vue@3.5.32(typescript@5.9.3)))(vitepress@2.0.0-alpha.17(@types/node@24.12.2)(esbuild@0.28.0)(jiti@2.6.1)(oxc-minify@0.127.0)(postcss@8.5.8)(typescript@5.9.3)(yaml@2.8.2)):
     dependencies:
@@ -3795,17 +3685,17 @@ snapshots:
       '@shikijs/transformers': 3.23.0
       '@shikijs/types': 3.23.0
       '@types/markdown-it': 14.1.2
-      '@vitejs/plugin-vue': 6.0.5(@voidzero-dev/vite-plus-core@0.1.19(@types/node@24.12.2)(esbuild@0.28.0)(jiti@2.6.1)(typescript@5.9.3)(yaml@2.8.2))(vue@3.5.30(typescript@5.9.3))
+      '@vitejs/plugin-vue': 6.0.5(@voidzero-dev/vite-plus-core@0.1.19(@types/node@24.12.2)(esbuild@0.28.0)(jiti@2.6.1)(typescript@5.9.3)(yaml@2.8.2))(vue@3.5.32(typescript@5.9.3))
       '@vue/devtools-api': 8.1.0
       '@vue/shared': 3.5.30
-      '@vueuse/core': 14.2.1(vue@3.5.30(typescript@5.9.3))
-      '@vueuse/integrations': 14.2.1(focus-trap@8.1.0)(vue@3.5.30(typescript@5.9.3))
+      '@vueuse/core': 14.2.1(vue@3.5.32(typescript@5.9.3))
+      '@vueuse/integrations': 14.2.1(focus-trap@8.1.0)(vue@3.5.32(typescript@5.9.3))
       focus-trap: 8.1.0
       mark.js: 8.11.1
       minisearch: 7.2.0
       shiki: 3.23.0
       vite: '@voidzero-dev/vite-plus-core@0.1.19(@types/node@24.12.2)(esbuild@0.28.0)(jiti@2.6.1)(typescript@5.9.3)(yaml@2.8.2)'
-      vue: 3.5.30(typescript@5.9.3)
+      vue: 3.5.32(typescript@5.9.3)
     optionalDependencies:
       oxc-minify: 0.127.0
       postcss: 8.5.8
@@ -3839,16 +3729,6 @@ snapshots:
       - universal-cookie
       - unplugin-unused
       - yaml
-
-  vue@3.5.30(typescript@5.9.3):
-    dependencies:
-      '@vue/compiler-dom': 3.5.30
-      '@vue/compiler-sfc': 3.5.30
-      '@vue/runtime-dom': 3.5.30
-      '@vue/server-renderer': 3.5.30(vue@3.5.30(typescript@5.9.3))
-      '@vue/shared': 3.5.30
-    optionalDependencies:
-      typescript: 5.9.3
 
   vue@3.5.32(typescript@5.9.3):
     dependencies:

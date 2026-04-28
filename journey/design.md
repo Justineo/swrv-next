@@ -127,7 +127,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - `advanced/understanding.md`
 - The site package now uses the default VitePress home layout, a SWR-shaped guide and advanced nav, a dedicated `Migrate from v1` page, and a Vue-first SSR and hydration guide built around provider-scoped clients, config-level `fallback`, and snapshot helpers.
 - The site package now documents snapshot-based SSR handoff through `serializeSWRVSnapshot()` and `hydrateSWRVSnapshot()`, so the SSR story is no longer limited to manually wiring config-level `fallback`.
-- The site package now targets the VitePress 2 prerelease line (`2.0.0-alpha.16`) instead of the VitePress 1 stable line so the docs stack stays on the intended forward-looking baseline.
+- The site package now targets the VitePress 2 prerelease line (`2.0.0-alpha.17`) instead of the VitePress 1 stable line so the docs stack stays on the intended forward-looking baseline.
 - Under the VitePress 2 plus Rolldown path used here, the site package now also carries `oxc-minify` explicitly because VitePress requires it for production builds on that toolchain.
 - Browser-facing end-to-end coverage now exists through a Playwright fixture app under `packages/swrv/e2e`, covering focus revalidation, reconnect revalidation, optimistic mutation UI, and subscription pushes in a real browser runtime.
 - A first built-in devtools hook now exists through `window.__SWRV_DEVTOOLS_USE__`, which injects global middleware across `useSWRV` and middleware-based APIs, and exposes `window.__SWRV_DEVTOOLS_VUE__` for Vue-aware tooling.
@@ -174,6 +174,9 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
     ranges, because pnpm 10.32.x can throw `Invalid Version` during targeted dependency updates
     (`installSome`) when catalog specifiers are ranged; that breaks Renovate lockfile artifact
     updates and then causes frozen-install failures in Vercel previews
+  - workspace overrides intentionally force `vue` and `@vue/server-renderer` through the catalog,
+    so VitePress, plugins, tests, and package-local SSR tooling do not resolve duplicate Vue
+    runtime types after grouped Renovate updates
 - Release publishing is now routed through `vp pm publish` in GitHub Actions so the workspace package manager remains responsible for `catalog:` dependency resolution and Trusted Publisher provenance.
 - The remaining first-stable `2.0` scope is now frozen more tightly:
   - Vue Suspense parity is explicitly deferred from the first stable `2.0` release
