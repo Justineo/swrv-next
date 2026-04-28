@@ -170,6 +170,10 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - non-major updates are grouped as `all non-major dependencies` and may automerge only through a
     PR after status checks pass
   - major updates stay separate and require manual review
+  - workspace `catalog:` entries are intentionally pinned to exact versions rather than semver
+    ranges, because pnpm 10.32.x can throw `Invalid Version` during targeted dependency updates
+    (`installSome`) when catalog specifiers are ranged; that breaks Renovate lockfile artifact
+    updates and then causes frozen-install failures in Vercel previews
 - Release publishing is now routed through `vp pm publish` in GitHub Actions so the workspace package manager remains responsible for `catalog:` dependency resolution and Trusted Publisher provenance.
 - The remaining first-stable `2.0` scope is now frozen more tightly:
   - Vue Suspense parity is explicitly deferred from the first stable `2.0` release

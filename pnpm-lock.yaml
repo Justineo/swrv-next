@@ -7,31 +7,31 @@ settings:
 catalogs:
   default:
     '@playwright/test':
-      specifier: ^1.58.2
+      specifier: 1.58.2
       version: 1.58.2
     '@types/node':
-      specifier: ^24
+      specifier: 24.12.0
       version: 24.12.0
     '@vue/server-renderer':
-      specifier: ^3.5.30
+      specifier: 3.5.30
       version: 3.5.30
     bumpp:
-      specifier: ^11.0.1
+      specifier: 11.0.1
       version: 11.0.1
     dequal:
-      specifier: ^2.0.3
+      specifier: 2.0.3
       version: 2.0.3
     esbuild:
-      specifier: ^0.27.4
+      specifier: 0.27.4
       version: 0.27.4
     jsdom:
-      specifier: ^29.0.0
+      specifier: 29.0.0
       version: 29.0.0
     oxc-minify:
-      specifier: ^0.120.0
+      specifier: 0.120.0
       version: 0.120.0
     typescript:
-      specifier: ^5
+      specifier: 5.9.3
       version: 5.9.3
     vite-plus:
       specifier: latest
@@ -40,13 +40,13 @@ catalogs:
       specifier: 2.0.0-alpha.16
       version: 2.0.0-alpha.16
     vitepress-plugin-npm-commands:
-      specifier: ^0.9.0
+      specifier: 0.9.0
       version: 0.9.0
     vitepress-plugin-tabs:
-      specifier: ^0.8.0
+      specifier: 0.8.0
       version: 0.8.0
     vue:
-      specifier: ^3.5.30
+      specifier: 3.5.30
       version: 3.5.30
 
 overrides:

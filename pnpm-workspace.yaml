@@ -3,22 +3,22 @@ packages:
   - packages/site
 
 catalog:
-  "@playwright/test": ^1.58.2
-  "@types/node": ^24
-  "@vue/server-renderer": ^3.5.30
-  bumpp: ^11.0.1
-  dequal: ^2.0.3
-  esbuild: ^0.27.4
-  jsdom: ^29.0.0
-  oxc-minify: ^0.120.0
-  typescript: ^5
+  "@playwright/test": 1.58.2
+  "@types/node": 24.12.0
+  "@vue/server-renderer": 3.5.30
+  bumpp: 11.0.1
+  dequal: 2.0.3
+  esbuild: 0.27.4
+  jsdom: 29.0.0
+  oxc-minify: 0.120.0
+  typescript: 5.9.3
   vite: npm:@voidzero-dev/vite-plus-core@latest
   vite-plus: latest
   vitepress: 2.0.0-alpha.16
-  vitepress-plugin-npm-commands: ^0.9.0
-  vitepress-plugin-tabs: ^0.8.0
+  vitepress-plugin-npm-commands: 0.9.0
+  vitepress-plugin-tabs: 0.8.0
   vitest: npm:@voidzero-dev/vite-plus-test@latest
-  vue: ^3.5.30
+  vue: 3.5.30
 
 catalogMode: prefer
 overrides:
