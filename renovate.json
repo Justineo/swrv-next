@@ -1,14 +1,19 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:recommended", ":dependencyDashboard"],
-  "labels": ["dependencies"],
-  "rangeStrategy": "replace",
-  "schedule": ["before 6am on monday"],
+  "extends": ["config:recommended"],
   "timezone": "Asia/Shanghai",
+  "schedule": ["before 5am on monday"],
+  "minimumReleaseAge": "7 days",
+  "separateMajorMinor": true,
+  "separateMultipleMajor": true,
   "packageRules": [
     {
-      "groupName": "vue ecosystem",
-      "matchPackageNames": ["vue", "vitepress"]
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "all non-major dependencies"
+    },
+    {
+      "matchUpdateTypes": ["major"],
+      "groupName": null
     }
   ]
 }
