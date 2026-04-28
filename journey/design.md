@@ -1,7 +1,7 @@
 # SWRV Next Design Snapshot
 
 Status: Post-hardening prerelease, repo-side release verification complete
-Last updated: 2026-03-25
+Last updated: 2026-04-28
 
 ## Mission
 
@@ -162,6 +162,14 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
 - The same `core-refresh-compare` domain file now also covers fast key-switch polling behavior so stale refresh completions cannot shift the new key's timer lane or fire stale `onSuccess` callbacks.
 - A dedicated `core-error-state` domain file now covers upstream-inspired error semantics, including synchronous and asynchronous fetcher failures, deduped `onError`, preserved error state during manual revalidation, `shouldRetryOnError` gating, and stale-key error callback suppression.
 - Repository maintenance scaffolding now exists for CI, Renovate, and release publishing.
+- Renovate dependency automation is intentionally weekly but stability-gated:
+  - branch creation is allowed only on Tuesdays in the `Asia/Shanghai` timezone so dependency
+    update work stays batched to one weekly window
+  - package updates must still satisfy `minimumReleaseAge: "7 days"` before PR creation, accepting
+    that frequently published packages can wait more than one week
+  - non-major updates are grouped as `all non-major dependencies` and may automerge only through a
+    PR after status checks pass
+  - major updates stay separate and require manual review
 - Release publishing is now routed through `vp pm publish` in GitHub Actions so the workspace package manager remains responsible for `catalog:` dependency resolution and Trusted Publisher provenance.
 - The remaining first-stable `2.0` scope is now frozen more tightly:
   - Vue Suspense parity is explicitly deferred from the first stable `2.0` release
