@@ -22,6 +22,8 @@ catalog:
 
 catalogMode: prefer
 overrides:
+  vue: "catalog:"
+  "@vue/server-renderer": "catalog:"
   vite: "catalog:"
   vitest: "catalog:"
 peerDependencyRules:
