@@ -26,6 +26,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
 - The root `vp run release:verify` command now exists and chains `vp run ready` with the package-local tarball smoke lane.
 - The GitHub Actions workflow now follows the official Vite+ CI path through `voidzero-dev/setup-vp@v1`, so Node.js, the package manager, dependency caching, and the `vp` CLI are provisioned by the recommended action instead of custom setup steps.
 - The GitHub Actions workflow now uses plain `vp` commands for every lane again, including the package dry-run through `vp pm pack -- --json --dry-run` in `packages/swrv`.
+- The repo-owned Vite+ config entrypoints now use `.mjs` instead of `.ts` for the root and `packages/swrv` configs so `vp check` and related commands do not depend on Node's native TypeScript config loading behavior.
 - GitHub still emits a Node 20 deprecation warning for `voidzero-dev/setup-vp@v1`; both job-level and workflow-level `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true` attempts were ineffective, so the remaining annotation is currently upstream in the published action rather than in this workflow.
 - The package-local tarball smoke lane now parses `vp pm pack -- --json`, cleans temp directories on success and handled interruption, and preserves temp artifacts only when `SWRV_KEEP_SMOKE_TMP=1` is set for debugging.
 - The `swrv` package now contains an initial provider-scoped runtime with:
@@ -241,7 +242,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - React server-entry files and the React-only `mutation/state.ts` helper remain intentionally absent
   - a few compatibility shims such as flat `_internal/*.ts`, top-level `config*.ts`, and `index/use-swrv*` files remain in place even though the primary ownership now follows the SWR-shaped wrappers
   - repo validation currently passes on the aligned source through:
-    - `vp check src tests e2e scripts vite.config.ts package.json README.md tsconfig.json`
+    - `vp check src tests e2e scripts vite.config.mjs package.json README.md tsconfig.json`
     - `vp run swrv#test`
     - `vp exec playwright test`
 - The main reference materials for the rebuild remain:

@@ -21,7 +21,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: `vp dev --config packages/swrv/e2e/vite.config.ts --host 127.0.0.1 --port ${port} --strictPort`,
+    command: `vp dev --config packages/swrv/e2e/vite.config.mjs --host 127.0.0.1 --port ${port} --strictPort`,
     url: `http://127.0.0.1:${port}`,
     reuseExistingServer: false,
     timeout: 120_000,
