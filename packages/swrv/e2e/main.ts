@@ -1,6 +1,7 @@
 import { createApp, createVNode, defineComponent, h } from "vue";
 
 import { SWRVConfig, createSWRVClient, useSWRV, useSWRVSubscription } from "../src/index.ts";
+import type { SWRVSubscriptionOptions } from "../src/index.ts";
 
 const remoteState = {
   focus: 0,
@@ -104,7 +105,7 @@ const MutationPanel = defineComponent({
     });
 
     const triggerMutation = async () => {
-      await state.mutate(
+      await state.mutate<string>(
         new Promise<string>((resolve) => {
           resolveMutation = () => {
             resolve("mutation-result");
@@ -113,7 +114,8 @@ const MutationPanel = defineComponent({
         }),
         {
           optimisticData: "optimistic",
-          populateCache: (result, currentData) => `${currentData ?? "missing"}|${result}`,
+          populateCache: (result: string, currentData: string | undefined) =>
+            `${currentData ?? "missing"}|${result}`,
           revalidate: false,
         },
       );
@@ -150,9 +152,9 @@ const MutationPanel = defineComponent({
 const SubscriptionPanel = defineComponent({
   name: "SubscriptionPanel",
   setup() {
-    const state = useSWRVSubscription<string>(
+    const state = useSWRVSubscription<string, Error, string>(
       "subscription",
-      (_key, { next }) => {
+      (_key: string, { next }: SWRVSubscriptionOptions<string, Error>) => {
         pushSubscription = (value) => {
           next(undefined, value);
         };
