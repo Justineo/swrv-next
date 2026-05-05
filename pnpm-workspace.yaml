@@ -5,12 +5,12 @@ packages:
 catalog:
   "@playwright/test": 1.59.1
   "@types/node": 24.12.2
-  "@vue/server-renderer": 3.5.32
+  "@vue/server-renderer": 3.5.33
   bumpp: 11.0.1
   dequal: 2.0.3
   esbuild: 0.28.0
-  jsdom: 29.0.2
-  oxc-minify: 0.127.0
+  jsdom: 29.1.0
+  oxc-minify: 0.128.0
   typescript: 6.0.3
   vite: npm:@voidzero-dev/vite-plus-core@latest
   vite-plus: 0.1.20
@@ -18,7 +18,7 @@ catalog:
   vitepress-plugin-npm-commands: 0.10.0
   vitepress-plugin-tabs: 0.9.0
   vitest: npm:@voidzero-dev/vite-plus-test@latest
-  vue: 3.5.32
+  vue: 3.5.33
 
 catalogMode: prefer
 overrides:
