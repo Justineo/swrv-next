@@ -178,6 +178,9 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - workspace overrides intentionally force `vue` and `@vue/server-renderer` through the catalog,
     so VitePress, plugins, tests, and package-local SSR tooling do not resolve duplicate Vue
     runtime types after grouped Renovate updates
+  - the pnpm 11 migration requires an explicit `allowBuilds.esbuild: true` workspace setting
+    because pnpm 11 treats ignored dependency build scripts as an install error; this keeps
+    Vite/VitePress esbuild postinstall execution as an intentional versioned trust decision
 - Release publishing is now routed through `vp pm publish` in GitHub Actions so the workspace package manager remains responsible for `catalog:` dependency resolution and Trusted Publisher provenance.
 - The remaining first-stable `2.0` scope is now frozen more tightly:
   - Vue Suspense parity is explicitly deferred from the first stable `2.0` release
