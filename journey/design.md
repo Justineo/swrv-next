@@ -28,6 +28,13 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
 - The GitHub Actions workflow now uses plain `vp` commands for every lane again, including the package dry-run through `vp pm pack -- --json --dry-run` in `packages/swrv`.
 - GitHub still emits a Node 20 deprecation warning for `voidzero-dev/setup-vp@v1`; both job-level and workflow-level `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true` attempts were ineffective, so the remaining annotation is currently upstream in the published action rather than in this workflow.
 - The contributor toolchain now pins `vite-plus` to `0.1.20` and `typescript` to `6.0.3` in the workspace catalog. This exposed stricter e2e fixture typing checks, so the fixture now annotates the mutation `populateCache` and subscription handler callbacks explicitly.
+- The PR 17 dependency line now follows the official Vite+ upgrade model by
+  keeping `vite-plus`, the `vite` alias, and the `vitest` alias on the same
+  toolchain version. The workspace catalog moves all three to `0.1.23`
+  (`vite` as `@voidzero-dev/vite-plus-core@0.1.23` and `vitest` as
+  `@voidzero-dev/vite-plus-test@0.1.23`). The broken state had
+  `vite-plus@0.1.22` while VitePress resolved `vite-plus-core@0.1.23`, which
+  broke VitePress config bundling during Vercel builds.
 - The package-local tarball smoke lane now parses `vp pm pack -- --json`, cleans temp directories on success and handled interruption, and preserves temp artifacts only when `SWRV_KEEP_SMOKE_TMP=1` is set for debugging.
 - The `swrv` package now contains an initial provider-scoped runtime with:
   - `useSWRV`
@@ -175,6 +182,10 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
     ranges, because pnpm 10.32.x can throw `Invalid Version` during targeted dependency updates
     (`installSome`) when catalog specifiers are ranged; that breaks Renovate lockfile artifact
     updates and then causes frozen-install failures in Vercel previews
+  - Vite+ aliases for `vite` and `vitest` are also intentionally exact
+    `npm:@voidzero-dev/*` aliases instead of `latest`; they must stay aligned
+    with the cataloged `vite-plus` version so VitePress, tests, and the global
+    Vite+ CLI use the same bundled toolchain line
   - workspace overrides intentionally force `vue` and `@vue/server-renderer` through the catalog,
     so VitePress, plugins, tests, and package-local SSR tooling do not resolve duplicate Vue
     runtime types after grouped Renovate updates
