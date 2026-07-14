@@ -10,11 +10,11 @@ catalog:
   dequal: 2.0.3
   esbuild: 0.28.1
   jsdom: 29.1.1
-  oxc-minify: 0.138.0
+  oxc-minify: 0.139.0
   typescript: 6.0.3
-  vite: npm:@voidzero-dev/vite-plus-core@0.2.1
-  vite-plus: 0.2.1
-  vitepress: 2.0.0-alpha.17
+  vite: npm:@voidzero-dev/vite-plus-core@0.2.2
+  vite-plus: 0.2.2
+  vitepress: 2.0.0-alpha.18
   vitepress-plugin-npm-commands: 0.10.0
   vitepress-plugin-tabs: 0.9.0
   vitest: npm:@voidzero-dev/vite-plus-test@0.1.24
