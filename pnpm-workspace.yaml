@@ -3,17 +3,17 @@ packages:
   - packages/site
 
 catalog:
-  "@playwright/test": 1.61.1
+  "@playwright/test": 1.62.0
   "@types/node": 24.13.3
   "@vue/server-renderer": 3.5.40
   bumpp: 12.0.0
   dequal: 2.0.3
   esbuild: 0.28.1
   jsdom: 29.1.1
-  oxc-minify: 0.140.0
+  oxc-minify: 0.142.0
   typescript: 6.0.3
-  vite: npm:@voidzero-dev/vite-plus-core@0.2.5
-  vite-plus: 0.2.5
+  vite: npm:@voidzero-dev/vite-plus-core@0.2.6
+  vite-plus: 0.2.6
   vitepress: 2.0.0-alpha.18
   vitepress-plugin-npm-commands: 0.10.0
   vitepress-plugin-tabs: 0.9.1
