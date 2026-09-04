@@ -40,7 +40,7 @@ For the underlying commands, run these before creating or approving a release:
 vp run swrv#check -- --fix
 vp test packages/swrv/tests
 vp exec playwright test
-vp run build -r
+vp run -r build
 ```
 
 ## Package validation

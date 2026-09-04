@@ -29,13 +29,13 @@ jobs:
         run: vp check
 
       - name: Test
-        run: vp run test -r
+        run: vp run -r test
 
       - name: Browser E2E
         run: vp exec playwright test
 
       - name: Build
-        run: vp run build -r
+        run: vp run -r build
 
       - name: Package dry-run
         working-directory: packages/swrv

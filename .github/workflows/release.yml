@@ -75,9 +75,9 @@ jobs:
       - name: Validate
         run: |
           vp check
-          vp run test -r
+          vp run -r test
           vp exec playwright test
-          vp run build -r
+          vp run -r build
 
       - name: Package dry-run
         working-directory: packages/swrv
