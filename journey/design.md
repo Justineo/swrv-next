@@ -1,7 +1,7 @@
 # SWRV Next Design Snapshot
 
 Status: Post-hardening prerelease, repo-side release verification complete
-Last updated: 2026-05-05
+Last updated: 2026-09-04
 
 ## Mission
 
@@ -17,7 +17,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   - `vp run swrv#check -- --fix`
   - `vp test packages/swrv/tests`
   - `vp exec playwright test`
-  - `vp run build -r`
+  - `vp run -r build`
   - `vp run swrv#release:verify`
 - The package-local `vp run swrv#check` path now scopes `vp check` to the
   package source inputs (`src`, `tests`, `e2e`, `scripts`, and key package
@@ -35,6 +35,16 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
   `@voidzero-dev/vite-plus-test@0.1.23`). The broken state had
   `vite-plus@0.1.22` while VitePress resolved `vite-plus-core@0.1.23`, which
   broke VitePress config bundling during Vercel builds.
+- Vite+ 0.3 uses upstream Vitest transitively and no longer publishes a matching
+  `@voidzero-dev/vite-plus-test` wrapper. The workspace therefore keeps only the
+  matching `vite` → `@voidzero-dev/vite-plus-core` override and has removed the
+  obsolete `vitest` alias. Retaining `vite-plus-test@0.1.24` beside
+  `vite-plus@0.3.0` pulled in `vite-plus-core@0.1.24` and broke clean installs at
+  the native-binding fallback during `vp config`.
+- Vite+ 0.3 requires task-runner selection flags before the task name. Current
+  scripts, CI, release validation, and contributor docs therefore use
+  `vp run -r test` and `vp run -r build`; the previous suffix form silently
+  selected zero tasks in this workspace.
 - The package-local tarball smoke lane now parses `vp pm pack -- --json`, cleans temp directories on success and handled interruption, and preserves temp artifacts only when `SWRV_KEEP_SMOKE_TMP=1` is set for debugging.
 - The `swrv` package now contains an initial provider-scoped runtime with:
   - `useSWRV`

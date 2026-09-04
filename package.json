@@ -4,15 +4,15 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "vp run build -r",
+    "build": "vp run -r build",
     "check": "vp check",
     "dev": "vp run site#dev",
-    "ready": "vp check && vp run test -r && vp run build -r && vp exec playwright test",
+    "ready": "vp check && vp run -r test && vp run -r build && vp exec playwright test",
     "release:verify": "vp run ready && vp run swrv#release:verify",
     "release:major": "vp exec bumpp --all --recursive --commit --tag --push --yes --release major",
     "release:minor": "vp exec bumpp --all --recursive --commit --tag --push --yes --release minor",
     "release:patch": "vp exec bumpp --all --recursive --commit --tag --push --yes --release patch",
-    "test": "vp run test -r",
+    "test": "vp run -r test",
     "test:e2e": "vp exec playwright test",
     "prepare": "vp config"
   },
@@ -24,5 +24,5 @@
   "engines": {
     "node": ">=22.12.0"
   },
-  "packageManager": "pnpm@11.17.0"
+  "packageManager": "pnpm@11.24.0"
 }

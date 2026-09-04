@@ -17,9 +17,9 @@ stable line is tagged, prereleases stay on the `next` dist-tag.
 ```bash
 vp install
 vp check
-vp run test -r
+vp run -r test
 vp run test:e2e
-vp run build -r
+vp run -r build
 ```
 
 Start the docs site:

@@ -9,10 +9,10 @@ commands.
 ```bash
 vp install
 vp check
-vp run test -r
+vp run -r test
 vp exec playwright install chromium
 vp run test:e2e
-vp run build -r
+vp run -r build
 ```
 
 Useful package-local commands:
@@ -38,7 +38,7 @@ vp run release:verify
   boundaries.
 - Update `journey/design.md` whenever effective project decisions change.
 - Add or update tests for behavior, type surface, or packaging changes.
-- Validate with `vp check`, `vp run test -r`, and `vp run test:e2e` before sending a patch.
+- Validate with `vp check`, `vp run -r test`, and `vp run test:e2e` before sending a patch.
 
 ## Releases
 

@@ -48,8 +48,9 @@ export default defineConfig({
       message: "Released under the Apache-2.0 License.",
       copyright: "Copyright © 2020-present Kong, Inc.",
     },
-    lastUpdatedText: "Last updated",
-    outlineTitle: "On this page",
+    lastUpdated: {
+      text: "Last updated",
+    },
     returnToTopLabel: "Back to top",
     sidebarMenuLabel: "Menu",
     darkModeSwitchLabel: "Theme",
@@ -94,6 +95,9 @@ export default defineConfig({
         items: [{ text: "Migrate from v1", link: "/migrate-from-v1" }],
       },
     ],
-    outline: [2, 3],
+    outline: {
+      label: "On this page",
+      level: [2, 3],
+    },
   },
 });
