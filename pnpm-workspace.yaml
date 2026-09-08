@@ -10,7 +10,7 @@ catalog:
   dequal: 2.0.3
   esbuild: 0.28.2
   jsdom: 30.0.1
-  oxc-minify: 0.147.0
+  oxc-minify: 0.148.0
   typescript: 7.0.2
   vite: npm:@voidzero-dev/vite-plus-core@0.3.0
   vite-plus: 0.3.0
