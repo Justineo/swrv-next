@@ -4,20 +4,20 @@ packages:
 
 catalog:
   "@playwright/test": 1.63.0
-  "@types/node": 24.13.4
-  "@vue/server-renderer": 3.5.42
+  "@types/node": 24.13.6
+  "@vue/server-renderer": 3.5.43
   bumpp: 12.3.0
   dequal: 2.0.3
   esbuild: 0.28.2
-  jsdom: 30.0.1
-  oxc-minify: 0.150.0
+  jsdom: 30.1.1
+  oxc-minify: 0.151.0
   typescript: 7.0.2
-  vite: npm:@voidzero-dev/vite-plus-core@0.3.2
-  vite-plus: 0.3.2
+  vite: npm:@voidzero-dev/vite-plus-core@0.3.3
+  vite-plus: 0.3.3
   vitepress: 2.0.0-alpha.20
   vitepress-plugin-npm-commands: 0.10.0
   vitepress-plugin-tabs: 0.9.1
-  vue: 3.5.42
+  vue: 3.5.43
 
 catalogMode: prefer
 allowBuilds:
