@@ -13,7 +13,7 @@ catalog:
   oxc-minify: 0.152.0
   typescript: 7.0.2
   vite: npm:@voidzero-dev/vite-plus-core@0.3.3
-  vite-plus: 0.3.3
+  vite-plus: 1.0.0
   vitepress: 2.0.0-alpha.20
   vitepress-plugin-npm-commands: 0.10.0
   vitepress-plugin-tabs: 0.9.1
