@@ -1,7 +1,7 @@
 # SWRV Next Design Snapshot
 
 Status: Post-hardening prerelease, repo-side release verification complete
-Last updated: 2026-09-04
+Last updated: 2026-10-17
 
 ## Mission
 
@@ -27,7 +27,7 @@ Rebuild SWRV as a modern, well-maintained, Vue-native counterpart to SWR. The ne
 - The GitHub Actions workflow now follows the official Vite+ CI path through `voidzero-dev/setup-vp@v1`, so Node.js, the package manager, dependency caching, and the `vp` CLI are provisioned by the recommended action instead of custom setup steps.
 - The GitHub Actions workflow now uses plain `vp` commands for every lane again, including the package dry-run through `vp pm pack -- --json --dry-run` in `packages/swrv`.
 - GitHub still emits a Node 20 deprecation warning for `voidzero-dev/setup-vp@v1`; both job-level and workflow-level `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true` attempts were ineffective, so the remaining annotation is currently upstream in the published action rather than in this workflow.
-- The contributor toolchain now pins `vite-plus` to `0.1.20` and `typescript` to `6.0.3` in the workspace catalog. This exposed stricter e2e fixture typing checks, so the fixture now annotates the mutation `populateCache` and subscription handler callbacks explicitly.
+- The contributor toolchain pins `vite-plus` and its `vite` alias to `1.1.0`, and stock `typescript` to `7.0.2` in the workspace catalog. Renovate groups the Vite+ packages so they stay aligned. CI uses Node.js 24. The e2e fixture explicitly annotates mutation `populateCache` and subscription handler callbacks.
 - The PR 17 dependency line now follows the official Vite+ upgrade model by
   keeping `vite-plus`, the `vite` alias, and the `vitest` alias on the same
   toolchain version. The workspace catalog moves all three to `0.1.23`
