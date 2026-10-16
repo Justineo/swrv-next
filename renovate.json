@@ -19,6 +19,10 @@
       "matchUpdateTypes": ["major"],
       "groupName": null,
       "automerge": false
+    },
+    {
+      "matchPackageNames": ["vite-plus", "@voidzero-dev/vite-plus-core"],
+      "groupName": "Vite+ toolchain"
     }
   ]
 }
