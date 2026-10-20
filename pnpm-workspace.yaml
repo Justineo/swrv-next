@@ -3,21 +3,21 @@ packages:
   - packages/site
 
 catalog:
-  "@playwright/test": 1.63.0
-  "@types/node": 24.19.1
-  "@vue/server-renderer": 3.5.43
+  "@playwright/test": 1.64.0
+  "@types/node": 24.19.2
+  "@vue/server-renderer": 3.5.44
   bumpp: 12.3.0
   dequal: 2.0.3
   esbuild: 0.28.2
   jsdom: 30.1.2
-  oxc-minify: 0.153.0
+  oxc-minify: 0.154.0
   typescript: 7.0.2
   vite: npm:@voidzero-dev/vite-plus-core@1.1.0
   vite-plus: 1.1.0
   vitepress: 2.0.0-alpha.20
   vitepress-plugin-npm-commands: 0.10.0
   vitepress-plugin-tabs: 0.9.1
-  vue: 3.5.43
+  vue: 3.5.44
 
 catalogMode: prefer
 allowBuilds:
