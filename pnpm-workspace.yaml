@@ -4,7 +4,7 @@ packages:
 
 catalog:
   "@playwright/test": 1.64.1
-  "@types/node": 24.19.2
+  "@types/node": 26.6.6
   "@vue/server-renderer": 3.5.44
   bumpp: 12.3.0
   dequal: 2.0.3
