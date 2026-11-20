@@ -9,7 +9,7 @@ catalog:
   bumpp: 12.3.0
   dequal: 2.0.3
   esbuild: 0.28.2
-  jsdom: 30.1.3
+  jsdom: 31.0.1
   oxc-minify: 0.158.0
   typescript: 7.0.2
   vite: npm:@voidzero-dev/vite-plus-core@1.5.1
